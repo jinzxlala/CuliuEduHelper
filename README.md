@@ -74,6 +74,8 @@ powershell -ExecutionPolicy Bypass -File .\infra\setup-meilisearch.ps1
 - 创建或更新 `lectures`、`cases`、`transcript_segments` 三个索引；
 - 使用临时数据完成中文关键词和精确短语搜索测试，随后删除临时索引。
 
+三个索引的唯一配置源是 `packages/search/index-definitions.json`，初始化脚本和 TypeScript 服务共同读取它。`@culiu/search` 提供 `searchLectures`、`searchCases`、`searchTranscriptSegments`、`getEvidence` 及受控全量重建能力；调用方必须在服务端注入搜索或管理密钥，浏览器端不得持有任何 Meilisearch 密钥。
+
 `infra/.env` 已被 Git 忽略。不要将主密钥复制到前端代码、浏览器环境变量、提交记录或聊天内容中。
 
 ### 常用命令

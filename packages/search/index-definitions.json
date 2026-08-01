@@ -1,0 +1,54 @@
+[
+  {
+    "uid": "lectures",
+    "primaryKey": "lecture_id",
+    "searchableAttributes": [
+      "title",
+      "summary",
+      "trend_text",
+      "ai_cross_disciplinary_text",
+      "failure_text",
+      "speakers",
+      "schools",
+      "majors",
+      "organization"
+    ],
+    "filterableAttributes": ["date", "organization", "speakers", "schools", "majors"],
+    "sortableAttributes": ["date", "title"]
+  },
+  {
+    "uid": "cases",
+    "primaryKey": "case_id",
+    "searchableAttributes": [
+      "academic_label",
+      "background",
+      "admission_result",
+      "major",
+      "research_methods",
+      "activity_types",
+      "ai_domains",
+      "evidence_boundary",
+      "case_type"
+    ],
+    "filterableAttributes": [
+      "lecture_id",
+      "case_type",
+      "curriculum_system",
+      "schools",
+      "major",
+      "research_methods",
+      "activity_types",
+      "ai_domains",
+      "ai_depth",
+      "confidence"
+    ],
+    "sortableAttributes": []
+  },
+  {
+    "uid": "transcript_segments",
+    "primaryKey": "segment_id",
+    "searchableAttributes": ["text", "section"],
+    "filterableAttributes": ["lecture_id", "section", "case_ids"],
+    "sortableAttributes": ["start_seconds", "end_seconds"]
+  }
+]

@@ -20,7 +20,15 @@
     "test:integration": {
       "cache": false,
       "dependsOn": ["^build"],
-      "passThroughEnv": ["DATABASE_POOL_MAX", "DATABASE_URL", "REDIS_URL"],
+      "passThroughEnv": [
+        "DATABASE_POOL_MAX",
+        "DATABASE_URL",
+        "MEILI_ADMIN_API_KEY",
+        "MEILI_HOST",
+        "MEILI_MASTER_KEY",
+        "MEILI_SEARCH_API_KEY",
+        "REDIS_URL"
+      ],
       "outputs": []
     },
     "typecheck": {

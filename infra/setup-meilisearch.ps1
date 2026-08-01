@@ -11,6 +11,7 @@ $ProgressPreference = "SilentlyContinue"
 $InfraDir = $PSScriptRoot
 $ComposeFile = Join-Path $InfraDir "docker-compose.yml"
 $EnvFile = Join-Path $InfraDir ".env"
+$IndexDefinitionsFile = Join-Path $InfraDir "..\packages\search\index-definitions.json"
 
 function Resolve-DockerExe {
     $command = Get-Command docker -ErrorAction SilentlyContinue
@@ -241,46 +242,24 @@ Invoke-Docker -Arguments @("compose", "--env-file", $EnvFile, "-f", $ComposeFile
 Wait-MeiliHealth
 Write-Host "Meilisearch is healthy at $BaseUrl"
 
-$indexes = @(
-    @{
-        Uid        = "lectures"
-        PrimaryKey = "lecture_id"
-        Settings   = @{
-            searchableAttributes = @(
-                "title", "summary", "trend_text", "ai_cross_disciplinary_text",
-                "failure_text", "speakers", "schools", "majors", "organization"
-            )
-            filterableAttributes = @("date", "organization", "speakers", "schools", "majors")
-            sortableAttributes   = @("date", "title")
-        }
-    },
-    @{
-        Uid        = "cases"
-        PrimaryKey = "case_id"
-        Settings   = @{
-            searchableAttributes = @(
-                "academic_label", "background", "admission_result", "major",
-                "research_methods", "activity_types", "ai_domains", "evidence_boundary", "case_type"
-            )
-            filterableAttributes = @(
-                "lecture_id", "case_type", "curriculum_system", "schools", "major",
-                "research_methods", "activity_types", "ai_domains", "ai_depth", "confidence"
-            )
-        }
-    },
-    @{
-        Uid        = "transcript_segments"
-        PrimaryKey = "segment_id"
-        Settings   = @{
-            searchableAttributes = @("text", "section")
-            filterableAttributes = @("lecture_id", "section", "case_ids")
-            sortableAttributes   = @("start_seconds", "end_seconds")
-        }
-    }
-)
+if (-not (Test-Path -LiteralPath $IndexDefinitionsFile -PathType Leaf)) {
+    throw "Canonical index definitions were not found: $IndexDefinitionsFile"
+}
+
+$parsedIndexes = Get-Content -LiteralPath $IndexDefinitionsFile -Raw -Encoding UTF8 | ConvertFrom-Json
+$indexes = @($parsedIndexes | ForEach-Object { $_ })
+$targetIndexUids = @($indexes | ForEach-Object { $_.uid })
+if ($indexes.Count -ne 3 -or ($targetIndexUids | Select-Object -Unique).Count -ne 3) {
+    throw "Canonical index definitions must contain exactly three unique indexes."
+}
 
 foreach ($index in $indexes) {
-    Ensure-Index -Uid $index.Uid -PrimaryKey $index.PrimaryKey -Settings $index.Settings
+    $settings = @{
+        searchableAttributes = @($index.searchableAttributes)
+        filterableAttributes = @($index.filterableAttributes)
+        sortableAttributes = @($index.sortableAttributes)
+    }
+    Ensure-Index -Uid $index.uid -PrimaryKey $index.primaryKey -Settings $settings
 }
 
 if (-not $SkipSmokeTest) {
@@ -288,9 +267,9 @@ if (-not $SkipSmokeTest) {
 }
 
 $allIndexes = Invoke-MeiliRequest -Method GET -Path "/indexes?limit=100"
-$targetIndexes = @($allIndexes.results | Where-Object { $_.uid -in @("lectures", "cases", "transcript_segments") })
+$targetIndexes = @($allIndexes.results | Where-Object { $_.uid -in $targetIndexUids })
 if ($targetIndexes.Count -ne 3) {
     throw "Expected three target indexes, found $($targetIndexes.Count)."
 }
 
-Write-Host "Meilisearch setup complete. Target indexes: lectures, cases, transcript_segments."
+Write-Host "Meilisearch setup complete. Target indexes: $($targetIndexUids -join ', ')."

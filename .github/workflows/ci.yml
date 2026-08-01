@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 20
     env:
       DATABASE_URL: postgresql://culiu_test:ci-only-password@127.0.0.1:5432/culiu_test
+      MEILI_HOST: http://127.0.0.1:7700
+      MEILI_MASTER_KEY: ci-only-meilisearch-master-key
       REDIS_URL: redis://127.0.0.1:6379
 
     services:
@@ -36,6 +38,19 @@ jobs:
           - 6379:6379
         options: >-
           --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      meilisearch:
+        image: getmeili/meilisearch:v1.50.0
+        env:
+          MEILI_ENV: production
+          MEILI_MASTER_KEY: ci-only-meilisearch-master-key
+          MEILI_NO_ANALYTICS: "true"
+        ports:
+          - 7700:7700
+        options: >-
+          --health-cmd "wget -q -O - http://127.0.0.1:7700/health >/dev/null 2>&1"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
@@ -64,5 +79,5 @@ jobs:
       - name: Apply migrations
         run: pnpm --filter @culiu/database db:migrate
 
-      - name: Run PostgreSQL and Redis integration tests
+      - name: Run PostgreSQL, Redis, and Meilisearch integration tests
         run: pnpm test:integration

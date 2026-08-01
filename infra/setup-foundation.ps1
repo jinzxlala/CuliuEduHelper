@@ -84,6 +84,7 @@ function Write-EnvValues {
     param([Parameter(Mandatory = $true)][hashtable]$Values)
 
     $orderedKeys = @(
+        "MEILI_HOST",
         "MEILI_MASTER_KEY",
         "POSTGRES_DB",
         "POSTGRES_USER",
@@ -114,6 +115,9 @@ function Write-EnvValues {
 
 function Ensure-LocalEnv {
     $values = Read-EnvValues
+    if (Test-MissingOrPlaceholder -Values $values -Key "MEILI_HOST") {
+        $values["MEILI_HOST"] = "http://127.0.0.1:7700"
+    }
     if (Test-MissingOrPlaceholder -Values $values -Key "MEILI_MASTER_KEY") {
         $values["MEILI_MASTER_KEY"] = New-SecureToken
     }
