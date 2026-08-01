@@ -12,15 +12,17 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "check": "pnpm format:check && pnpm secrets:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke:web",
+    "check": "pnpm format:check && pnpm secrets:check && pnpm lint && pnpm typecheck && pnpm migration:check && pnpm test && pnpm build && pnpm smoke:web",
     "dev": "turbo run dev --parallel",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "pnpm lint:root && turbo run lint",
     "lint:root": "eslint eslint.config.mjs scripts/*.mjs",
+    "migration:check": "pnpm --filter @culiu/database db:check",
     "secrets:check": "node scripts/check-secrets.mjs",
     "smoke:web": "node scripts/smoke-web-runtime.mjs",
     "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

@@ -6,6 +6,7 @@ overrides:
   sharp: "0.35.0"
 allowBuilds:
   esbuild: true
+  msgpackr-extract: false
   sharp: true
 minimumReleaseAgeExclude:
   - "@turbo/darwin-64@2.10.8"
@@ -15,3 +16,4 @@ minimumReleaseAgeExclude:
   - "@turbo/windows-64@2.10.8"
   - "@turbo/windows-arm64@2.10.8"
   - "turbo@2.10.8"
+  - "@types/pg@8.20.3"

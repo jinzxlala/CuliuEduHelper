@@ -17,6 +17,12 @@
       "dependsOn": ["^build"],
       "outputs": []
     },
+    "test:integration": {
+      "cache": false,
+      "dependsOn": ["^build"],
+      "passThroughEnv": ["DATABASE_POOL_MAX", "DATABASE_URL", "REDIS_URL"],
+      "outputs": []
+    },
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": []

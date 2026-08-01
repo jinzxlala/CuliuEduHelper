@@ -3,5 +3,5 @@
 data_origin/
 docs/
 infra/.env
-infra/setup-meilisearch.ps1
+infra/*.ps1
 pnpm-lock.yaml

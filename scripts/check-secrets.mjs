@@ -27,7 +27,7 @@ const secretPatterns = [
   {
     name: "assigned application secret",
     pattern:
-      /^\s*(?:DEEPSEEK_API_KEY|MEILI_MASTER_KEY)\s*=\s*(?!(?:replace|example|changeme|<|\$\{))\S+/imu,
+      /^\s*(?:DATABASE_URL|DEEPSEEK_API_KEY|MEILI_MASTER_KEY|POSTGRES_PASSWORD|REDIS_PASSWORD|REDIS_URL)\s*=\s*(?!(?:replace|example|changeme|postgresql:\/\/[^:\s]+:(?:replace|ci-only)|redis:\/\/:(?:replace|ci-only)|<|\$\{))\S+/imu,
   },
 ];
 

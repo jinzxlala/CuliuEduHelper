@@ -18,7 +18,37 @@ packages/shared 共享Schema与类型
 pnpm check
 ```
 
-该命令依次检查格式、潜在密钥、ESLint、严格类型、单元测试和生产构建。开发机上的其他Node.js主版本不能代替Node.js 22的CI与Docker验证。
+该命令依次检查格式、潜在密钥、ESLint、严格类型、Drizzle迁移一致性、单元测试、生产构建和Web运行时冒烟。开发机上的其他Node.js主版本不能代替Node.js 22的CI与Docker验证。
+
+## 本地 PostgreSQL、Redis 与证据文件
+
+首次启动或重复应用阶段0基础设施：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\setup-foundation.ps1
+```
+
+脚本会保留已有真实密钥和其他环境变量，替换缺失、空白或仍为`replace-...`的本地占位值，并根据本地配置刷新连接URL；随后启动固定版本的PostgreSQL 16与Redis 7.4，等待健康检查，再应用Drizzle迁移并写入幂等的脱敏fixtures。跳过镜像拉取可使用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\setup-foundation.ps1 -SkipPull
+```
+
+常用开发命令：
+
+```powershell
+# 检查迁移快照
+pnpm migration:check
+
+# 应用迁移及脱敏fixtures（自动读取infra/.env）
+pnpm --filter @culiu/database db:migrate
+pnpm --filter @culiu/database db:seed
+
+# PostgreSQL与Redis必须在线
+pnpm test:integration
+```
+
+本地不可变文件适配器按SHA-256寻址，将匿名知识与学生证据写入不同路径。`.local-data/`和`infra/.env`均不进入Git。浏览器端不得读取数据库、Redis或存储密钥。
 
 ## 本地 Meilisearch
 
@@ -55,7 +85,7 @@ docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml ps
 # 查看日志
 docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml logs -f meilisearch
 
-# 停止服务，但保留索引数据
+# 停止全部本地基础设施，但保留命名卷
 docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml down
 
 # 重新启动并校验索引配置，不重复拉取镜像
@@ -66,7 +96,7 @@ powershell -ExecutionPolicy Bypass -File .\infra\setup-meilisearch.ps1 -SkipPull
 
 ### 清空本地搜索数据
 
-> **危险：以下命令会永久删除 Docker 卷中的全部 Meilisearch 索引和文档。**
+> **危险：以下命令会永久删除PostgreSQL正式数据、Redis队列数据以及全部Meilisearch索引。**
 
 ```powershell
 docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml down -v

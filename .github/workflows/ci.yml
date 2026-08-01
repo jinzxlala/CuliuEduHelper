@@ -12,6 +12,33 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      DATABASE_URL: postgresql://culiu_test:ci-only-password@127.0.0.1:5432/culiu_test
+      REDIS_URL: redis://127.0.0.1:6379
+
+    services:
+      postgres:
+        image: postgres:16.14-bookworm
+        env:
+          POSTGRES_DB: culiu_test
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_USER: culiu_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U culiu_test -d culiu_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7.4.10-alpine3.21
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
 
     steps:
       - name: Checkout
@@ -33,3 +60,9 @@ jobs:
 
       - name: Run quality gate
         run: pnpm check
+
+      - name: Apply migrations
+        run: pnpm --filter @culiu/database db:migrate
+
+      - name: Run PostgreSQL and Redis integration tests
+        run: pnpm test:integration

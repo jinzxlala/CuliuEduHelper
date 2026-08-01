@@ -1,6 +1,65 @@
 name: culiu-edu-helper
 
 services:
+  postgres:
+    image: postgres:16.14-bookworm
+    container_name: culiu-edu-helper-postgres
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set in infra/.env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in infra/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in infra/.env}
+    command: ["postgres", "-c", "max_connections=100"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" >/dev/null 2>&1']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    cpus: 1.5
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: redis:7.4.10-alpine3.21
+    container_name: culiu-edu-helper-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in infra/.env}
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --appendfsync everysec --requirepass "$$REDIS_PASSWORD"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'redis-cli --no-auth-warning -a "$$REDIS_PASSWORD" ping 2>/dev/null | grep -q PONG',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    cpus: 0.5
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   meilisearch:
     image: getmeili/meilisearch:v1.50.0
     container_name: culiu-edu-helper-meilisearch
@@ -29,5 +88,9 @@ services:
         max-file: "3"
 
 volumes:
+  postgres_data:
+    name: culiu-edu-helper-postgres-data
+  redis_data:
+    name: culiu-edu-helper-redis-data
   meilisearch_data:
     name: culiu-edu-helper-meilisearch-data
