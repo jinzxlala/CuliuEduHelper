@@ -13,12 +13,20 @@ import {
   seedRedactedFixtures,
 } from "../packages/database/dist/index.js";
 import { hashPassword } from "../packages/authorization/dist/index.js";
+import {
+  createRedisConnection,
+  createTaskQueue,
+  parseRedisUrl,
+} from "../packages/tasks/dist/index.js";
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const port = 3100;
 const baseUrl = `http://127.0.0.1:${port}`;
 const nextCli = resolve(rootDirectory, "apps/web/node_modules/next/dist/bin/next");
+const workerEntry = resolve(rootDirectory, "apps/worker/dist/index.js");
 const output = [];
+const workerOutput = [];
+const queueName = `culiu-e2e-${randomUUID()}`;
 const temporaryUserId = randomUUID();
 const temporaryGrantId = randomUUID();
 const temporaryEmail = `${temporaryUserId}@example.invalid`;
@@ -37,6 +45,7 @@ const maintenanceClient = createDatabaseClient({
 });
 let databaseClient;
 let server;
+let worker;
 let temporaryStorageRoot;
 
 const delay = (milliseconds) =>
@@ -96,7 +105,7 @@ async function prepareTemporaryAccount() {
     `insert into student_authorization
      (id, user_id, student_id, allowed_actions, max_access_level, granted_by_user_id,
         valid_from)
-     values ($1, $2, $3, array['student:read', 'student:write'], 'sensitive', $2, now() - interval '1 minute')`,
+     values ($1, $2, $3, array['student:read', 'student:write', 'student:profile:generate'], 'sensitive', $2, now() - interval '1 minute')`,
     [temporaryGrantId, temporaryUserId, REDACTED_FIXTURE_IDS.student],
   );
 }
@@ -131,6 +140,8 @@ function startServer() {
     env: {
       ...process.env,
       DATABASE_URL: temporaryDatabaseUrl.toString(),
+      CULIU_GIT_COMMIT_SHA: "1".repeat(40),
+      CULIU_TASK_QUEUE_NAME: queueName,
       LOCAL_STORAGE_ROOT: temporaryStorageRoot,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ?? randomBytes(32).toString("base64url"),
       NEXTAUTH_URL: baseUrl,
@@ -148,6 +159,41 @@ function startServer() {
     });
   }
   return child;
+}
+
+function startWorker() {
+  const child = spawn(process.execPath, [workerEntry], {
+    cwd: rootDirectory,
+    env: {
+      ...process.env,
+      CULIU_TASK_QUEUE_NAME: queueName,
+      DATABASE_URL: temporaryDatabaseUrl.toString(),
+      LOCAL_STORAGE_ROOT: temporaryStorageRoot,
+      NODE_ENV: "test",
+      PROFILE_MODEL_PROVIDER: "mock",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+  });
+  for (const stream of [child.stdout, child.stderr]) {
+    stream.setEncoding("utf8");
+    stream.on("data", (chunk) => {
+      workerOutput.push(chunk);
+      if (workerOutput.length > 40) workerOutput.shift();
+    });
+  }
+  return child;
+}
+
+async function waitForWorker() {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    if (worker?.exitCode !== null) {
+      throw new Error(`Worker exited early.\n${workerOutput.join("")}`);
+    }
+    if (workerOutput.join("").includes('"service":"worker"')) return;
+    await delay(500);
+  }
+  throw new Error(`Worker did not become ready.\n${workerOutput.join("")}`);
 }
 
 async function waitForHealth() {
@@ -203,6 +249,8 @@ function authenticatedFetch(path, jar, init = {}) {
 try {
   await prepareTemporaryDatabase();
   await prepareTemporaryAccount();
+  worker = startWorker();
+  await waitForWorker();
   server = startServer();
 
   const healthResponse = await waitForHealth();
@@ -328,7 +376,7 @@ try {
         accessLevel: "sensitive",
         confirmationStatus: "confirmed",
         evidenceLinks: [{ evidenceLocatorId: locatorId, relation: "supports" }],
-        fieldKey: "runtime.readiness",
+        fieldKey: "academic.readiness",
         sourceType: "evidence",
         value: { text: "synthetic runtime readiness" },
       }),
@@ -337,7 +385,7 @@ try {
     },
   );
   const factPayload = await factResponse.json();
-  if (factResponse.status !== 201 || factPayload.fact?.fieldKey !== "runtime.readiness") {
+  if (factResponse.status !== 201 || factPayload.fact?.fieldKey !== "academic.readiness") {
     throw new Error(`Student fact creation failed (status=${String(factResponse.status)}).`);
   }
 
@@ -347,13 +395,46 @@ try {
   );
   const updatedStudent = await updatedStudentResponse.json();
   const runtimeFact = updatedStudent.student?.facts?.find(
-    (fact) => fact.fieldKey === "runtime.readiness",
+    (fact) => fact.fieldKey === "academic.readiness",
   );
   if (
     !updatedStudentResponse.ok ||
     runtimeFact?.evidenceLinks?.[0]?.effectiveValidationStatus !== "valid"
   ) {
     throw new Error("Created student fact was not traceable to valid evidence.");
+  }
+
+  const profileEnqueueResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profile-drafts`,
+    accepted.jar,
+    { method: "POST" },
+  );
+  if (profileEnqueueResponse.status !== 202) {
+    throw new Error(
+      `Profile draft enqueue failed (status=${String(profileEnqueueResponse.status)}).`,
+    );
+  }
+  let profilePayload;
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    const response = await authenticatedFetch(
+      `/api/students/${REDACTED_FIXTURE_IDS.student}/profile-drafts`,
+      accepted.jar,
+    );
+    profilePayload = await response.json();
+    if (profilePayload.tasks?.[0]?.status === "succeeded") break;
+    if (profilePayload.tasks?.[0]?.status === "failed") {
+      throw new Error("Profile draft worker reported a failed task.");
+    }
+    await delay(500);
+  }
+  if (
+    profilePayload?.tasks?.[0]?.status !== "succeeded" ||
+    profilePayload.profiles?.[0]?.status !== "draft" ||
+    profilePayload.profiles?.[0]?.claims?.length !== 8 ||
+    JSON.stringify(profilePayload).includes("student_demo_001") ||
+    JSON.stringify(profilePayload).includes("student@example.com")
+  ) {
+    throw new Error("Profile draft did not complete as a safe eight-section draft.");
   }
 
   const evidenceDownload = await authenticatedFetch(
@@ -406,7 +487,7 @@ try {
   );
   const invalidatedStudent = await invalidatedStudentResponse.json();
   const invalidatedRuntimeFact = invalidatedStudent.student?.facts?.find(
-    (fact) => fact.fieldKey === "runtime.readiness",
+    (fact) => fact.fieldKey === "academic.readiness",
   );
   if (invalidatedRuntimeFact?.evidenceLinks?.[0]?.effectiveValidationStatus !== "invalid") {
     throw new Error("Evidence invalidation did not propagate to the fact view.");
@@ -448,6 +529,7 @@ try {
       factStatus: factResponse.status,
       healthStatus: health.status,
       loginStatus: accepted.response.status,
+      profileStatus: profilePayload.tasks[0].status,
       unauthenticatedStudentStatus: unauthorizedStudent.status,
     }),
   );
@@ -459,5 +541,17 @@ try {
       delay(3000),
     ]);
   }
+  if (worker !== undefined) {
+    worker.kill();
+    await Promise.race([
+      new Promise((resolveExit) => worker.once("exit", resolveExit)),
+      delay(3000),
+    ]);
+  }
+  const cleanupRedis = createRedisConnection(parseRedisUrl());
+  const cleanupQueue = createTaskQueue({ connection: cleanupRedis, queueName });
+  await cleanupQueue.obliterate({ force: true }).catch(() => undefined);
+  await cleanupQueue.close().catch(() => undefined);
+  await cleanupRedis.quit().catch(() => undefined);
   await dropTemporaryDatabase();
 }

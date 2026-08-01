@@ -1,5 +1,6 @@
 import { AuthorizationDeniedError, createStudentAuthorizationContext } from "@culiu/authorization";
 import { StudentRecordNotFoundError, readStudentRecord } from "@culiu/student-records";
+import { readStudentProfiles } from "@culiu/student-profiles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
@@ -7,6 +8,7 @@ import { z } from "zod";
 
 import { EvidenceInvalidateButton } from "../../../components/evidence-invalidate-button";
 import { StudentRecordEditor } from "../../../components/student-record-editor";
+import { ProfileDraftPanel } from "../../../components/profile-draft-panel";
 import { requireActiveSessionPrincipal } from "../../../lib/auth-session";
 import { getDatabaseClient } from "../../../lib/database";
 
@@ -39,6 +41,7 @@ export default async function StudentDetailPage({
 
   const database = getDatabaseClient().database;
   let student;
+  let profiles;
   try {
     const context = await createStudentAuthorizationContext(database, principal, {
       action: "student:read",
@@ -46,6 +49,12 @@ export default async function StudentDetailPage({
       studentId: studentId.data,
     });
     student = await readStudentRecord(database, context);
+    const profileContext = await createStudentAuthorizationContext(database, principal, {
+      action: "student:read",
+      accessLevel: "internal",
+      studentId: studentId.data,
+    });
+    profiles = await readStudentProfiles(database, profileContext);
   } catch (error) {
     if (error instanceof AuthorizationDeniedError || error instanceof StudentRecordNotFoundError) {
       notFound();
@@ -92,6 +101,8 @@ export default async function StudentDetailPage({
           }))}
           studentId={student.id}
         />
+
+        <ProfileDraftPanel initialData={profiles} studentId={student.id} />
 
         <section className="detail-section record-section">
           <div className="section-heading-row">

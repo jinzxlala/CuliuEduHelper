@@ -1,0 +1,1 @@
+ALTER TABLE "model_task_run" ADD COLUMN "request_correlation_id" uuid NOT NULL;

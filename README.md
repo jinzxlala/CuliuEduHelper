@@ -100,6 +100,21 @@ POST /api/students/<id>/evidence/<evidence-id>/invalidate
 
 Web运行时冒烟使用独立的随机临时PostgreSQL数据库和临时文件目录，执行错误密码、登录Cookie、授权学生、证据上传与下载、事实绑定、证据失效传播、跨学生读写和停用账号测试；结束后删除整个临时数据库与文件目录，不向本地正式环境写入测试账号、证据或不可删除的审计残留。
 
+学生画像草稿通过后台 Worker 生成，浏览器不会获得 DeepSeek 密钥。生成动作要求单独的 `student:profile:generate` 授权，只使用当前已确认、经过脱敏且带有有效学生证据定位的事实；知识库案例不会进入画像输入。稳定接口为：
+
+```text
+POST /api/students/<id>/profile-drafts  创建或复用幂等后台任务
+GET  /api/students/<id>/profile-drafts  查看任务状态和草稿版本
+```
+
+本地运行需在 `infra/.env` 配置 `DEEPSEEK_API_KEY`、`CULIU_GIT_COMMIT_SHA` 和 `PROFILE_MODEL_PROVIDER=deepseek`。可选的真实连通探针如下；它只发送虚构请求，但会产生极小的 API 用量，因此不包含在普通 `pnpm check` 中：
+
+```powershell
+pnpm profile:model:smoke
+```
+
+当前画像始终保存为 `draft`；人工复核、批准/退回、证据失效后的复查状态和课程规划属于后续模块。
+
 ## 本地 Meilisearch
 
 ### 前置条件

@@ -27,6 +27,7 @@
     "lint": "pnpm lint:root && turbo run lint",
     "lint:root": "eslint eslint.config.mjs scripts/*.mjs",
     "migration:check": "pnpm --filter @culiu/database db:check",
+    "profile:model:smoke": "node --env-file-if-exists=infra/.env scripts/smoke-deepseek-profile-model.mjs",
     "secrets:check": "node scripts/check-secrets.mjs",
     "smoke:web": "node --env-file-if-exists=infra/.env scripts/smoke-web-runtime.mjs",
     "test": "turbo run test",

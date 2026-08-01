@@ -53,4 +53,29 @@ describe("TaskEnvelopeSchema", () => {
       }),
     ).toThrow();
   });
+
+  it("accepts a profile task containing references and version hashes but no student payload", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: "profile_draft_001",
+      payload: {
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "c".repeat(40),
+        inputSnapshotHash: "d".repeat(64),
+        inputSnapshotId: "00000000-0000-4000-8000-000000000020",
+        model: "deepseek-v4-flash",
+        pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
+        promptHash: "e".repeat(64),
+        promptVersion: "profile-draft-prompt.v1",
+        redactionVersion: "profile-outbound.v1",
+        schemaHash: "f".repeat(64),
+        schemaVersion: "profile-draft-output.v1",
+      },
+      taskName: "profile.draft",
+    } as const;
+
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain("studentId");
+    expect(JSON.stringify(task)).not.toContain("facts");
+  });
 });

@@ -7,11 +7,14 @@ const AbsolutePathSchema = z.string().min(1).refine(isAbsolute, {
 });
 
 const WorkerEnvironmentSchema = z.object({
+  CULIU_TASK_QUEUE_NAME: z.string().trim().min(1).max(128).optional(),
   KNOWLEDGE_ANALYSIS_ROOT: AbsolutePathSchema,
   KNOWLEDGE_MANIFEST_PATH: AbsolutePathSchema,
   KNOWLEDGE_TRANSCRIPT_2025_ROOT: AbsolutePathSchema,
   KNOWLEDGE_TRANSCRIPT_2026_ROOT: AbsolutePathSchema,
   LOCAL_STORAGE_ROOT: AbsolutePathSchema,
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  PROFILE_MODEL_PROVIDER: z.enum(["deepseek", "mock"]).default("deepseek"),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(4).default(1),
 });
 
@@ -19,6 +22,8 @@ export interface WorkerRuntimeConfig {
   readonly concurrency: number;
   readonly localStorageRoot: string;
   readonly manifestPath: string;
+  readonly profileModelProvider: "deepseek" | "mock";
+  readonly queueName: string | undefined;
   readonly sourceRoots: Readonly<Record<string, string>>;
 }
 
@@ -26,10 +31,15 @@ export function parseWorkerRuntimeConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): WorkerRuntimeConfig {
   const parsed = WorkerEnvironmentSchema.parse(environment);
+  if (parsed.NODE_ENV === "production" && parsed.PROFILE_MODEL_PROVIDER === "mock") {
+    throw new Error("The mock profile provider is forbidden in production.");
+  }
   return {
     concurrency: parsed.WORKER_CONCURRENCY,
     localStorageRoot: parsed.LOCAL_STORAGE_ROOT,
     manifestPath: parsed.KNOWLEDGE_MANIFEST_PATH,
+    profileModelProvider: parsed.PROFILE_MODEL_PROVIDER,
+    queueName: parsed.CULIU_TASK_QUEUE_NAME,
     sourceRoots: {
       analysis: parsed.KNOWLEDGE_ANALYSIS_ROOT,
       transcripts_2025: parsed.KNOWLEDGE_TRANSCRIPT_2025_ROOT,

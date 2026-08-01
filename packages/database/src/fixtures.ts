@@ -73,7 +73,7 @@ export async function seedRedactedFixtures(database: Database): Promise<void> {
     await transaction
       .insert(studentAuthorizations)
       .values({
-        allowedActions: ["student:read", "student:write"],
+        allowedActions: ["student:read", "student:write", "student:profile:generate"],
         grantedByUserId: REDACTED_FIXTURE_IDS.advisorUser,
         id: REDACTED_FIXTURE_IDS.authorization,
         maxAccessLevel: "sensitive",
@@ -86,7 +86,7 @@ export async function seedRedactedFixtures(database: Database): Promise<void> {
       .insert(authorizationContextSnapshots)
       .values({
         actorUserId: REDACTED_FIXTURE_IDS.advisorUser,
-        allowedActions: ["student:read", "student:write"],
+        allowedActions: ["student:read", "student:write", "student:profile:generate"],
         contextHash: "b".repeat(64),
         expiresAt: new Date("2099-01-01T00:00:00.000Z"),
         id: REDACTED_FIXTURE_IDS.authorizationContext,

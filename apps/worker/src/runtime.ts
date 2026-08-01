@@ -3,6 +3,7 @@ import {
   createDatabaseClient,
   parseDatabaseConfig,
 } from "@culiu/database";
+import { DeepSeekJsonModelProvider, parseDeepSeekGatewayConfig } from "@culiu/ai";
 import { KnowledgeImporter } from "@culiu/knowledge-ingest";
 import {
   createMeilisearchClient,
@@ -10,6 +11,10 @@ import {
   parseMeilisearchAdminConfig,
 } from "@culiu/search";
 import { LocalImmutableObjectStore } from "@culiu/storage";
+import {
+  createDeterministicMockProfileProvider,
+  executeProfileDraftTask,
+} from "@culiu/student-profiles";
 import {
   checkRedisConnection,
   createRedisConnection,
@@ -35,6 +40,10 @@ export async function runWorker(): Promise<void> {
     objectStore: new LocalImmutableObjectStore(runtime.localStorageRoot),
     sourceRoots: runtime.sourceRoots,
   });
+  const profileProvider =
+    runtime.profileModelProvider === "mock"
+      ? createDeterministicMockProfileProvider()
+      : new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig());
 
   try {
     await checkDatabaseConnection(databaseClient);
@@ -45,8 +54,13 @@ export async function runWorker(): Promise<void> {
     const worker = createTaskWorker({
       concurrency: runtime.concurrency,
       connection: redis,
+      ...(runtime.queueName === undefined ? {} : { queueName: runtime.queueName }),
       handlers: {
         "knowledge.import": createKnowledgeImportTaskHandler({ databaseClient, importer }),
+        "profile.draft": async (task) => {
+          if (task.taskName !== "profile.draft") throw new Error("Unexpected task type.");
+          return executeProfileDraftTask(databaseClient.database, task, profileProvider);
+        },
         "system.probe": () => Promise.resolve(buildWorkerHealth()),
       },
     });

@@ -12,6 +12,7 @@ export type AccessLevel = z.infer<typeof AccessLevelSchema>;
 export const StudentActionSchema = z.enum([
   "student:read",
   "student:write",
+  "student:profile:generate",
   "student:authorize",
   "student:audit",
 ]);

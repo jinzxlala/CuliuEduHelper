@@ -91,6 +91,30 @@ export const knowledgeSourceRoleEnum = pgEnum("knowledge_source_role", [
   "transcript_srt",
   "transcript_text",
 ]);
+export const profileStatusEnum = pgEnum("profile_status", [
+  "draft",
+  "in_review",
+  "approved",
+  "needs_review",
+  "archived",
+]);
+export const profileClaimCategoryEnum = pgEnum("profile_claim_category", [
+  "academic_foundation",
+  "interest_thread",
+  "experience_connections",
+  "responsibility_impact",
+  "interdisciplinary_ai_depth",
+  "behavioral_evidence",
+  "gaps_contradictions_risks",
+  "one_sentence_label",
+]);
+export const informationNatureEnum = pgEnum("information_nature", [
+  "fact",
+  "inference",
+  "missing",
+  "advisor_judgment",
+]);
+export const confidenceLevelEnum = pgEnum("confidence_level", ["high", "medium", "low", "unknown"]);
 
 export const appUsers = pgTable(
   "app_user",
@@ -342,6 +366,75 @@ export const factEvidence = pgTable(
   (table) => [primaryKey({ columns: [table.studentFactId, table.evidenceLocatorId] })],
 );
 
+export const profileInputSnapshots = pgTable(
+  "profile_input_snapshot",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "restrict" }),
+    authorizationContextId: uuid("authorization_context_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    snapshotHash: varchar("snapshot_hash", { length: 64 }).notNull(),
+    redactionVersion: varchar("redaction_version", { length: 64 }).notNull(),
+    factCount: integer("fact_count").notNull(),
+    evidenceLocatorCount: integer("evidence_locator_count").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("profile_input_snapshot_actor_hash_unique").on(
+      table.studentId,
+      table.createdByUserId,
+      table.snapshotHash,
+      table.redactionVersion,
+    ),
+    uniqueIndex("profile_input_snapshot_id_student_unique").on(table.id, table.studentId),
+    index("profile_input_snapshot_student_created_idx").on(table.studentId, table.createdAt),
+    check("profile_input_snapshot_hash_check", sql`${table.snapshotHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "profile_input_snapshot_counts_check",
+      sql`${table.factCount} > 0 and ${table.evidenceLocatorCount} > 0`,
+    ),
+    check(
+      "profile_input_snapshot_redaction_check",
+      sql`char_length(trim(${table.redactionVersion})) > 0`,
+    ),
+  ],
+);
+
+export const profileInputSnapshotFacts = pgTable(
+  "profile_input_snapshot_fact",
+  {
+    snapshotId: uuid("snapshot_id")
+      .notNull()
+      .references(() => profileInputSnapshots.id, { onDelete: "restrict" }),
+    studentFactId: uuid("student_fact_id")
+      .notNull()
+      .references(() => studentFacts.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.snapshotId, table.studentFactId] })],
+);
+
+export const profileInputSnapshotEvidence = pgTable(
+  "profile_input_snapshot_evidence",
+  {
+    snapshotId: uuid("snapshot_id")
+      .notNull()
+      .references(() => profileInputSnapshots.id, { onDelete: "restrict" }),
+    evidenceLocatorId: uuid("evidence_locator_id")
+      .notNull()
+      .references(() => evidenceLocators.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.snapshotId, table.evidenceLocatorId] })],
+);
+
 export const backgroundJobs = pgTable(
   "background_job",
   {
@@ -380,6 +473,157 @@ export const backgroundJobs = pgTable(
       sql`(${table.status} = 'queued' and ${table.startedAt} is null and ${table.completedAt} is null and ${table.claimToken} is null and ${table.leaseExpiresAt} is null) or (${table.status} = 'running' and ${table.startedAt} is not null and ${table.completedAt} is null and ${table.claimToken} is not null and ${table.leaseExpiresAt} is not null) or (${table.status} in ('succeeded', 'failed', 'canceled') and ${table.completedAt} is not null and ${table.claimToken} is null and ${table.leaseExpiresAt} is null)`,
     ),
   ],
+);
+
+export const modelTaskRuns = pgTable(
+  "model_task_run",
+  {
+    id: uuid("id").primaryKey(),
+    backgroundJobId: uuid("background_job_id")
+      .notNull()
+      .references(() => backgroundJobs.id, { onDelete: "restrict" }),
+    taskType: varchar("task_type", { length: 64 }).notNull(),
+    requestCorrelationId: uuid("request_correlation_id").notNull(),
+    authorizationContextId: uuid("authorization_context_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    studentId: uuid("student_id").notNull(),
+    inputSnapshotId: uuid("input_snapshot_id").notNull(),
+    inputSnapshotHash: varchar("input_snapshot_hash", { length: 64 }).notNull(),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    model: varchar("model", { length: 128 }).notNull(),
+    promptVersion: varchar("prompt_version", { length: 64 }).notNull(),
+    promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 64 }).notNull(),
+    schemaHash: varchar("schema_hash", { length: 64 }).notNull(),
+    redactionVersion: varchar("redaction_version", { length: 64 }).notNull(),
+    gitCommitSha: varchar("git_commit_sha", { length: 40 }).notNull(),
+    pricingVersion: varchar("pricing_version", { length: 64 }).notNull(),
+    status: jobStatusEnum("status").notNull().default("queued"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    promptTokens: integer("prompt_tokens"),
+    promptCacheHitTokens: integer("prompt_cache_hit_tokens"),
+    promptCacheMissTokens: integer("prompt_cache_miss_tokens"),
+    completionTokens: integer("completion_tokens"),
+    totalTokens: integer("total_tokens"),
+    estimatedCostMicrosCny: integer("estimated_cost_micros_cny"),
+    providerRequestId: varchar("provider_request_id", { length: 256 }),
+    outputHash: varchar("output_hash", { length: 64 }),
+    errorCode: varchar("error_code", { length: 128 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("model_task_run_background_job_unique").on(table.backgroundJobId),
+    foreignKey({
+      columns: [table.inputSnapshotId, table.studentId],
+      foreignColumns: [profileInputSnapshots.id, profileInputSnapshots.studentId],
+      name: "model_task_run_snapshot_student_fk",
+    }).onDelete("restrict"),
+    index("model_task_run_student_created_idx").on(table.studentId, table.createdAt),
+    check("model_task_run_type_check", sql`${table.taskType} = 'profile.draft'`),
+    check(
+      "model_task_run_hashes_check",
+      sql`${table.inputSnapshotHash} ~ '^[0-9a-f]{64}$' and ${table.promptHash} ~ '^[0-9a-f]{64}$' and ${table.schemaHash} ~ '^[0-9a-f]{64}$' and (${table.outputHash} is null or ${table.outputHash} ~ '^[0-9a-f]{64}$')`,
+    ),
+    check("model_task_run_git_sha_check", sql`${table.gitCommitSha} ~ '^[0-9a-f]{40}$'`),
+    check("model_task_run_attempt_check", sql`${table.attemptCount} between 0 and 3`),
+    check(
+      "model_task_run_usage_check",
+      sql`(${table.promptTokens} is null and ${table.promptCacheHitTokens} is null and ${table.promptCacheMissTokens} is null and ${table.completionTokens} is null and ${table.totalTokens} is null and ${table.estimatedCostMicrosCny} is null) or (${table.promptTokens} >= 0 and ${table.promptCacheHitTokens} >= 0 and ${table.promptCacheMissTokens} >= 0 and ${table.completionTokens} >= 0 and ${table.totalTokens} >= 0 and ${table.estimatedCostMicrosCny} >= 0 and ${table.promptCacheHitTokens} + ${table.promptCacheMissTokens} = ${table.promptTokens} and ${table.promptTokens} + ${table.completionTokens} = ${table.totalTokens})`,
+    ),
+    check(
+      "model_task_run_state_check",
+      sql`(${table.status} = 'queued' and ${table.startedAt} is null and ${table.completedAt} is null and ${table.outputHash} is null and ${table.errorCode} is null) or (${table.status} = 'running' and ${table.startedAt} is not null and ${table.completedAt} is null and ${table.outputHash} is null and ${table.errorCode} is null) or (${table.status} = 'succeeded' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.outputHash} is not null and ${table.errorCode} is null and ${table.totalTokens} is not null) or (${table.status} in ('failed', 'canceled') and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.outputHash} is null and ${table.errorCode} is not null)`,
+    ),
+  ],
+);
+
+export const profileVersions = pgTable(
+  "profile_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    status: profileStatusEnum("status").notNull().default("draft"),
+    inputSnapshotId: uuid("input_snapshot_id")
+      .notNull()
+      .references(() => profileInputSnapshots.id, { onDelete: "restrict" }),
+    inputSnapshotHash: varchar("input_snapshot_hash", { length: 64 }).notNull(),
+    modelTaskRunId: uuid("model_task_run_id")
+      .notNull()
+      .references(() => modelTaskRuns.id, { onDelete: "restrict" }),
+    questionsToConfirm: jsonb("questions_to_confirm")
+      .$type<Array<{ question: string; relatedFieldKeys: string[] }>>()
+      .notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    invalidationReason: varchar("invalidation_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("profile_version_student_version_unique").on(table.studentId, table.version),
+    uniqueIndex("profile_version_model_task_unique").on(table.modelTaskRunId),
+    index("profile_version_student_created_idx").on(table.studentId, table.createdAt),
+    check("profile_version_version_check", sql`${table.version} > 0`),
+    check("profile_version_hash_check", sql`${table.inputSnapshotHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "profile_version_state_check",
+      sql`(${table.status} in ('draft', 'in_review') and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} in ('needs_review', 'archived') and ${table.invalidationReason} is not null)`,
+    ),
+  ],
+);
+
+export const profileClaims = pgTable(
+  "profile_claim",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileVersionId: uuid("profile_version_id")
+      .notNull()
+      .references(() => profileVersions.id, { onDelete: "restrict" }),
+    category: profileClaimCategoryEnum("category").notNull(),
+    statement: text("statement").notNull(),
+    informationNature: informationNatureEnum("information_nature").notNull(),
+    confidence: confidenceLevelEnum("confidence").notNull(),
+    evidenceCount: integer("evidence_count").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("profile_claim_version_category_idx").on(table.profileVersionId, table.category),
+    check(
+      "profile_claim_statement_check",
+      sql`char_length(trim(${table.statement})) between 1 and 1200`,
+    ),
+    check(
+      "profile_claim_evidence_count_check",
+      sql`(${table.informationNature} = 'missing' and ${table.evidenceCount} = 0 and ${table.confidence} = 'unknown') or (${table.informationNature} <> 'missing' and ${table.evidenceCount} between 1 and 10 and ${table.confidence} <> 'unknown')`,
+    ),
+  ],
+);
+
+export const claimEvidence = pgTable(
+  "claim_evidence",
+  {
+    profileClaimId: uuid("profile_claim_id")
+      .notNull()
+      .references(() => profileClaims.id, { onDelete: "restrict" }),
+    evidenceLocatorId: uuid("evidence_locator_id")
+      .notNull()
+      .references(() => evidenceLocators.id, { onDelete: "restrict" }),
+    relation: evidenceRelationEnum("relation").notNull(),
+    validationStatus: validationStatusEnum("validation_status").notNull().default("valid"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.profileClaimId, table.evidenceLocatorId] })],
 );
 
 export const knowledgeImportBatches = pgTable(

@@ -50,6 +50,20 @@
       "when": 1785613901845,
       "tag": "0006_colossal_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785617362522,
+      "tag": "0007_gifted_marrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785618042756,
+      "tag": "0008_aspiring_ironclad",
+      "breakpoints": true
     }
   ]
 }

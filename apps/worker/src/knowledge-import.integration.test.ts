@@ -86,6 +86,7 @@ async function runFailureScenario(initialAttempts: 0 | 1 | 3): Promise<void> {
         databaseClient,
         importer,
       }),
+      "profile.draft": () => Promise.resolve({ skipped: true }),
       "system.probe": () => Promise.resolve(buildWorkerHealth()),
     },
     queueName,

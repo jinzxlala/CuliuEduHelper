@@ -28,6 +28,7 @@ describe("BullMQ foundation", () => {
       connection: workerConnection,
       handlers: {
         "knowledge.import": () => Promise.resolve({ status: "not-used" }),
+        "profile.draft": () => Promise.resolve({ status: "not-used" }),
         "system.probe": () => {
           processed += 1;
           resolveCompletion?.();

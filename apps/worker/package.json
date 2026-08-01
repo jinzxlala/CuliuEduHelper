@@ -18,11 +18,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@culiu/ai": "workspace:*",
     "@culiu/database": "workspace:*",
     "@culiu/knowledge-ingest": "workspace:*",
     "@culiu/search": "workspace:*",
     "@culiu/shared": "workspace:*",
     "@culiu/storage": "workspace:*",
+    "@culiu/student-profiles": "workspace:*",
     "@culiu/tasks": "workspace:*",
     "zod": "4.4.3"
   },
