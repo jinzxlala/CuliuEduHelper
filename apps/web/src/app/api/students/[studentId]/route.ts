@@ -1,42 +1,30 @@
-import {
-  AuthorizationDeniedError,
-  createStudentAuthorizationContext,
-  readStudentOverview,
-} from "@culiu/authorization";
+import { readStudentRecord } from "@culiu/student-records";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
-import { getActiveSessionPrincipal } from "../../../../lib/auth-session";
 import { getDatabaseClient } from "../../../../lib/database";
-
-const privateHeaders = { "Cache-Control": "private, no-store" };
+import {
+  createRouteStudentContext,
+  privateStudentHeaders,
+  studentRecordErrorResponse,
+} from "../../../../lib/student-record-http";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ studentId: string }> },
 ): Promise<NextResponse> {
-  const principal = await getActiveSessionPrincipal();
-  if (principal === null) {
-    return NextResponse.json({ error: "unauthorized" }, { headers: privateHeaders, status: 401 });
-  }
-  const studentId = z.uuid().safeParse((await params).studentId);
-  if (!studentId.success) {
-    return NextResponse.json({ error: "not_found" }, { headers: privateHeaders, status: 404 });
-  }
+  const authorization = await createRouteStudentContext({
+    accessLevel: "internal",
+    action: "student:read",
+    studentId: (await params).studentId,
+  });
+  if ("response" in authorization) return authorization.response;
 
   try {
-    const database = getDatabaseClient().database;
-    const context = await createStudentAuthorizationContext(database, principal, {
-      action: "student:read",
-      accessLevel: "sensitive",
-      studentId: studentId.data,
-    });
-    const student = await readStudentOverview(database, context);
-    return NextResponse.json({ student }, { headers: privateHeaders });
+    const student = await readStudentRecord(getDatabaseClient().database, authorization.context);
+    return NextResponse.json({ student }, { headers: privateStudentHeaders });
   } catch (error) {
-    if (error instanceof AuthorizationDeniedError) {
-      return NextResponse.json({ error: "not_found" }, { headers: privateHeaders, status: 404 });
-    }
+    const response = studentRecordErrorResponse(error);
+    if (response !== null) return response;
     throw error;
   }
 }

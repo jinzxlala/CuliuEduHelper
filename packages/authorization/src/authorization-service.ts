@@ -50,6 +50,7 @@ export interface AuthorizedStudentSummary {
 }
 
 export interface StudentFactSummary {
+  accessLevel: AccessLevel;
   confirmationStatus: "unconfirmed" | "confirmed" | "rejected" | "superseded";
   fieldKey: string;
   id: string;
@@ -334,6 +335,7 @@ export async function readStudentOverview(
   }
   const facts = await database
     .select({
+      accessLevel: studentFacts.accessLevel,
       confirmationStatus: studentFacts.confirmationStatus,
       fieldKey: studentFacts.fieldKey,
       id: studentFacts.id,
@@ -341,7 +343,12 @@ export async function readStudentOverview(
       value: studentFacts.value,
     })
     .from(studentFacts)
-    .where(eq(studentFacts.studentId, context.studentId))
+    .where(
+      and(
+        eq(studentFacts.studentId, context.studentId),
+        sql`${accessLevelRankSql(studentFacts.accessLevel)} <= ${accessLevelRankSql(context.maxAccessLevel)}`,
+      ),
+    )
     .orderBy(asc(studentFacts.createdAt));
 
   await recordStudentAudit(database, {

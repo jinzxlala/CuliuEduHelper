@@ -2,7 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  serverExternalPackages: ["@culiu/authorization", "@culiu/database", "@node-rs/argon2"],
+  serverExternalPackages: [
+    "@culiu/authorization",
+    "@culiu/database",
+    "@culiu/storage",
+    "@culiu/student-records",
+    "@node-rs/argon2",
+  ],
   transpilePackages: ["@culiu/search", "@culiu/shared"],
 };
 

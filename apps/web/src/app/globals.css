@@ -855,6 +855,199 @@ mark {
   margin-top: 7rem;
 }
 
+.student-record-shell {
+  width: min(1180px, calc(100% - 40px));
+}
+
+.record-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.6rem 0 2.2rem;
+}
+
+.editor-panel {
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fbfcf9;
+}
+
+.editor-panel h2 {
+  margin: 0;
+}
+
+.editor-panel form {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.editor-panel label,
+.editor-panel fieldset {
+  display: grid;
+  gap: 0.4rem;
+  color: #405148;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.editor-panel input,
+.editor-panel select,
+.editor-panel textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #bcc8c1;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+
+.editor-panel textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.editor-panel button {
+  min-height: 42px;
+  border: 1px solid var(--green);
+  border-radius: 9px;
+  background: var(--green);
+  color: white;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.form-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.editor-panel fieldset {
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.locator-options {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 150px;
+  overflow: auto;
+}
+
+.locator-options label {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.locator-options input {
+  min-height: auto;
+  margin-top: 0.18rem;
+}
+
+.form-message {
+  margin: 0;
+  padding: 0.65rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.form-message.success {
+  background: #e9f6ef;
+  color: var(--green-dark);
+}
+
+.form-message.error,
+.record-warning {
+  background: #fff1eb;
+  color: #8a351f;
+}
+
+.record-section {
+  border-top: 1px solid var(--line);
+}
+
+.section-heading-row,
+.record-item-heading,
+.record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-heading-row h2,
+.record-item h3 {
+  margin: 0;
+}
+
+.record-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.record-item {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+
+.record-item p {
+  margin: 0.65rem 0;
+  line-height: 1.65;
+}
+
+.record-item small {
+  color: var(--muted);
+}
+
+.record-warning {
+  padding: 0.65rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.record-actions {
+  justify-content: flex-start;
+  margin-top: 0.8rem;
+}
+
+.link-button {
+  min-height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--green) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.danger-link {
+  color: #9c4026 !important;
+}
+
+.history-panel {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.history-panel summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
 @media (max-width: 780px) {
   .home-shell,
   .app-shell,
@@ -879,7 +1072,8 @@ mark {
 
   .principle-grid,
   .search-layout,
-  .student-grid {
+  .student-grid,
+  .record-editor {
     grid-template-columns: 1fr;
   }
 
@@ -911,6 +1105,10 @@ mark {
   .metadata-grid div,
   .metadata-grid div:nth-child(even) {
     border-right: 0;
+  }
+
+  .form-grid-two {
+    grid-template-columns: 1fr;
   }
 }
 

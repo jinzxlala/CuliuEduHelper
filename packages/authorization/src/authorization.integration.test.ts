@@ -194,6 +194,14 @@ describe("student authorization boundary", () => {
         studentId: fixture.studentId,
         value: { topic: "robotics" },
       });
+      await database.insert(studentFacts).values({
+        accessLevel: "restricted",
+        confirmationStatus: "confirmed",
+        fieldKey: "synthetic_restricted_note",
+        sourceType: "advisor",
+        studentId: fixture.studentId,
+        value: { text: "must remain hidden at the sensitive ceiling" },
+      });
       const context = await createStudentAuthorizationContext(database, fixture.principal, {
         action: "student:read",
         accessLevel: "sensitive",
@@ -204,6 +212,7 @@ describe("student authorization boundary", () => {
       const overview = await readStudentOverview(database, context);
       expect(overview.id).toBe(fixture.studentId);
       expect(overview.facts).toHaveLength(1);
+      expect(overview.facts[0]?.accessLevel).toBe("sensitive");
       expect(overview.facts[0]?.value).toEqual({ topic: "robotics" });
     });
   });

@@ -1,6 +1,8 @@
 import { spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
-import { dirname, resolve } from "node:path";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -35,6 +37,7 @@ const maintenanceClient = createDatabaseClient({
 });
 let databaseClient;
 let server;
+let temporaryStorageRoot;
 
 const delay = (milliseconds) =>
   new Promise((resolveDelay) => {
@@ -71,6 +74,7 @@ async function prepareTemporaryDatabase() {
   });
   await runMigrations(databaseClient);
   await seedRedactedFixtures(databaseClient.database);
+  temporaryStorageRoot = await mkdtemp(join(tmpdir(), "culiu-web-e2e-storage-"));
 }
 
 function activeDatabaseClient() {
@@ -90,9 +94,9 @@ async function prepareTemporaryAccount() {
   );
   await client.pool.query(
     `insert into student_authorization
-       (id, user_id, student_id, allowed_actions, max_access_level, granted_by_user_id,
+     (id, user_id, student_id, allowed_actions, max_access_level, granted_by_user_id,
         valid_from)
-     values ($1, $2, $3, array['student:read'], 'sensitive', $2, now() - interval '1 minute')`,
+     values ($1, $2, $3, array['student:read', 'student:write'], 'sensitive', $2, now() - interval '1 minute')`,
     [temporaryGrantId, temporaryUserId, REDACTED_FIXTURE_IDS.student],
   );
 }
@@ -115,6 +119,10 @@ async function dropTemporaryDatabase() {
     throw new Error("Temporary runtime database was not removed.");
   }
   await maintenanceClient.close();
+  if (temporaryStorageRoot !== undefined) {
+    await rm(temporaryStorageRoot, { force: true, recursive: true });
+    temporaryStorageRoot = undefined;
+  }
 }
 
 function startServer() {
@@ -123,6 +131,7 @@ function startServer() {
     env: {
       ...process.env,
       DATABASE_URL: temporaryDatabaseUrl.toString(),
+      LOCAL_STORAGE_ROOT: temporaryStorageRoot,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ?? randomBytes(32).toString("base64url"),
       NEXTAUTH_URL: baseUrl,
       NEXT_TELEMETRY_DISABLED: "1",
@@ -185,8 +194,10 @@ async function signIn(email, password) {
   return { jar, response, result, setCookies };
 }
 
-function authenticatedFetch(path, jar) {
-  return fetch(`${baseUrl}${path}`, { headers: { Cookie: jar.header() }, redirect: "manual" });
+function authenticatedFetch(path, jar, init = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Cookie", jar.header());
+  return fetch(`${baseUrl}${path}`, { ...init, headers, redirect: "manual" });
 }
 
 try {
@@ -278,9 +289,134 @@ try {
   if (
     !studentResponse.ok ||
     studentPayload.student?.publicCode !== "student_demo_001" ||
-    studentPayload.student?.facts?.[0]?.fieldKey !== "synthetic_readiness"
+    !studentPayload.student?.facts?.some((fact) => fact.fieldKey === "synthetic_readiness")
   ) {
     throw new Error("Authorized student detail failed.");
+  }
+
+  const evidenceForm = new FormData();
+  evidenceForm.set("accessLevel", "sensitive");
+  evidenceForm.set(
+    "file",
+    new File(["synthetic runtime evidence"], "runtime-evidence.txt", { type: "text/plain" }),
+  );
+  evidenceForm.set(
+    "locators",
+    JSON.stringify([{ locator: { field: "runtime_summary" }, locatorType: "record_field" }]),
+  );
+  const evidenceResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence`,
+    accepted.jar,
+    { body: evidenceForm, method: "POST" },
+  );
+  const evidencePayload = await evidenceResponse.json();
+  const evidenceId = evidencePayload.evidence?.id;
+  const locatorId = evidencePayload.evidence?.locators?.[0]?.id;
+  if (
+    evidenceResponse.status !== 201 ||
+    typeof evidenceId !== "string" ||
+    typeof locatorId !== "string"
+  ) {
+    throw new Error(`Evidence upload failed (status=${String(evidenceResponse.status)}).`);
+  }
+
+  const factResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/facts`,
+    accepted.jar,
+    {
+      body: JSON.stringify({
+        accessLevel: "sensitive",
+        confirmationStatus: "confirmed",
+        evidenceLinks: [{ evidenceLocatorId: locatorId, relation: "supports" }],
+        fieldKey: "runtime.readiness",
+        sourceType: "evidence",
+        value: { text: "synthetic runtime readiness" },
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  const factPayload = await factResponse.json();
+  if (factResponse.status !== 201 || factPayload.fact?.fieldKey !== "runtime.readiness") {
+    throw new Error(`Student fact creation failed (status=${String(factResponse.status)}).`);
+  }
+
+  const updatedStudentResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}`,
+    accepted.jar,
+  );
+  const updatedStudent = await updatedStudentResponse.json();
+  const runtimeFact = updatedStudent.student?.facts?.find(
+    (fact) => fact.fieldKey === "runtime.readiness",
+  );
+  if (
+    !updatedStudentResponse.ok ||
+    runtimeFact?.evidenceLinks?.[0]?.effectiveValidationStatus !== "valid"
+  ) {
+    throw new Error("Created student fact was not traceable to valid evidence.");
+  }
+
+  const evidenceDownload = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}`,
+    accepted.jar,
+  );
+  if (
+    !evidenceDownload.ok ||
+    (await evidenceDownload.text()) !== "synthetic runtime evidence" ||
+    !evidenceDownload.headers.get("content-disposition")?.includes("attachment")
+  ) {
+    throw new Error("Protected student evidence download failed.");
+  }
+
+  const crossStudentWrite = await authenticatedFetch(
+    `/api/students/${randomUUID()}/facts`,
+    accepted.jar,
+    {
+      body: JSON.stringify({
+        fieldKey: "runtime.cross_student",
+        sourceType: "advisor",
+        value: { text: "must not be stored" },
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (
+    crossStudentWrite.status !== 404 ||
+    !crossStudentWrite.headers.get("cache-control")?.includes("no-store")
+  ) {
+    throw new Error("Cross-student fact write was not blocked uniformly.");
+  }
+
+  const invalidateResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}/invalidate`,
+    accepted.jar,
+    {
+      body: JSON.stringify({ reason: "Synthetic runtime withdrawal" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!invalidateResponse.ok) {
+    throw new Error(`Evidence invalidation failed (status=${String(invalidateResponse.status)}).`);
+  }
+  const invalidatedStudentResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}`,
+    accepted.jar,
+  );
+  const invalidatedStudent = await invalidatedStudentResponse.json();
+  const invalidatedRuntimeFact = invalidatedStudent.student?.facts?.find(
+    (fact) => fact.fieldKey === "runtime.readiness",
+  );
+  if (invalidatedRuntimeFact?.evidenceLinks?.[0]?.effectiveValidationStatus !== "invalid") {
+    throw new Error("Evidence invalidation did not propagate to the fact view.");
+  }
+  const invalidatedDownload = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}`,
+    accepted.jar,
+  );
+  if (invalidatedDownload.status !== 404) {
+    throw new Error("Invalidated evidence remained downloadable.");
   }
 
   const crossStudentResponse = await authenticatedFetch(
@@ -305,8 +441,11 @@ try {
   console.log(
     JSON.stringify({
       authenticatedStudentStatus: studentResponse.status,
+      crossStudentWriteStatus: crossStudentWrite.status,
       crossStudentStatus: crossStudentResponse.status,
       disabledSessionStatus: disabledSessionResponse.status,
+      evidenceStatus: evidenceResponse.status,
+      factStatus: factResponse.status,
       healthStatus: health.status,
       loginStatus: accepted.response.status,
       unauthenticatedStudentStatus: unauthorizedStudent.status,

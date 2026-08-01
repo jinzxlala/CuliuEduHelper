@@ -15,6 +15,7 @@ packages/authorization 内部账号、Argon2id密码与学生级授权上下文
 packages/knowledge-ingest 知识源清单、校验、保守解析与幂等导入
 packages/search Meilisearch文档契约、查询、金标评测与原子重建
 packages/storage 本地不可变证据存储
+packages/student-records 学生事实、证据定位、版本、失效和授权领域服务
 packages/tasks BullMQ任务契约与执行器
 ```
 
@@ -86,7 +87,18 @@ finally {
 
 每次学生读取都会创建15分钟的最小作用域授权快照，并在实际查询前重新检查账号状态、当前授权、操作和访问等级。即使已有会话，账号停用或学生授权撤销也会立即阻断后续学生API访问；客户端篡改学生ID统一返回404，避免泄露学生是否存在。
 
-Web运行时冒烟使用独立的随机临时PostgreSQL数据库执行错误密码、登录Cookie、授权学生、跨学生参数和停用账号测试，结束后删除整个临时数据库，不向本地正式库写入可变测试账号或不可删除的审计残留。
+学生档案页支持字段化事实录入、事实线性修订、本人证据上传、具体定位、证据版本、受保护下载和追加式失效。稳定业务接口为：
+
+```text
+POST /api/students/<id>/facts
+POST /api/students/<id>/evidence
+GET  /api/students/<id>/evidence/<evidence-id>
+POST /api/students/<id>/evidence/<evidence-id>/invalidate
+```
+
+事实值、文件名、MIME、文件大小和每类定位均经过严格Schema校验；证据文件最大20 MB，按SHA-256写入`LOCAL_STORAGE_ROOT`下的学生专属路径。原始证据、定位和失效事件不可原地修改或删除；修订会创建新版本。事实引用只能绑定同一学生域内、未失效且未被取代的证据版本，且事实访问等级不能低于引用证据。数据库触发器会再次阻断跨学生、知识域冒充、访问等级降级、分支版本和原地篡改。
+
+Web运行时冒烟使用独立的随机临时PostgreSQL数据库和临时文件目录，执行错误密码、登录Cookie、授权学生、证据上传与下载、事实绑定、证据失效传播、跨学生读写和停用账号测试；结束后删除整个临时数据库与文件目录，不向本地正式环境写入测试账号、证据或不可删除的审计残留。
 
 ## 本地 Meilisearch
 

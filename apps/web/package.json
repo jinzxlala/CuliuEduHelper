@@ -16,6 +16,8 @@
     "@culiu/database": "workspace:*",
     "@culiu/search": "workspace:*",
     "@culiu/shared": "workspace:*",
+    "@culiu/storage": "workspace:*",
+    "@culiu/student-records": "workspace:*",
     "next": "15.5.22",
     "next-auth": "4.24.15",
     "react": "19.2.8",

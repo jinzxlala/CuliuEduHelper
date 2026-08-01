@@ -217,6 +217,12 @@ export const evidenceObjects = pgTable(
     version: integer("version").notNull().default(1),
     contentHash: varchar("content_hash", { length: 64 }).notNull(),
     storageKey: text("storage_key").notNull(),
+    originalFileName: varchar("original_file_name", { length: 255 }).notNull().default("unknown"),
+    mimeType: varchar("mime_type", { length: 255 }).notNull().default("application/octet-stream"),
+    byteCount: integer("byte_count").notNull().default(0),
+    supersedesId: uuid("supersedes_id").references((): AnyPgColumn => evidenceObjects.id, {
+      onDelete: "restrict",
+    }),
     uploadedByUserId: uuid("uploaded_by_user_id")
       .notNull()
       .references(() => appUsers.id, { onDelete: "restrict" }),
@@ -226,8 +232,17 @@ export const evidenceObjects = pgTable(
   (table) => [
     uniqueIndex("evidence_object_storage_version_unique").on(table.storageKey, table.version),
     uniqueIndex("evidence_object_id_domain_unique").on(table.id, table.dataDomain),
+    uniqueIndex("evidence_object_supersedes_unique")
+      .on(table.supersedesId)
+      .where(sql`${table.supersedesId} is not null`),
+    index("evidence_object_student_created_idx").on(table.studentId, table.createdAt),
     check("evidence_object_hash_check", sql`${table.contentHash} ~ '^[0-9a-f]{64}$'`),
     check("evidence_object_version_check", sql`${table.version} > 0`),
+    check("evidence_object_byte_count_check", sql`${table.byteCount} >= 0`),
+    check(
+      "evidence_object_not_self_superseding",
+      sql`${table.supersedesId} is null or ${table.supersedesId} <> ${table.id}`,
+    ),
     check(
       "evidence_object_storage_key_check",
       sql`(${table.dataDomain} = 'knowledge' and ${table.storageKey} like 'knowledge/%') or (${table.dataDomain} = 'student' and ${table.storageKey} like ('student/' || ${table.studentId}::text || '/%'))`,
@@ -236,6 +251,26 @@ export const evidenceObjects = pgTable(
       "evidence_object_domain_student_check",
       sql`(${table.dataDomain} = 'knowledge' and ${table.studentId} is null) or (${table.dataDomain} = 'student' and ${table.studentId} is not null)`,
     ),
+  ],
+);
+
+export const evidenceInvalidations = pgTable(
+  "evidence_invalidation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    evidenceObjectId: uuid("evidence_object_id")
+      .notNull()
+      .references(() => evidenceObjects.id, { onDelete: "restrict" }),
+    reason: varchar("reason", { length: 512 }).notNull(),
+    invalidatedByUserId: uuid("invalidated_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("evidence_invalidation_object_unique").on(table.evidenceObjectId),
+    index("evidence_invalidation_created_idx").on(table.createdAt),
+    check("evidence_invalidation_reason_check", sql`char_length(trim(${table.reason})) > 0`),
   ],
 );
 
@@ -262,6 +297,7 @@ export const studentFacts = pgTable(
       .references(() => students.id, { onDelete: "restrict" }),
     fieldKey: varchar("field_key", { length: 128 }).notNull(),
     value: jsonb("value").$type<Record<string, unknown>>().notNull(),
+    accessLevel: accessLevelEnum("access_level").notNull().default("sensitive"),
     sourceType: factSourceTypeEnum("source_type").notNull(),
     confirmationStatus: confirmationStatusEnum("confirmation_status")
       .notNull()
@@ -276,6 +312,9 @@ export const studentFacts = pgTable(
   },
   (table) => [
     index("student_fact_student_field_idx").on(table.studentId, table.fieldKey),
+    uniqueIndex("student_fact_supersedes_unique")
+      .on(table.supersedesId)
+      .where(sql`${table.supersedesId} is not null`),
     check(
       "student_fact_validity_check",
       sql`${table.validTo} is null or ${table.validTo} > ${table.validFrom}`,

@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "evidence_object_supersedes_unique" ON "evidence_object" USING btree ("supersedes_id") WHERE "evidence_object"."supersedes_id" is not null;--> statement-breakpoint
+CREATE UNIQUE INDEX "student_fact_supersedes_unique" ON "student_fact" USING btree ("supersedes_id") WHERE "student_fact"."supersedes_id" is not null;

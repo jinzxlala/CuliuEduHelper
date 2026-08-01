@@ -36,6 +36,20 @@
       "when": 1785603977739,
       "tag": "0004_confused_tinkerer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785613851927,
+      "tag": "0005_bored_nighthawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785613901845,
+      "tag": "0006_colossal_nova",
+      "breakpoints": true
     }
   ]
 }
