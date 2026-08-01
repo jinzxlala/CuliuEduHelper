@@ -970,6 +970,92 @@ mark {
   color: #8a351f;
 }
 
+.profile-current {
+  margin-top: 1rem;
+}
+
+.profile-editor {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--line);
+}
+
+.profile-editor fieldset {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.profile-editor legend,
+.profile-editor label,
+.profile-evidence-options strong {
+  color: #405148;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.profile-editor input,
+.profile-editor select,
+.profile-editor textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #bcc8c1;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+
+.profile-editor textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.profile-editor > button:not(.link-button),
+.profile-editor .record-actions button:not(.link-button) {
+  min-height: 42px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--green);
+  border-radius: 9px;
+  background: var(--green);
+  color: white;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.profile-evidence-options,
+.profile-field-options,
+.profile-question {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-evidence-options > div,
+.profile-field-options label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 0.35fr);
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.profile-evidence-options label,
+.profile-field-options label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-evidence-options input[type="checkbox"],
+.profile-field-options input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+}
+
 .record-section {
   border-top: 1px solid var(--line);
 }

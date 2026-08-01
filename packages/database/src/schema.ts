@@ -98,6 +98,14 @@ export const profileStatusEnum = pgEnum("profile_status", [
   "needs_review",
   "archived",
 ]);
+export const profileReviewActionEnum = pgEnum("profile_review_action", [
+  "revised",
+  "submitted",
+  "returned",
+  "approved",
+  "invalidated",
+  "archived",
+]);
 export const profileClaimCategoryEnum = pgEnum("profile_claim_category", [
   "academic_foundation",
   "interest_thread",
@@ -556,6 +564,10 @@ export const profileVersions = pgTable(
     modelTaskRunId: uuid("model_task_run_id")
       .notNull()
       .references(() => modelTaskRuns.id, { onDelete: "restrict" }),
+    sourceProfileVersionId: uuid("source_profile_version_id").references(
+      (): AnyPgColumn => profileVersions.id,
+      { onDelete: "restrict" },
+    ),
     questionsToConfirm: jsonb("questions_to_confirm")
       .$type<Array<{ question: string; relatedFieldKeys: string[] }>>()
       .notNull(),
@@ -572,13 +584,47 @@ export const profileVersions = pgTable(
   },
   (table) => [
     uniqueIndex("profile_version_student_version_unique").on(table.studentId, table.version),
-    uniqueIndex("profile_version_model_task_unique").on(table.modelTaskRunId),
+    uniqueIndex("profile_version_source_unique")
+      .on(table.sourceProfileVersionId)
+      .where(sql`${table.sourceProfileVersionId} is not null`),
+    index("profile_version_model_task_idx").on(table.modelTaskRunId),
     index("profile_version_student_created_idx").on(table.studentId, table.createdAt),
     check("profile_version_version_check", sql`${table.version} > 0`),
     check("profile_version_hash_check", sql`${table.inputSnapshotHash} ~ '^[0-9a-f]{64}$'`),
     check(
       "profile_version_state_check",
-      sql`(${table.status} in ('draft', 'in_review') and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} in ('needs_review', 'archived') and ${table.invalidationReason} is not null)`,
+      sql`(${table.status} in ('draft', 'in_review') and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} = 'needs_review' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is not null) or (${table.status} = 'archived' and ((${table.approvedByUserId} is null and ${table.approvedAt} is null) or (${table.approvedByUserId} is not null and ${table.approvedAt} is not null)) and ${table.invalidationReason} is not null)`,
+    ),
+  ],
+);
+
+export const profileReviewRecords = pgTable(
+  "profile_review_record",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    profileVersionId: uuid("profile_version_id")
+      .notNull()
+      .references(() => profileVersions.id, { onDelete: "restrict" }),
+    action: profileReviewActionEnum("action").notNull(),
+    fromStatus: profileStatusEnum("from_status"),
+    toStatus: profileStatusEnum("to_status").notNull(),
+    actorType: actorTypeEnum("actor_type").notNull(),
+    actorUserId: uuid("actor_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    reason: varchar("reason", { length: 512 }),
+    requestCorrelationId: uuid("request_correlation_id").notNull().defaultRandom(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("profile_review_record_version_created_idx").on(table.profileVersionId, table.createdAt),
+    check(
+      "profile_review_record_actor_check",
+      sql`(${table.actorType} = 'user' and ${table.actorUserId} is not null) or ${table.actorType} = 'service'`,
+    ),
+    check(
+      "profile_review_record_reason_check",
+      sql`(${table.action} in ('returned', 'invalidated', 'archived') and char_length(trim(${table.reason})) > 0) or (${table.action} not in ('returned', 'invalidated', 'archived'))`,
     ),
   ],
 );

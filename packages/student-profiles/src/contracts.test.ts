@@ -6,6 +6,8 @@ import {
   PROFILE_REDACTION_VERSION,
   PROFILE_SCHEMA_VERSION,
   ProfileDraftOutputSchema,
+  ProfileRevisionInputSchema,
+  ProfileTransitionInputSchema,
   estimateDeepSeekFlashCostMicrosCny,
   isProfileOutboundFieldAllowed,
   sanitizeProfileFactValue,
@@ -122,5 +124,40 @@ describe("profile contracts", () => {
         totalTokens: 300,
       }),
     ).toBe(302);
+  });
+
+  it("validates complete advisor revisions and strict transition commands", () => {
+    expect(
+      ProfileRevisionInputSchema.parse({
+        claims: output().claims,
+        expectedSourceUpdatedAt: "2026-08-02T12:00:00.000Z",
+        questionsToConfirm: [],
+      }).questionsToConfirm,
+    ).toEqual([]);
+    expect(() =>
+      ProfileRevisionInputSchema.parse({
+        claims: output().claims.map((claim) =>
+          claim.category === "one_sentence_label"
+            ? { ...claim, informationNature: "advisor_judgment" }
+            : claim,
+        ),
+        expectedSourceUpdatedAt: "2026-08-02T12:00:00.000Z",
+        questionsToConfirm: [],
+      }),
+    ).toThrow(/label must be marked as an inference/u);
+    expect(
+      ProfileTransitionInputSchema.parse({
+        action: "return",
+        expectedUpdatedAt: "2026-08-02T12:00:00.000Z",
+        reason: "Needs a clearer evidence statement.",
+      }).action,
+    ).toBe("return");
+    expect(() =>
+      ProfileTransitionInputSchema.parse({
+        action: "return",
+        expectedUpdatedAt: "2026-08-02T12:00:00.000Z",
+        reason: "",
+      }),
+    ).toThrow();
   });
 });

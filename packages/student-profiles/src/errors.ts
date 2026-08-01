@@ -19,3 +19,11 @@ export class ProfileDraftProcessingError extends Error {
     this.code = code;
   }
 }
+
+export class ProfileWorkflowConflictError extends Error {
+  override readonly name = "ProfileWorkflowConflictError";
+}
+
+export class ProfileWorkflowNotFoundError extends Error {
+  override readonly name = "ProfileWorkflowNotFoundError";
+}

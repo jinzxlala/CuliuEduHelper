@@ -64,6 +64,13 @@
       "when": 1785618042756,
       "tag": "0008_aspiring_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785620392455,
+      "tag": "0009_lovely_nemesis",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,7 @@ import {
   seedRedactedFixtures,
 } from "../packages/database/dist/index.js";
 import { hashPassword } from "../packages/authorization/dist/index.js";
+import { ProfileRevisionInputSchema } from "../packages/student-profiles/dist/index.js";
 import {
   createRedisConnection,
   createTaskQueue,
@@ -105,7 +106,7 @@ async function prepareTemporaryAccount() {
     `insert into student_authorization
      (id, user_id, student_id, allowed_actions, max_access_level, granted_by_user_id,
         valid_from)
-     values ($1, $2, $3, array['student:read', 'student:write', 'student:profile:generate'], 'sensitive', $2, now() - interval '1 minute')`,
+     values ($1, $2, $3, array['student:read', 'student:write', 'student:profile:generate', 'student:profile:review', 'student:profile:approve'], 'sensitive', $2, now() - interval '1 minute')`,
     [temporaryGrantId, temporaryUserId, REDACTED_FIXTURE_IDS.student],
   );
 }
@@ -437,6 +438,86 @@ try {
     throw new Error("Profile draft did not complete as a safe eight-section draft.");
   }
 
+  const generatedProfile = profilePayload.profiles[0];
+  const revisionBody = ProfileRevisionInputSchema.parse({
+    claims: generatedProfile.claims.map(
+      ({ category, confidence, evidence, informationNature, statement }, index) => ({
+        category,
+        confidence,
+        evidence,
+        informationNature,
+        statement: index === 0 ? `${statement} Advisor reviewed.` : statement,
+      }),
+    ),
+    expectedSourceUpdatedAt: generatedProfile.updatedAt,
+    questionsToConfirm: [],
+  });
+  const revisionResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profiles/${generatedProfile.id}/revisions`,
+    accepted.jar,
+    {
+      body: JSON.stringify(revisionBody),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (revisionResponse.status !== 201) {
+    const safeError = await revisionResponse.text();
+    throw new Error(
+      `Profile revision failed (status=${String(revisionResponse.status)}, body=${safeError}).`,
+    );
+  }
+  let reviewedProfilesResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profile-drafts`,
+    accepted.jar,
+  );
+  let reviewedProfiles = await reviewedProfilesResponse.json();
+  const revisedProfile = reviewedProfiles.profiles?.[0];
+  if (revisedProfile?.version !== 2 || revisedProfile.status !== "draft") {
+    throw new Error("Profile revision did not create a new draft version.");
+  }
+  const submitResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profiles/${revisedProfile.id}/transitions`,
+    accepted.jar,
+    {
+      body: JSON.stringify({ action: "submit", expectedUpdatedAt: revisedProfile.updatedAt }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!submitResponse.ok) {
+    throw new Error(`Profile submit failed (status=${String(submitResponse.status)}).`);
+  }
+  reviewedProfilesResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profile-drafts`,
+    accepted.jar,
+  );
+  reviewedProfiles = await reviewedProfilesResponse.json();
+  const inReviewProfile = reviewedProfiles.profiles?.[0];
+  const approveResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profiles/${inReviewProfile.id}/transitions`,
+    accepted.jar,
+    {
+      body: JSON.stringify({ action: "approve", expectedUpdatedAt: inReviewProfile.updatedAt }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!approveResponse.ok) {
+    throw new Error(`Profile approval failed (status=${String(approveResponse.status)}).`);
+  }
+  reviewedProfilesResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profile-drafts`,
+    accepted.jar,
+  );
+  reviewedProfiles = await reviewedProfilesResponse.json();
+  if (
+    reviewedProfiles.profiles?.[0]?.status !== "approved" ||
+    reviewedProfiles.profiles?.[0]?.reviews?.some((review) => review.action === "approved") !== true
+  ) {
+    throw new Error("Profile approval was not persisted with review history.");
+  }
+
   const evidenceDownload = await authenticatedFetch(
     `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}`,
     accepted.jar,
@@ -468,6 +549,18 @@ try {
   ) {
     throw new Error("Cross-student fact write was not blocked uniformly.");
   }
+  const crossStudentProfileTransition = await authenticatedFetch(
+    `/api/students/${randomUUID()}/profiles/${revisedProfile.id}/transitions`,
+    accepted.jar,
+    {
+      body: JSON.stringify({ action: "submit", expectedUpdatedAt: revisedProfile.updatedAt }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (crossStudentProfileTransition.status !== 404) {
+    throw new Error("Cross-student profile transition was not blocked uniformly.");
+  }
 
   const invalidateResponse = await authenticatedFetch(
     `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}/invalidate`,
@@ -491,6 +584,14 @@ try {
   );
   if (invalidatedRuntimeFact?.evidenceLinks?.[0]?.effectiveValidationStatus !== "invalid") {
     throw new Error("Evidence invalidation did not propagate to the fact view.");
+  }
+  const invalidatedProfilesResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/profile-drafts`,
+    accepted.jar,
+  );
+  const invalidatedProfiles = await invalidatedProfilesResponse.json();
+  if (invalidatedProfiles.profiles?.[0]?.status !== "needs_review") {
+    throw new Error("Evidence invalidation did not mark the approved profile for review.");
   }
   const invalidatedDownload = await authenticatedFetch(
     `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}`,
@@ -524,12 +625,14 @@ try {
       authenticatedStudentStatus: studentResponse.status,
       crossStudentWriteStatus: crossStudentWrite.status,
       crossStudentStatus: crossStudentResponse.status,
+      crossStudentProfileTransitionStatus: crossStudentProfileTransition.status,
       disabledSessionStatus: disabledSessionResponse.status,
       evidenceStatus: evidenceResponse.status,
       factStatus: factResponse.status,
       healthStatus: health.status,
       loginStatus: accepted.response.status,
       profileStatus: profilePayload.tasks[0].status,
+      profileWorkflowStatus: invalidatedProfiles.profiles[0].status,
       unauthenticatedStudentStatus: unauthorizedStudent.status,
     }),
   );

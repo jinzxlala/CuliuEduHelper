@@ -22,6 +22,7 @@ import {
   profileInputSnapshotEvidence,
   profileInputSnapshotFacts,
   profileInputSnapshots,
+  profileReviewRecords,
   profileVersions,
   studentFacts,
   students,
@@ -57,6 +58,7 @@ import {
   ProfileDraftNotFoundError,
   ProfileDraftProcessingError,
 } from "./errors.js";
+import { validateCurrentProfileSnapshot } from "./snapshot-validation.js";
 
 const GitCommitShaSchema = z.string().regex(/^[0-9a-f]{40}$/u);
 const MAX_FACTS = 50;
@@ -417,7 +419,6 @@ async function validateFrozenSnapshot(
     .select({
       actorUserId: profileInputSnapshots.createdByUserId,
       authorizationContextId: profileInputSnapshots.authorizationContextId,
-      payload: profileInputSnapshots.payload,
       snapshotHash: profileInputSnapshots.snapshotHash,
       studentId: profileInputSnapshots.studentId,
     })
@@ -442,100 +443,11 @@ async function validateFrozenSnapshot(
     action: "student:profile:generate",
     studentId: row.studentId,
   });
-  const snapshot = ProfileInputSnapshotPayloadSchema.parse(row.payload);
-  if (sha256(stableJson(snapshot)) !== row.snapshotHash) {
-    throw new ProfileDraftProcessingError("snapshot_hash_invalid");
-  }
-  const factIds = snapshot.facts.map((fact) => fact.factId);
-  const locatorIds = [
-    ...new Set(snapshot.facts.flatMap((fact) => fact.evidence.map((e) => e.locatorId))),
-  ];
-  const factRows = await database
-    .select({ id: studentFacts.id })
-    .from(studentFacts)
-    .where(
-      and(
-        inArray(studentFacts.id, factIds),
-        eq(studentFacts.studentId, row.studentId),
-        eq(studentFacts.confirmationStatus, "confirmed"),
-        isNull(studentFacts.validTo),
-        sql`${studentFacts.accessLevel} in ('internal', 'sensitive')`,
-      ),
-    );
-  const factChildren = await database
-    .select({ supersedesId: studentFacts.supersedesId })
-    .from(studentFacts)
-    .where(inArray(studentFacts.supersedesId, factIds));
-  const locatorRows = await database
-    .select({
-      id: evidenceLocators.id,
-      invalidationId: evidenceInvalidations.id,
-      objectId: evidenceObjects.id,
-      studentId: evidenceObjects.studentId,
-    })
-    .from(evidenceLocators)
-    .innerJoin(evidenceObjects, eq(evidenceObjects.id, evidenceLocators.evidenceObjectId))
-    .leftJoin(evidenceInvalidations, eq(evidenceInvalidations.evidenceObjectId, evidenceObjects.id))
-    .where(
-      and(
-        inArray(evidenceLocators.id, locatorIds),
-        eq(evidenceObjects.dataDomain, "student"),
-        eq(evidenceObjects.studentId, row.studentId),
-        sql`${evidenceObjects.accessLevel} in ('internal', 'sensitive')`,
-      ),
-    );
-  const objectIds = locatorRows.map((locator) => locator.objectId);
-  const evidenceChildren = await database
-    .select({ supersedesId: evidenceObjects.supersedesId })
-    .from(evidenceObjects)
-    .where(inArray(evidenceObjects.supersedesId, objectIds));
-  const snapshotFactRows = await database
-    .select({ id: profileInputSnapshotFacts.studentFactId })
-    .from(profileInputSnapshotFacts)
-    .where(eq(profileInputSnapshotFacts.snapshotId, task.payload.inputSnapshotId));
-  const snapshotEvidenceRows = await database
-    .select({ id: profileInputSnapshotEvidence.evidenceLocatorId })
-    .from(profileInputSnapshotEvidence)
-    .where(eq(profileInputSnapshotEvidence.snapshotId, task.payload.inputSnapshotId));
-  const linkRows = await database
-    .select({
-      evidenceLocatorId: factEvidence.evidenceLocatorId,
-      relation: factEvidence.relation,
-      studentFactId: factEvidence.studentFactId,
-      validationStatus: factEvidence.validationStatus,
-    })
-    .from(factEvidence)
-    .where(
-      and(
-        inArray(factEvidence.studentFactId, factIds),
-        inArray(factEvidence.evidenceLocatorId, locatorIds),
-      ),
-    );
-  const expectedLinks = new Set(
-    snapshot.facts.flatMap((fact) =>
-      fact.evidence.map((evidence) => `${fact.factId}:${evidence.locatorId}:${evidence.relation}`),
-    ),
-  );
-  const validLinks = new Set(
-    linkRows
-      .filter((link) => link.validationStatus === "valid")
-      .map((link) => `${link.studentFactId}:${link.evidenceLocatorId}:${link.relation}`),
-  );
-  if (
-    factRows.length !== factIds.length ||
-    factChildren.length > 0 ||
-    locatorRows.length !== locatorIds.length ||
-    locatorRows.some((locator) => locator.invalidationId !== null) ||
-    evidenceChildren.length > 0 ||
-    snapshotFactRows.length !== factIds.length ||
-    snapshotEvidenceRows.length !== locatorIds.length ||
-    snapshotFactRows.some((fact) => !factIds.includes(fact.id)) ||
-    snapshotEvidenceRows.some((locator) => !locatorIds.includes(locator.id)) ||
-    expectedLinks.size !== validLinks.size ||
-    [...expectedLinks].some((link) => !validLinks.has(link))
-  ) {
-    throw new ProfileDraftProcessingError("snapshot_source_stale");
-  }
+  const snapshot = await validateCurrentProfileSnapshot(database, {
+    inputSnapshotHash: row.snapshotHash,
+    inputSnapshotId: task.payload.inputSnapshotId,
+    studentId: row.studentId,
+  });
   return { actorUserId: row.actorUserId, snapshot, studentId: row.studentId };
 }
 
@@ -630,6 +542,37 @@ export async function executeProfileDraftTask(
         .limit(1);
       const version = (latest[0]?.version ?? 0) + 1;
       const profileVersionId = randomUUID();
+      const workingVersions = await transaction
+        .select({ id: profileVersions.id, status: profileVersions.status })
+        .from(profileVersions)
+        .where(
+          and(
+            eq(profileVersions.studentId, frozen.studentId),
+            sql`${profileVersions.status} in ('draft', 'in_review')`,
+          ),
+        )
+        .for("update");
+      if (workingVersions.some((working) => working.status === "in_review")) {
+        throw new ProfileDraftConflictError("An in-review profile blocks a replacement draft.");
+      }
+      for (const working of workingVersions) {
+        const reason = `superseded_by_generated_draft:${profileVersionId}`;
+        await transaction
+          .update(profileVersions)
+          .set({ invalidationReason: reason, status: "archived", updatedAt: completedAt })
+          .where(eq(profileVersions.id, working.id));
+        await transaction.insert(profileReviewRecords).values({
+          action: "archived",
+          actorType: "service",
+          actorUserId: frozen.actorUserId,
+          createdAt: completedAt,
+          fromStatus: "draft",
+          profileVersionId: working.id,
+          reason,
+          requestCorrelationId: task.payload.correlationId,
+          toStatus: "archived",
+        });
+      }
       await transaction.insert(profileVersions).values({
         createdAt: completedAt,
         createdByUserId: frozen.actorUserId,
@@ -723,17 +666,46 @@ export async function executeProfileDraftTask(
 
 export interface StudentProfileReadModel {
   readonly profiles: Array<{
+    approvedAt: Date | null;
+    approvedByUserId: string | null;
+    availableEvidence: Array<{ fieldKey: string; locatorId: string }>;
+    availableFieldKeys: string[];
     claims: Array<{
-      category: string;
-      confidence: string;
+      category:
+        | "academic_foundation"
+        | "behavioral_evidence"
+        | "experience_connections"
+        | "gaps_contradictions_risks"
+        | "interdisciplinary_ai_depth"
+        | "interest_thread"
+        | "one_sentence_label"
+        | "responsibility_impact";
+      confidence: "high" | "low" | "medium" | "unknown";
+      evidence: Array<{
+        locatorId: string;
+        relation: "contradicts" | "partially_supports" | "supports";
+      }>;
       evidenceCount: number;
-      informationNature: string;
+      id: string;
+      informationNature: "advisor_judgment" | "fact" | "inference" | "missing";
       statement: string;
     }>;
     createdAt: Date;
     id: string;
+    invalidationReason: string | null;
     questionsToConfirm: Array<{ question: string; relatedFieldKeys: string[] }>;
-    status: string;
+    reviews: Array<{
+      action: "approved" | "archived" | "invalidated" | "returned" | "revised" | "submitted";
+      actorType: "service" | "user";
+      actorUserId: string | null;
+      createdAt: Date;
+      fromStatus: "approved" | "archived" | "draft" | "in_review" | "needs_review" | null;
+      reason: string | null;
+      toStatus: "approved" | "archived" | "draft" | "in_review" | "needs_review";
+    }>;
+    sourceProfileVersionId: string | null;
+    status: "approved" | "archived" | "draft" | "in_review" | "needs_review";
+    updatedAt: Date;
     version: number;
   }>;
   readonly tasks: Array<{ errorCode: string | null; id: string; status: string }>;
@@ -764,8 +736,14 @@ export async function readStudentProfiles(
     .select({
       createdAt: profileVersions.createdAt,
       id: profileVersions.id,
+      approvedAt: profileVersions.approvedAt,
+      approvedByUserId: profileVersions.approvedByUserId,
+      inputSnapshotId: profileVersions.inputSnapshotId,
+      invalidationReason: profileVersions.invalidationReason,
       questionsToConfirm: profileVersions.questionsToConfirm,
+      sourceProfileVersionId: profileVersions.sourceProfileVersionId,
       status: profileVersions.status,
+      updatedAt: profileVersions.updatedAt,
       version: profileVersions.version,
     })
     .from(profileVersions)
@@ -780,6 +758,7 @@ export async function readStudentProfiles(
             category: profileClaims.category,
             confidence: profileClaims.confidence,
             evidenceCount: profileClaims.evidenceCount,
+            id: profileClaims.id,
             informationNature: profileClaims.informationNature,
             profileVersionId: profileClaims.profileVersionId,
             statement: profileClaims.statement,
@@ -787,6 +766,43 @@ export async function readStudentProfiles(
           .from(profileClaims)
           .where(inArray(profileClaims.profileVersionId, versionIds))
           .orderBy(asc(profileClaims.createdAt));
+  const claimIds = claims.map((claim) => claim.id);
+  const evidenceLinks =
+    claimIds.length === 0
+      ? []
+      : await database
+          .select({
+            evidenceLocatorId: claimEvidence.evidenceLocatorId,
+            profileClaimId: claimEvidence.profileClaimId,
+            relation: claimEvidence.relation,
+          })
+          .from(claimEvidence)
+          .where(inArray(claimEvidence.profileClaimId, claimIds));
+  const snapshotIds = [...new Set(versions.map((version) => version.inputSnapshotId))];
+  const snapshots =
+    snapshotIds.length === 0
+      ? []
+      : await database
+          .select({ id: profileInputSnapshots.id, payload: profileInputSnapshots.payload })
+          .from(profileInputSnapshots)
+          .where(inArray(profileInputSnapshots.id, snapshotIds));
+  const reviews =
+    versionIds.length === 0
+      ? []
+      : await database
+          .select({
+            action: profileReviewRecords.action,
+            actorType: profileReviewRecords.actorType,
+            actorUserId: profileReviewRecords.actorUserId,
+            createdAt: profileReviewRecords.createdAt,
+            fromStatus: profileReviewRecords.fromStatus,
+            profileVersionId: profileReviewRecords.profileVersionId,
+            reason: profileReviewRecords.reason,
+            toStatus: profileReviewRecords.toStatus,
+          })
+          .from(profileReviewRecords)
+          .where(inArray(profileReviewRecords.profileVersionId, versionIds))
+          .orderBy(asc(profileReviewRecords.createdAt));
   const tasks = await database
     .select({
       errorCode: modelTaskRuns.errorCode,
@@ -797,10 +813,30 @@ export async function readStudentProfiles(
     .where(eq(modelTaskRuns.studentId, context.studentId))
     .orderBy(sql`${modelTaskRuns.createdAt} desc`);
   return {
-    profiles: versions.map((version) => ({
-      ...version,
-      claims: claims.filter((claim) => claim.profileVersionId === version.id),
-    })),
+    profiles: versions.map((version) => {
+      const snapshot = ProfileInputSnapshotPayloadSchema.parse(
+        snapshots.find((candidate) => candidate.id === version.inputSnapshotId)?.payload,
+      );
+      return {
+        ...version,
+        availableEvidence: snapshot.facts.flatMap((fact) =>
+          fact.evidence.map((evidence) => ({
+            fieldKey: fact.fieldKey,
+            locatorId: evidence.locatorId,
+          })),
+        ),
+        availableFieldKeys: [...new Set(snapshot.facts.map((fact) => fact.fieldKey))],
+        claims: claims
+          .filter((claim) => claim.profileVersionId === version.id)
+          .map((claim) => ({
+            ...claim,
+            evidence: evidenceLinks
+              .filter((link) => link.profileClaimId === claim.id)
+              .map((link) => ({ locatorId: link.evidenceLocatorId, relation: link.relation })),
+          })),
+        reviews: reviews.filter((review) => review.profileVersionId === version.id),
+      };
+    }),
     tasks,
   };
 }

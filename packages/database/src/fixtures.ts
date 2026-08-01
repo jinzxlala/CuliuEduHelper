@@ -73,20 +73,44 @@ export async function seedRedactedFixtures(database: Database): Promise<void> {
     await transaction
       .insert(studentAuthorizations)
       .values({
-        allowedActions: ["student:read", "student:write", "student:profile:generate"],
+        allowedActions: [
+          "student:read",
+          "student:write",
+          "student:profile:generate",
+          "student:profile:review",
+          "student:profile:approve",
+        ],
         grantedByUserId: REDACTED_FIXTURE_IDS.advisorUser,
         id: REDACTED_FIXTURE_IDS.authorization,
         maxAccessLevel: "sensitive",
         studentId: REDACTED_FIXTURE_IDS.student,
         userId: REDACTED_FIXTURE_IDS.advisorUser,
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: [studentAuthorizations.userId, studentAuthorizations.studentId],
+        set: {
+          allowedActions: [
+            "student:read",
+            "student:write",
+            "student:profile:generate",
+            "student:profile:review",
+            "student:profile:approve",
+          ],
+          maxAccessLevel: "sensitive",
+        },
+      });
 
     await transaction
       .insert(authorizationContextSnapshots)
       .values({
         actorUserId: REDACTED_FIXTURE_IDS.advisorUser,
-        allowedActions: ["student:read", "student:write", "student:profile:generate"],
+        allowedActions: [
+          "student:read",
+          "student:write",
+          "student:profile:generate",
+          "student:profile:review",
+          "student:profile:approve",
+        ],
         contextHash: "b".repeat(64),
         expiresAt: new Date("2099-01-01T00:00:00.000Z"),
         id: REDACTED_FIXTURE_IDS.authorizationContext,

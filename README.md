@@ -105,6 +105,8 @@ Web运行时冒烟使用独立的随机临时PostgreSQL数据库和临时文件�
 ```text
 POST /api/students/<id>/profile-drafts  创建或复用幂等后台任务
 GET  /api/students/<id>/profile-drafts  查看任务状态和草稿版本
+POST /api/students/<id>/profiles/<profile-id>/revisions   保存完整人工修改为新版本
+POST /api/students/<id>/profiles/<profile-id>/transitions 提交、退回、批准或归档
 ```
 
 本地运行需在 `infra/.env` 配置 `DEEPSEEK_API_KEY`、`CULIU_GIT_COMMIT_SHA` 和 `PROFILE_MODEL_PROVIDER=deepseek`。可选的真实连通探针如下；它只发送虚构请求，但会产生极小的 API 用量，因此不包含在普通 `pnpm check` 中：
@@ -113,7 +115,9 @@ GET  /api/students/<id>/profile-drafts  查看任务状态和草稿版本
 pnpm profile:model:smoke
 ```
 
-当前画像始终保存为 `draft`；人工复核、批准/退回、证据失效后的复查状态和课程规划属于后续模块。
+画像采用 `draft → in_review → approved → needs_review/archived` 状态机。人工修改不会覆盖原结论，而是创建带来源关系的新版本；退回必须填写原因，批准人和批准时间由服务端记录。批准前会重新校验冻结快照和全部学生本人证据；相关事实或证据被修订、替代或失效时，已批准画像会自动转为 `needs_review` 并留下审核与审计记录。`student:profile:review` 与 `student:profile:approve` 是独立授权，浏览器参数不能扩大权限。
+
+Web运行时冒烟还会走通画像生成、人工修订、提交、批准、证据失效后的 `needs_review` 传播及跨学生状态操作拒绝。课程目录、课程规则和规划仍属于后续模块。
 
 ## 本地 Meilisearch
 

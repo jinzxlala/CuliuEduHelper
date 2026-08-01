@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  AuthorizationDeniedError,
   createStudentAuthorizationContext,
   type AuthorizationContext,
   type SessionPrincipal,
@@ -16,6 +17,7 @@ import {
   parseDatabaseConfig,
   profileClaims,
   profileInputSnapshots,
+  profileReviewRecords,
   profileVersions,
   runMigrations,
   studentAuthorizations,
@@ -26,14 +28,20 @@ import {
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { PROFILE_REDACTION_VERSION, ProfileInputSnapshotPayloadSchema } from "./contracts.js";
+import {
+  PROFILE_REDACTION_VERSION,
+  ProfileInputSnapshotPayloadSchema,
+  type ProfileRevisionInput,
+} from "./contracts.js";
 import { ProfileDraftInputError } from "./errors.js";
 import {
   createDeterministicMockProfileProvider,
   executeProfileDraftTask,
   prepareProfileDraftTask,
   readStudentProfiles,
+  type StudentProfileReadModel,
 } from "./service.js";
+import { reviseProfileVersion, transitionProfileVersion } from "./workflow.js";
 
 let maintenanceClient: DatabaseClient | undefined;
 let databaseClient: DatabaseClient | undefined;
@@ -51,10 +59,15 @@ async function createStudentWithFact(
     value?: Record<string, unknown>;
   } = {},
 ): Promise<{
+  approveContext: AuthorizationContext;
+  evidenceId: string;
+  factId: string;
   generateContext: AuthorizationContext;
   locatorId: string;
   readContext: AuthorizationContext;
+  reviewContext: AuthorizationContext;
   studentId: string;
+  userId: string;
 }> {
   const database = activeDatabaseClient().database;
   const userId = randomUUID();
@@ -81,7 +94,12 @@ async function createStudentWithFact(
     publicCode: `synthetic_${studentId}`,
   });
   await database.insert(studentAuthorizations).values({
-    allowedActions: ["student:read", "student:profile:generate"],
+    allowedActions: [
+      "student:read",
+      "student:profile:generate",
+      "student:profile:review",
+      "student:profile:approve",
+    ],
     grantedByUserId: userId,
     maxAccessLevel: "sensitive",
     studentId,
@@ -122,6 +140,13 @@ async function createStudentWithFact(
     validationStatus: "valid",
   });
   return {
+    approveContext: await createStudentAuthorizationContext(database, principal, {
+      accessLevel: "sensitive",
+      action: "student:profile:approve",
+      studentId,
+    }),
+    evidenceId,
+    factId,
     generateContext: await createStudentAuthorizationContext(database, principal, {
       accessLevel: "sensitive",
       action: "student:profile:generate",
@@ -133,7 +158,52 @@ async function createStudentWithFact(
       action: "student:read",
       studentId,
     }),
+    reviewContext: await createStudentAuthorizationContext(database, principal, {
+      accessLevel: "sensitive",
+      action: "student:profile:review",
+      studentId,
+    }),
     studentId,
+    userId,
+  };
+}
+
+async function generateProfile(
+  actor: Awaited<ReturnType<typeof createStudentWithFact>>,
+  gitCommitCharacter = "7",
+): Promise<StudentProfileReadModel["profiles"][number]> {
+  const prepared = await prepareProfileDraftTask(
+    activeDatabaseClient().database,
+    actor.generateContext,
+    { gitCommitSha: gitCommitCharacter.repeat(40) },
+  );
+  await executeProfileDraftTask(
+    activeDatabaseClient().database,
+    prepared.task,
+    createDeterministicMockProfileProvider(),
+  );
+  const profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+  const profile = profiles.profiles[0];
+  if (profile === undefined) throw new Error("Expected a generated profile.");
+  return profile;
+}
+
+function revisionInput(
+  profile: Awaited<ReturnType<typeof generateProfile>>,
+  statementSuffix: string,
+): ProfileRevisionInput {
+  return {
+    claims: profile.claims.map(
+      ({ category, confidence, evidence, informationNature, statement }, index) => ({
+        category,
+        confidence,
+        evidence,
+        informationNature,
+        statement: index === 0 ? `${statement} ${statementSuffix}` : statement,
+      }),
+    ),
+    expectedSourceUpdatedAt: profile.updatedAt.toISOString(),
+    questionsToConfirm: profile.questionsToConfirm,
   };
 }
 
@@ -293,5 +363,275 @@ describe("student profile draft pipeline", () => {
         gitCommitSha: "4".repeat(40),
       }),
     ).rejects.toBeInstanceOf(ProfileDraftInputError);
+  });
+
+  it("creates immutable advisor revisions and enforces submit, return, and approve transitions", async () => {
+    const actor = await createStudentWithFact();
+    const generated = await generateProfile(actor, "6");
+    await expect(
+      activeDatabaseClient()
+        .database.update(profileVersions)
+        .set({
+          approvedAt: new Date(),
+          approvedByUserId: actor.userId,
+          status: "approved",
+          updatedAt: new Date(),
+        })
+        .where(eq(profileVersions.id, generated.id)),
+    ).rejects.toMatchObject({ cause: { code: "P0001" } });
+    const revised = await reviseProfileVersion(
+      activeDatabaseClient().database,
+      actor.reviewContext,
+      generated.id,
+      revisionInput(generated, "Advisor revision."),
+    );
+    expect(revised).toMatchObject({ status: "draft", version: 2 });
+    let profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    expect(profiles.profiles.map((profile) => [profile.version, profile.status])).toEqual([
+      [2, "draft"],
+      [1, "archived"],
+    ]);
+    const draft = profiles.profiles[0];
+    if (draft === undefined) throw new Error("Expected revised profile.");
+    await transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+      action: "submit",
+      expectedUpdatedAt: draft.updatedAt.toISOString(),
+    });
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const inReview = profiles.profiles[0];
+    if (inReview === undefined) throw new Error("Expected in-review profile.");
+    expect(inReview.status).toBe("in_review");
+    await expect(
+      reviseProfileVersion(
+        activeDatabaseClient().database,
+        actor.reviewContext,
+        inReview.id,
+        revisionInput(inReview, "Invalid concurrent revision."),
+      ),
+    ).rejects.toThrow(/cannot be revised/u);
+    await transitionProfileVersion(
+      activeDatabaseClient().database,
+      actor.reviewContext,
+      inReview.id,
+      {
+        action: "return",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+        reason: "Synthetic evidence wording needs correction.",
+      },
+    );
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const returned = profiles.profiles[0];
+    if (returned === undefined) throw new Error("Expected returned profile.");
+    const third = await reviseProfileVersion(
+      activeDatabaseClient().database,
+      actor.reviewContext,
+      returned.id,
+      revisionInput(returned, "Final advisor wording."),
+    );
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const finalDraft = profiles.profiles.find((profile) => profile.id === third.id);
+    if (finalDraft === undefined) throw new Error("Expected final draft.");
+    await transitionProfileVersion(
+      activeDatabaseClient().database,
+      actor.reviewContext,
+      finalDraft.id,
+      { action: "submit", expectedUpdatedAt: finalDraft.updatedAt.toISOString() },
+    );
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const finalReview = profiles.profiles.find((profile) => profile.id === finalDraft.id);
+    if (finalReview === undefined) throw new Error("Expected final review.");
+    await transitionProfileVersion(
+      activeDatabaseClient().database,
+      actor.approveContext,
+      finalReview.id,
+      { action: "approve", expectedUpdatedAt: finalReview.updatedAt.toISOString() },
+    );
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const approved = profiles.profiles.find((profile) => profile.id === finalDraft.id);
+    expect(approved).toMatchObject({
+      approvedByUserId: actor.userId,
+      sourceProfileVersionId: returned.id,
+      status: "approved",
+      version: 3,
+    });
+    expect(approved?.reviews.map((review) => review.action)).toEqual([
+      "revised",
+      "submitted",
+      "approved",
+    ]);
+    const reviewRows = await activeDatabaseClient()
+      .database.select({ id: profileReviewRecords.id })
+      .from(profileReviewRecords)
+      .where(eq(profileReviewRecords.profileVersionId, finalDraft.id));
+    expect(reviewRows).toHaveLength(3);
+    await expect(
+      activeDatabaseClient()
+        .database.update(profileReviewRecords)
+        .set({ reason: "tampered" })
+        .where(eq(profileReviewRecords.id, reviewRows[0]?.id ?? randomUUID())),
+    ).rejects.toMatchObject({ cause: { code: "P0001" } });
+  });
+
+  it("marks an approved profile needs_review when cited evidence is invalidated", async () => {
+    const actor = await createStudentWithFact();
+    const draft = await generateProfile(actor, "8");
+    await transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+      action: "submit",
+      expectedUpdatedAt: draft.updatedAt.toISOString(),
+    });
+    let profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const inReview = profiles.profiles[0];
+    if (inReview === undefined) throw new Error("Expected in-review profile.");
+    await transitionProfileVersion(
+      activeDatabaseClient().database,
+      actor.approveContext,
+      draft.id,
+      {
+        action: "approve",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+      },
+    );
+    await activeDatabaseClient().database.insert(evidenceInvalidations).values({
+      evidenceObjectId: actor.evidenceId,
+      invalidatedByUserId: actor.userId,
+      reason: "Synthetic consent withdrawal.",
+    });
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    expect(profiles.profiles[0]).toMatchObject({
+      approvedByUserId: actor.userId,
+      invalidationReason: `evidence_invalidated:${actor.evidenceId}`,
+      status: "needs_review",
+    });
+    expect(profiles.profiles[0]?.reviews.at(-1)).toMatchObject({
+      action: "invalidated",
+      fromStatus: "approved",
+      toStatus: "needs_review",
+    });
+  });
+
+  it("keeps review and approval authorization contexts separate", async () => {
+    const actor = await createStudentWithFact();
+    const draft = await generateProfile(actor, "c");
+    await transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+      action: "submit",
+      expectedUpdatedAt: draft.updatedAt.toISOString(),
+    });
+    const profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const inReview = profiles.profiles[0];
+    if (inReview === undefined) throw new Error("Expected in-review profile.");
+    await expect(
+      transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+        action: "approve",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+      }),
+    ).rejects.toBeInstanceOf(AuthorizationDeniedError);
+    await expect(
+      transitionProfileVersion(activeDatabaseClient().database, actor.approveContext, draft.id, {
+        action: "return",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+        reason: "Synthetic review correction.",
+      }),
+    ).rejects.toBeInstanceOf(AuthorizationDeniedError);
+  });
+
+  it("marks an approved profile needs_review when cited evidence is superseded", async () => {
+    const actor = await createStudentWithFact();
+    const draft = await generateProfile(actor, "9");
+    await transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+      action: "submit",
+      expectedUpdatedAt: draft.updatedAt.toISOString(),
+    });
+    let profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const inReview = profiles.profiles[0];
+    if (inReview === undefined) throw new Error("Expected in-review profile.");
+    await transitionProfileVersion(
+      activeDatabaseClient().database,
+      actor.approveContext,
+      draft.id,
+      {
+        action: "approve",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+      },
+    );
+    const replacementHash = "b".repeat(64);
+    await activeDatabaseClient()
+      .database.insert(evidenceObjects)
+      .values({
+        accessLevel: "sensitive",
+        byteCount: 21,
+        contentHash: replacementHash,
+        dataDomain: "student",
+        mimeType: "text/plain",
+        originalFileName: "synthetic-v2.txt",
+        storageKey: `student/${actor.studentId}/bb/${replacementHash}`,
+        studentId: actor.studentId,
+        supersedesId: actor.evidenceId,
+        uploadedByUserId: actor.userId,
+        version: 2,
+      });
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    expect(profiles.profiles[0]).toMatchObject({
+      invalidationReason: `evidence_superseded:${actor.evidenceId}`,
+      status: "needs_review",
+    });
+  });
+
+  it("blocks approval when evidence becomes stale while the profile is in review", async () => {
+    const actor = await createStudentWithFact();
+    const draft = await generateProfile(actor, "a");
+    await transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+      action: "submit",
+      expectedUpdatedAt: draft.updatedAt.toISOString(),
+    });
+    const profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const inReview = profiles.profiles[0];
+    if (inReview === undefined) throw new Error("Expected in-review profile.");
+    await activeDatabaseClient().database.insert(evidenceInvalidations).values({
+      evidenceObjectId: actor.evidenceId,
+      invalidatedByUserId: actor.userId,
+      reason: "Synthetic stale evidence.",
+    });
+    await expect(
+      transitionProfileVersion(activeDatabaseClient().database, actor.approveContext, draft.id, {
+        action: "approve",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+      }),
+    ).rejects.toThrow(/no longer current/u);
+    const rows = await activeDatabaseClient()
+      .database.select({ status: profileVersions.status })
+      .from(profileVersions)
+      .where(eq(profileVersions.id, draft.id));
+    expect(rows[0]?.status).toBe("in_review");
+  });
+
+  it("marks an approved profile needs_review when an input fact is superseded", async () => {
+    const actor = await createStudentWithFact();
+    const draft = await generateProfile(actor, "b");
+    await transitionProfileVersion(activeDatabaseClient().database, actor.reviewContext, draft.id, {
+      action: "submit",
+      expectedUpdatedAt: draft.updatedAt.toISOString(),
+    });
+    let profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    const inReview = profiles.profiles[0];
+    if (inReview === undefined) throw new Error("Expected in-review profile.");
+    await transitionProfileVersion(
+      activeDatabaseClient().database,
+      actor.approveContext,
+      draft.id,
+      {
+        action: "approve",
+        expectedUpdatedAt: inReview.updatedAt.toISOString(),
+      },
+    );
+    const supersededAt = new Date(Date.now() + 1_000);
+    await activeDatabaseClient()
+      .database.update(studentFacts)
+      .set({ confirmationStatus: "superseded", updatedAt: supersededAt, validTo: supersededAt })
+      .where(eq(studentFacts.id, actor.factId));
+    profiles = await readStudentProfiles(activeDatabaseClient().database, actor.readContext);
+    expect(profiles.profiles[0]).toMatchObject({
+      invalidationReason: `fact_superseded:${actor.factId}`,
+      status: "needs_review",
+    });
   });
 });

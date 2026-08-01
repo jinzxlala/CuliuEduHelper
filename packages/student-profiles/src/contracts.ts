@@ -25,7 +25,7 @@ export type ProfileClaimCategory = z.infer<typeof ProfileClaimCategorySchema>;
 
 export const InformationNatureSchema = z.enum(["fact", "inference", "missing", "advisor_judgment"]);
 export const ProfileConfidenceSchema = z.enum(["high", "medium", "low", "unknown"]);
-const EvidenceRelationSchema = z.enum(["supports", "contradicts", "partially_supports"]);
+export const EvidenceRelationSchema = z.enum(["supports", "contradicts", "partially_supports"]);
 
 const ProfileClaimEvidenceSchema = z
   .object({
@@ -69,7 +69,7 @@ export const ProfileClaimDraftSchema = z
     }
   });
 
-const ProfileQuestionSchema = z
+export const ProfileQuestionSchema = z
   .object({
     question: z.string().trim().min(1).max(500),
     relatedFieldKeys: z.array(z.string().min(1).max(128)).max(10),
@@ -83,27 +83,63 @@ export const ProfileDraftOutputSchema = z
     schemaVersion: z.literal(PROFILE_SCHEMA_VERSION),
   })
   .strict()
-  .superRefine((output, context) => {
-    for (const category of ProfileClaimCategorySchema.options) {
-      const count = output.claims.filter((claim) => claim.category === category).length;
-      if (count !== 1) {
-        context.addIssue({
-          code: "custom",
-          message: `Exactly one ${category} claim is required.`,
-          path: ["claims"],
-        });
-      }
-    }
-    const label = output.claims.find((claim) => claim.category === "one_sentence_label");
-    if (label?.informationNature !== "inference") {
+  .superRefine(validateProfileClaimSet);
+export type ProfileDraftOutput = z.infer<typeof ProfileDraftOutputSchema>;
+
+function validateProfileClaimSet(
+  value: { claims: Array<z.infer<typeof ProfileClaimDraftSchema>> },
+  context: z.RefinementCtx,
+): void {
+  for (const category of ProfileClaimCategorySchema.options) {
+    const count = value.claims.filter((claim) => claim.category === category).length;
+    if (count !== 1) {
       context.addIssue({
         code: "custom",
-        message: "The one-sentence label must be marked as an inference.",
+        message: `Exactly one ${category} claim is required.`,
         path: ["claims"],
       });
     }
-  });
-export type ProfileDraftOutput = z.infer<typeof ProfileDraftOutputSchema>;
+  }
+  const label = value.claims.find((claim) => claim.category === "one_sentence_label");
+  if (label?.informationNature !== "inference") {
+    context.addIssue({
+      code: "custom",
+      message: "The one-sentence label must be marked as an inference.",
+      path: ["claims"],
+    });
+  }
+}
+
+export const ProfileRevisionInputSchema = z
+  .object({
+    claims: z.array(ProfileClaimDraftSchema).length(8),
+    expectedSourceUpdatedAt: z.iso.datetime({ offset: true }),
+    questionsToConfirm: z.array(ProfileQuestionSchema).max(20),
+  })
+  .strict()
+  .superRefine(validateProfileClaimSet);
+export type ProfileRevisionInput = z.infer<typeof ProfileRevisionInputSchema>;
+
+const ExpectedUpdatedAtSchema = z.iso.datetime({ offset: true });
+export const ProfileTransitionInputSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("submit"), expectedUpdatedAt: ExpectedUpdatedAtSchema }).strict(),
+  z
+    .object({
+      action: z.literal("return"),
+      expectedUpdatedAt: ExpectedUpdatedAtSchema,
+      reason: z.string().trim().min(1).max(512),
+    })
+    .strict(),
+  z.object({ action: z.literal("approve"), expectedUpdatedAt: ExpectedUpdatedAtSchema }).strict(),
+  z
+    .object({
+      action: z.literal("archive"),
+      expectedUpdatedAt: ExpectedUpdatedAtSchema,
+      reason: z.string().trim().min(1).max(512),
+    })
+    .strict(),
+]);
+export type ProfileTransitionInput = z.infer<typeof ProfileTransitionInputSchema>;
 
 const SnapshotEvidenceLinkSchema = z
   .object({
@@ -267,6 +303,17 @@ export function validateProfileOutputAgainstSnapshot(
   snapshot: ProfileInputSnapshotPayload,
 ): ProfileDraftOutput {
   const output = ProfileDraftOutputSchema.parse(untrustedOutput);
+  validateProfileReferences(output, snapshot);
+  return output;
+}
+
+function validateProfileReferences(
+  output: {
+    claims: ProfileDraftOutput["claims"];
+    questionsToConfirm: ProfileDraftOutput["questionsToConfirm"];
+  },
+  snapshot: ProfileInputSnapshotPayload,
+): void {
   const allowedLocators = new Set(
     snapshot.facts.flatMap((fact) => fact.evidence.map((evidence) => evidence.locatorId)),
   );
@@ -285,7 +332,15 @@ export function validateProfileOutputAgainstSnapshot(
       }
     }
   }
-  return output;
+}
+
+export function validateProfileRevisionAgainstSnapshot(
+  untrustedInput: unknown,
+  snapshot: ProfileInputSnapshotPayload,
+): ProfileRevisionInput {
+  const input = ProfileRevisionInputSchema.parse(untrustedInput);
+  validateProfileReferences(input, snapshot);
+  return input;
 }
 
 export function profileOutputHash(output: ProfileDraftOutput): string {
