@@ -1,0 +1,3627 @@
+{
+  "boundary_rules": {
+    "manifest_contains_body_content": false,
+    "manifest_purpose": "inventory_only_no_import",
+    "raw_embedded_paths_are_excluded": true,
+    "source_files_read_only": true,
+    "student_data_allowed": false
+  },
+  "builder_version": "0.1.0",
+  "corpus_hash": "6e0e05d877bce46f09d17f5e1d00d16a96c08a916125646bb45f4394cbbb7008",
+  "corpus_id": "eduknow_knowledge_sources_v1",
+  "excluded_files": [
+    {
+      "reason": "aggregate_not_primary_source",
+      "relative_path": "_整理汇总.json",
+      "root_id": "transcripts_2026"
+    }
+  ],
+  "expected_lecture_count": 48,
+  "index_mappings": [
+    {
+      "primary_source_roles": [
+        "analysis_markdown"
+      ],
+      "required_gate": "none",
+      "target_fields": [
+        "lecture_id",
+        "title",
+        "summary",
+        "trend_text",
+        "ai_cross_disciplinary_text",
+        "failure_text",
+        "date",
+        "organization",
+        "speakers",
+        "schools",
+        "majors",
+        "source_path"
+      ],
+      "target_index": "lectures",
+      "validation_source_roles": []
+    },
+    {
+      "primary_source_roles": [
+        "analysis_markdown"
+      ],
+      "required_gate": "none",
+      "target_fields": [
+        "case_id",
+        "lecture_id",
+        "case_type",
+        "curriculum_system",
+        "academic_label",
+        "background",
+        "admission_result",
+        "schools",
+        "major",
+        "research_methods",
+        "activity_types",
+        "ai_domains",
+        "ai_depth",
+        "confidence",
+        "evidence_boundary",
+        "timestamp_refs"
+      ],
+      "target_index": "cases",
+      "validation_source_roles": [
+        "transcript_json",
+        "transcript_srt"
+      ]
+    },
+    {
+      "primary_source_roles": [
+        "transcript_json"
+      ],
+      "required_gate": "privacy_review_and_anonymization",
+      "target_fields": [
+        "segment_id",
+        "lecture_id",
+        "section",
+        "text",
+        "start_seconds",
+        "end_seconds",
+        "case_ids",
+        "source_path"
+      ],
+      "target_index": "transcript_segments",
+      "validation_source_roles": [
+        "transcript_srt",
+        "transcript_text",
+        "transcript_qa"
+      ]
+    }
+  ],
+  "lecture_count": 48,
+  "lectures": [
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "ba6da408d94a40fe7e2271c6651510134a4a646f53c177aa0696f1c9bf090a6f",
+      "lecture_date": "2025-12-04",
+      "lecture_id": "lecture_20251204_462c077301ff",
+      "source_key": "2025-12-04_3年115枚大藤海狸学院重磅发布",
+      "sources": [
+        {
+          "bytes": 8423,
+          "content_sha256": "3234b2517d9df88d2c70f6822e0b07a1bfbba7b0d06a4fa0bd3aba21a1c39fdc",
+          "logical_path": "knowledge/analysis/2025-12-04_3年115枚大藤海狸学院重磅发布.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-04_3年115枚大藤海狸学院重磅发布.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4302964,
+          "content_sha256": "0cf6763b231e38501936bd3ee3124421c07b6d702c28be2f28f94ae4e1da7b6b",
+          "logical_path": "knowledge/transcripts/2025/2025-12-04_3年115枚大藤海狸学院重磅发布.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-04_3年115枚大藤海狸学院重磅发布.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 1990,
+          "content_sha256": "19a901cfa9e5314ab7100e548b4247b1cb9774fd25307ea5d2790ad6894637e3",
+          "logical_path": "knowledge/transcripts/2025/2025-12-04_3年115枚大藤海狸学院重磅发布.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-04_3年115枚大藤海狸学院重磅发布.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 194118,
+          "content_sha256": "344e88602037018619cfaf178b98f5b070fb304474fad24cd1ad6d8aef1e7ee2",
+          "logical_path": "knowledge/transcripts/2025/2025-12-04_3年115枚大藤海狸学院重磅发布.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-04_3年115枚大藤海狸学院重磅发布.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 183878,
+          "content_sha256": "decffe3c4db64093fad594f60dfd9c01747d389d5d6c04946f6288a64f1f854c",
+          "logical_path": "knowledge/transcripts/2025/2025-12-04_3年115枚大藤海狸学院重磅发布.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-04_3年115枚大藤海狸学院重磅发布.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-04｜3年115枚大藤：海狸学院项目榜单发布",
+      "transcript_validation": {
+        "changed_sentence_count": 609,
+        "duration_seconds": 8666.67,
+        "sentence_count": 1261,
+        "srt_cue_count": 1261,
+        "text_line_count": 1261
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "d3b3e24e0aa5e35591fcb51d8199716584b01c29bba3d1233569bbc45d3b949b",
+      "lecture_date": "2025-12-17",
+      "lecture_id": "lecture_20251217_04179e7643c6",
+      "source_key": "2025-12-17_早申放榜对话美本屡创第一凭远",
+      "sources": [
+        {
+          "bytes": 7976,
+          "content_sha256": "6c1e8d78be1e36ddb89902d31bc1ea6b626f334f4dec3e456343560cd2e096e4",
+          "logical_path": "knowledge/analysis/2025-12-17_早申放榜对话美本屡创第一凭远.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-17_早申放榜对话美本屡创第一凭远.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3711474,
+          "content_sha256": "4a6a8583465421a36f072b2e2c76c95368339dd8ec99e96591eacc5fd970f7f5",
+          "logical_path": "knowledge/transcripts/2025/2025-12-17_早申放榜对话美本屡创第一凭远.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-17_早申放榜对话美本屡创第一凭远.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2259,
+          "content_sha256": "aac7786f5b2e87376507333a8bf0ccac8d61d7d3780b137b693618606bf1dbd2",
+          "logical_path": "knowledge/transcripts/2025/2025-12-17_早申放榜对话美本屡创第一凭远.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-17_早申放榜对话美本屡创第一凭远.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 167923,
+          "content_sha256": "c619168f570d6f4c1b43cee0be56c447afb07ca30aa115107bfb949334e0b405",
+          "logical_path": "knowledge/transcripts/2025/2025-12-17_早申放榜对话美本屡创第一凭远.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-17_早申放榜对话美本屡创第一凭远.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 158709,
+          "content_sha256": "e9902852fd767e258be72d8bd6ad0672320c15634652604a8396f6834b7dc230",
+          "logical_path": "knowledge/transcripts/2025/2025-12-17_早申放榜对话美本屡创第一凭远.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-17_早申放榜对话美本屡创第一凭远.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-17｜早申放榜：对话美本“屡创第一”的凭远",
+      "transcript_validation": {
+        "changed_sentence_count": 668,
+        "duration_seconds": 7291.67,
+        "sentence_count": 1147,
+        "srt_cue_count": 1147,
+        "text_line_count": 1147
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "45f2b6c8c224a7294b000b72a37505ac8d16b1456d1bf51f7c9baedacf7c4fbd",
+      "lecture_date": "2025-12-18",
+      "lecture_id": "lecture_20251218_047520c95ace",
+      "source_key": "2025-12-18_放榜棒呆解码爬藤核心策略",
+      "sources": [
+        {
+          "bytes": 8468,
+          "content_sha256": "6dc57767c409dc1524bc2ec2d53b6b93295a02437c24213c6ba6c8bf4cb81088",
+          "logical_path": "knowledge/analysis/2025-12-18_放榜棒呆解码爬藤核心策略.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-18_放榜棒呆解码爬藤核心策略.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4717187,
+          "content_sha256": "0455b0243458a452c77d7bde1635bcd1b4e2311d43554e63f618d155de791722",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_放榜棒呆解码爬藤核心策略.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-18_放榜棒呆解码爬藤核心策略.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2161,
+          "content_sha256": "198fe806fdb4eefd2269b44b06b8b86da10d0316a006a4694a00d3e6851e825d",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_放榜棒呆解码爬藤核心策略.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-18_放榜棒呆解码爬藤核心策略.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 218142,
+          "content_sha256": "cd16e591f9265161fdb8b9535831245e6f73a847286e3c1f4cc92588e1091b80",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_放榜棒呆解码爬藤核心策略.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-18_放榜棒呆解码爬藤核心策略.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 205994,
+          "content_sha256": "8fb54e560045039898e12f8ee901421d39faeacf4c33d341d00a228b4cd86079",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_放榜棒呆解码爬藤核心策略.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-18_放榜棒呆解码爬藤核心策略.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-18｜放榜：棒呆解码爬藤核心策略",
+      "transcript_validation": {
+        "changed_sentence_count": 754,
+        "duration_seconds": 9715.22,
+        "sentence_count": 1473,
+        "srt_cue_count": 1473,
+        "text_line_count": 1473
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "9d0aefbe7502e45b59270fba03c1577799d50976c54eb86c25095b4c888212d6",
+      "lecture_date": "2025-12-18",
+      "lecture_id": "lecture_20251218_94e2e9f6d2dd",
+      "source_key": "2025-12-18_老查最新录取画像剖析王牌竟是",
+      "sources": [
+        {
+          "bytes": 10226,
+          "content_sha256": "a522c1183da69d60368c90f6122213f74f250966045357e2616c4e37d7bdfb34",
+          "logical_path": "knowledge/analysis/2025-12-18_老查最新录取画像剖析王牌竟是.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-18_老查最新录取画像剖析王牌竟是.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3940204,
+          "content_sha256": "2abd806629d9326f893759f511f1525db6978e6cb393cf3679bbc6d1e7285848",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_老查最新录取画像剖析王牌竟是.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-18_老查最新录取画像剖析王牌竟是.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2295,
+          "content_sha256": "30ec0adb2e5bf299e83410c1ecf31b74e44b0b0461ea5c5bcd9a8108796190a3",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_老查最新录取画像剖析王牌竟是.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-18_老查最新录取画像剖析王牌竟是.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 180415,
+          "content_sha256": "0f35f743294861d22991c6fcaa1ed48bb9ffe2c5f4946d780a3135a045b367df",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_老查最新录取画像剖析王牌竟是.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-18_老查最新录取画像剖析王牌竟是.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 169779,
+          "content_sha256": "4bad92ae9cbf325c42e2faeecf23f2ea57b20c41d58266b60647783b574442a2",
+          "logical_path": "knowledge/transcripts/2025/2025-12-18_老查最新录取画像剖析王牌竟是.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-18_老查最新录取画像剖析王牌竟是.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-18｜老查：最新录取画像与核心“王牌”",
+      "transcript_validation": {
+        "changed_sentence_count": 779,
+        "duration_seconds": 9033.62,
+        "sentence_count": 1305,
+        "srt_cue_count": 1305,
+        "text_line_count": 1305
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "c7ef51d337352aaa11e63e8b00a71066be43f785d54a57c343021942341cc384",
+      "lecture_date": "2025-12-19",
+      "lecture_id": "lecture_20251219_d62425d9f058",
+      "source_key": "2025-12-19_CMC横纵向对比早申风向变了吗",
+      "sources": [
+        {
+          "bytes": 13298,
+          "content_sha256": "25e32f7826bd233826fa00e3b9680289fd413d2b7bf7e2a53e419de0fcd11283",
+          "logical_path": "knowledge/analysis/2025-12-19_CMC横纵向对比早申风向变了吗.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-19_CMC横纵向对比早申风向变了吗.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3963585,
+          "content_sha256": "18d300bb4f68b1ac581aa473d298e47684cb8b2a12329eea99f2df93141f942f",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_CMC横纵向对比早申风向变了吗.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-19_CMC横纵向对比早申风向变了吗.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2289,
+          "content_sha256": "dcc56111106a507f69f3a4905556085165d4714c5b41aa0bfaab5c3ee1502de7",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_CMC横纵向对比早申风向变了吗.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-19_CMC横纵向对比早申风向变了吗.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 178114,
+          "content_sha256": "7cd0702346aa3d2b910fa229821fbb5605be74efcb0027284db5fbaa2f232e04",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_CMC横纵向对比早申风向变了吗.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-19_CMC横纵向对比早申风向变了吗.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 168774,
+          "content_sha256": "9a5d8f95162a7e6d38da147c77404dadd3dde1feddbf314244790950e61871a2",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_CMC横纵向对比早申风向变了吗.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-19_CMC横纵向对比早申风向变了吗.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-19｜CMC横纵向对比：早申风向变了吗",
+      "transcript_validation": {
+        "changed_sentence_count": 687,
+        "duration_seconds": 7435.01,
+        "sentence_count": 1161,
+        "srt_cue_count": 1161,
+        "text_line_count": 1161
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "3e600be642b513474329c5ed94980a9bfbd3eb6287996efd5f05d3a87700b709",
+      "lecture_date": "2025-12-19",
+      "lecture_id": "lecture_20251219_07fb5dec2f8d",
+      "source_key": "2025-12-19_放榜三士渡剖析早申数据的背后",
+      "sources": [
+        {
+          "bytes": 10383,
+          "content_sha256": "2cac07cebca4010186956694c5819464433f10100bd8a18a0ba9e5e9378b7467",
+          "logical_path": "knowledge/analysis/2025-12-19_放榜三士渡剖析早申数据的背后.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-19_放榜三士渡剖析早申数据的背后.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 7367366,
+          "content_sha256": "5fc6569ec0e7deed1423b846a6bea2b5c5e24ce441c134c853dc87c851464e05",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_放榜三士渡剖析早申数据的背后.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-19_放榜三士渡剖析早申数据的背后.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2313,
+          "content_sha256": "49bafa07aec7be95d59a0f7fba9f5ed82e095b4438cb5b82cd75b666f3327720",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_放榜三士渡剖析早申数据的背后.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-19_放榜三士渡剖析早申数据的背后.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 337944,
+          "content_sha256": "20200c7299b8b89abc5bccfa67785dddd804bec6f4cc56207976c478cdc8d8e5",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_放榜三士渡剖析早申数据的背后.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-19_放榜三士渡剖析早申数据的背后.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 318614,
+          "content_sha256": "4c7fd7ac5ed8ded9b2bd58050ee427ebe5c66f2952df9eb0c0ba95dfb7bbcd30",
+          "logical_path": "knowledge/transcripts/2025/2025-12-19_放榜三士渡剖析早申数据的背后.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-19_放榜三士渡剖析早申数据的背后.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-19｜放榜：三士渡剖析早申数据背后",
+      "transcript_validation": {
+        "changed_sentence_count": 971,
+        "duration_seconds": 13475.01,
+        "sentence_count": 2271,
+        "srt_cue_count": 2271,
+        "text_line_count": 2271
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "2c10f2e3273794d842e52e56a9e20534532de5d66e283dd061d194690dbfdd50",
+      "lecture_date": "2025-12-22",
+      "lecture_id": "lecture_20251222_a3ce77606cff",
+      "source_key": "2025-12-22_体制内辍学后他进了斯沃斯莫尔",
+      "sources": [
+        {
+          "bytes": 12639,
+          "content_sha256": "2a0a1cecfe805ed8ee77f49062fa4cc28f613590e7e446b57c97f1faa07be817",
+          "logical_path": "knowledge/analysis/2025-12-22_体制内辍学后他进了斯沃斯莫尔.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-22_体制内辍学后他进了斯沃斯莫尔.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3828549,
+          "content_sha256": "3e6a90364465ef0b5f30a3d36b4ca36b9acf0075ad36fdfc4b6ecb8311040344",
+          "logical_path": "knowledge/transcripts/2025/2025-12-22_体制内辍学后他进了斯沃斯莫尔.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-22_体制内辍学后他进了斯沃斯莫尔.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2118,
+          "content_sha256": "6d66f27b46470974dc82fae63b64cf9a622e07976cfe3812743b88058581ea63",
+          "logical_path": "knowledge/transcripts/2025/2025-12-22_体制内辍学后他进了斯沃斯莫尔.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-22_体制内辍学后他进了斯沃斯莫尔.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 173350,
+          "content_sha256": "8a42ab8b36ff454f47a549befc41a4f4327a1bb95dc6cb3063274cac4651aa0a",
+          "logical_path": "knowledge/transcripts/2025/2025-12-22_体制内辍学后他进了斯沃斯莫尔.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-22_体制内辍学后他进了斯沃斯莫尔.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 163767,
+          "content_sha256": "2de6dccd82ec19158c6b6eaac12f4f49971c8941e3b1fca0ce14c181fba40f3f",
+          "logical_path": "knowledge/transcripts/2025/2025-12-22_体制内辍学后他进了斯沃斯莫尔.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-22_体制内辍学后他进了斯沃斯莫尔.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-22｜体制内辍学后，他进了斯沃斯莫尔",
+      "transcript_validation": {
+        "changed_sentence_count": 694,
+        "duration_seconds": 8225,
+        "sentence_count": 1188,
+        "srt_cue_count": 1188,
+        "text_line_count": 1188
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "6d23c769e3e99a524bc867745d6ae6b046da5da2e0d8d022c48ef8f32ad04e59",
+      "lecture_date": "2025-12-24",
+      "lecture_id": "lecture_20251224_45f787d6277a",
+      "source_key": "2025-12-24_关于早申我有话说大咖圆桌派",
+      "sources": [
+        {
+          "bytes": 11322,
+          "content_sha256": "972dcbbdd6f6810fa32e45bf31bee09142e610bc1f94da5a4aa11bb4f1c96937",
+          "logical_path": "knowledge/analysis/2025-12-24_关于早申我有话说大咖圆桌派.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-24_关于早申我有话说大咖圆桌派.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4065436,
+          "content_sha256": "5e6546bd02123f35180f769de86c9b5c453c8ac1f901d1283e9c657f13a5fb71",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_关于早申我有话说大咖圆桌派.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-24_关于早申我有话说大咖圆桌派.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2376,
+          "content_sha256": "2de6e868e90806165694fd6a617ddac06144de18e94dbf4456840663ca38d259",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_关于早申我有话说大咖圆桌派.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-24_关于早申我有话说大咖圆桌派.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 185816,
+          "content_sha256": "176db5925fb3f807010dab25173f068a67279c0cd2b3cbb4c4b8bf40de3c26fb",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_关于早申我有话说大咖圆桌派.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-24_关于早申我有话说大咖圆桌派.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 175468,
+          "content_sha256": "96f3335f0d5f930ef191871123e2bd27baea561f7606e45c3096927113162968",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_关于早申我有话说大咖圆桌派.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-24_关于早申我有话说大咖圆桌派.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-24｜关于早申，我有话说：大咖圆桌派",
+      "transcript_validation": {
+        "changed_sentence_count": 593,
+        "duration_seconds": 8140.01,
+        "sentence_count": 1273,
+        "srt_cue_count": 1273,
+        "text_line_count": 1273
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "0519fb3dc7c710177c398a611088048831649dcd51bdf9db2e515c33bb47c570",
+      "lecture_date": "2025-12-24",
+      "lecture_id": "lecture_20251224_6500fa2967a7",
+      "source_key": "2025-12-24_早申趋势突变藤校青睐画像重构",
+      "sources": [
+        {
+          "bytes": 11212,
+          "content_sha256": "afea669d0ad36d5dd4b923b8d568dd07e4ca43dbfd6639d7bdf9323a907fc43f",
+          "logical_path": "knowledge/analysis/2025-12-24_早申趋势突变藤校青睐画像重构.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-24_早申趋势突变藤校青睐画像重构.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3749113,
+          "content_sha256": "692389b8609dec1bf72b9d303c8a32cd9adb0e33a3fce63ef97e9fbcb3dcb324",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_早申趋势突变藤校青睐画像重构.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-24_早申趋势突变藤校青睐画像重构.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 1804,
+          "content_sha256": "40d5d627faff92b60d52209531d77116bf9a0bc8a2b374515dbbe931e31b684b",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_早申趋势突变藤校青睐画像重构.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-24_早申趋势突变藤校青睐画像重构.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 192051,
+          "content_sha256": "5ce8a29725427b6246e2751d9d26009014b11a771055f9912967126af3390100",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_早申趋势突变藤校青睐画像重构.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-24_早申趋势突变藤校青睐画像重构.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 181982,
+          "content_sha256": "dee6baef3b19f04fd1b777dcff41fecd08708f3068a4b3740d5edc507e5fddba",
+          "logical_path": "knowledge/transcripts/2025/2025-12-24_早申趋势突变藤校青睐画像重构.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-24_早申趋势突变藤校青睐画像重构.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-24｜早申趋势突变：藤校青睐画像重构",
+      "transcript_validation": {
+        "changed_sentence_count": 766,
+        "duration_seconds": 9483.35,
+        "sentence_count": 1242,
+        "srt_cue_count": 1242,
+        "text_line_count": 1242
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "7fe29a527c91078f8676cb5f504b4fafd16fde60ee664c532c6c81e181f35d3e",
+      "lecture_date": "2025-12-25",
+      "lecture_id": "lecture_20251225_c5bacf73742f",
+      "source_key": "2025-12-25_早申30枚王牌专业录取案例拆解",
+      "sources": [
+        {
+          "bytes": 11535,
+          "content_sha256": "0fbb5e9abc81314608bb9bc6741ff16254c698a23ec3b115106495dd3658aff7",
+          "logical_path": "knowledge/analysis/2025-12-25_早申30枚王牌专业录取案例拆解.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-25_早申30枚王牌专业录取案例拆解.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3730438,
+          "content_sha256": "79dedbe25eb582ae19f9019c600803b668111e3ad128cb961b9155b904c8c5ef",
+          "logical_path": "knowledge/transcripts/2025/2025-12-25_早申30枚王牌专业录取案例拆解.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-25_早申30枚王牌专业录取案例拆解.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2089,
+          "content_sha256": "1e171bf0c273c7608d645e34c517d016fa330b6d6d247c752afb374fc8e811a4",
+          "logical_path": "knowledge/transcripts/2025/2025-12-25_早申30枚王牌专业录取案例拆解.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-25_早申30枚王牌专业录取案例拆解.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 175617,
+          "content_sha256": "ee31bab874799cb9fb4b5ddf7df6d4ff64136d54c0af26a50b30d349b6bde1e2",
+          "logical_path": "knowledge/transcripts/2025/2025-12-25_早申30枚王牌专业录取案例拆解.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-25_早申30枚王牌专业录取案例拆解.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 165413,
+          "content_sha256": "9aaedd0fc539e0ef56e61a88c9941c4218ca6e787cf06edc977207c9f7e8797f",
+          "logical_path": "knowledge/transcripts/2025/2025-12-25_早申30枚王牌专业录取案例拆解.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-25_早申30枚王牌专业录取案例拆解.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-25｜早申30枚王牌专业录取案例拆解",
+      "transcript_validation": {
+        "changed_sentence_count": 453,
+        "duration_seconds": 7276.82,
+        "sentence_count": 1257,
+        "srt_cue_count": 1257,
+        "text_line_count": 1257
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "f700b86059c42b15d59a4311905bc38ba57869dc0a27807bf02369f0ac57213b",
+      "lecture_date": "2025-12-26",
+      "lecture_id": "lecture_20251226_4efdd28d912a",
+      "source_key": "2025-12-26_2026早申案例解读留学的成长性",
+      "sources": [
+        {
+          "bytes": 12304,
+          "content_sha256": "8da6cf396d7bd5dbf5b29f59df0a2c365310bf4831e7858be670818210cdc601",
+          "logical_path": "knowledge/analysis/2025-12-26_2026早申案例解读留学的成长性.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-26_2026早申案例解读留学的成长性.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3934028,
+          "content_sha256": "4e63d6112d1cb1655636819cf5a1dae7e1a759e3433f2e2e797b2aa1bde45c2c",
+          "logical_path": "knowledge/transcripts/2025/2025-12-26_2026早申案例解读留学的成长性.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-26_2026早申案例解读留学的成长性.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2258,
+          "content_sha256": "191917b2f1152d469ef584c105cf4f29f68b4a708ce60ca5b257eda4886d8bfe",
+          "logical_path": "knowledge/transcripts/2025/2025-12-26_2026早申案例解读留学的成长性.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-26_2026早申案例解读留学的成长性.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 180831,
+          "content_sha256": "9a57c7688387b02d343aa51f25cdaa73ac5c95e4073ad811f68f29f3f9207a50",
+          "logical_path": "knowledge/transcripts/2025/2025-12-26_2026早申案例解读留学的成长性.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-26_2026早申案例解读留学的成长性.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 170132,
+          "content_sha256": "174e6bbd59ec813ab57c2dd0d6119c2ed738db1b988a3940f8e3b5f5df97ade1",
+          "logical_path": "knowledge/transcripts/2025/2025-12-26_2026早申案例解读留学的成长性.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-26_2026早申案例解读留学的成长性.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-26｜2026早申案例解读：留学的成长性",
+      "transcript_validation": {
+        "changed_sentence_count": 758,
+        "duration_seconds": 8092.82,
+        "sentence_count": 1312,
+        "srt_cue_count": 1312,
+        "text_line_count": 1312
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败案例与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 讲座摘要",
+        "trends": "3. 2026申请趋势清单"
+      },
+      "bundle_hash": "09d0fac1c3c3ae71b642de06b0cadc14ad411ccb8b78c99f29fec42048db754e",
+      "lecture_date": "2025-12-30",
+      "lecture_id": "lecture_20251230_5bc9b7491364",
+      "source_key": "2025-12-30_特优生揭秘藤校早申录取者特质",
+      "sources": [
+        {
+          "bytes": 11507,
+          "content_sha256": "564528f41d82c3b386095f9dcd0381b664e8538b025b868799c0fa774f247ae0",
+          "logical_path": "knowledge/analysis/2025-12-30_特优生揭秘藤校早申录取者特质.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2025-12-30_特优生揭秘藤校早申录取者特质.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3766444,
+          "content_sha256": "269a2a697f4d05496159f8d7db595bc91e925223a93102bb2618be7ad8804fa5",
+          "logical_path": "knowledge/transcripts/2025/2025-12-30_特优生揭秘藤校早申录取者特质.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-30_特优生揭秘藤校早申录取者特质.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 2166,
+          "content_sha256": "cafd63489cc66181275dad64c7bb39f323ab8a456d40caeafa5e01a194021117",
+          "logical_path": "knowledge/transcripts/2025/2025-12-30_特优生揭秘藤校早申录取者特质.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2025-12-30_特优生揭秘藤校早申录取者特质.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 176629,
+          "content_sha256": "1d6b72213ad9139935e78e675139dd7c08c004a048a49c97058775e8235ca91f",
+          "logical_path": "knowledge/transcripts/2025/2025-12-30_特优生揭秘藤校早申录取者特质.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2025-12-30_特优生揭秘藤校早申录取者特质.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2025"
+        },
+        {
+          "bytes": 166425,
+          "content_sha256": "f04d45bd5313465dc5a8c2827c42df8e488e4f0906703d0f0b3c444acdf08214",
+          "logical_path": "knowledge/transcripts/2025/2025-12-30_特优生揭秘藤校早申录取者特质.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2025-12-30_特优生揭秘藤校早申录取者特质.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2025"
+        }
+      ],
+      "title": "2025-12-30｜特优生揭秘藤校早申录取者特质",
+      "transcript_validation": {
+        "changed_sentence_count": 531,
+        "duration_seconds": 7591.2,
+        "sentence_count": 1257,
+        "srt_cue_count": 1257,
+        "text_line_count": 1257
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+ 与跨学科判断",
+        "basics": "1. 讲座基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量与待核验项",
+        "failures": "6. 失败案例与反例",
+        "quotes": "7. 关键原话与时间戳",
+        "summary": "2. 约 300 字讲座摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "5b2d41e4f671804dbd99f7959950e894fbc3584bd9d534282f3d3806f2f5c33b",
+      "lecture_date": "2026-01-05",
+      "lecture_id": "lecture_20260105_2655d5915015",
+      "source_key": "2026-01-05_藤校分享生活褶皱里的申请答案",
+      "sources": [
+        {
+          "bytes": 19707,
+          "content_sha256": "e33b9f9216cc29c900e80f0336a74c5198892ad1e2d6609cd0c867c53b2c35fe",
+          "logical_path": "knowledge/analysis/2026-01-05_藤校分享生活褶皱里的申请答案.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-01-05_藤校分享生活褶皱里的申请答案.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 5375269,
+          "content_sha256": "d447dfe8662b3c51ca81759ebca1011aef6ad73f1ab8d42122e5879a39f58c6b",
+          "logical_path": "knowledge/transcripts/2026/2026-01-05_藤校分享生活褶皱里的申请答案.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-05_藤校分享生活褶皱里的申请答案.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2129,
+          "content_sha256": "8ca5c43f15ede153ea7f5fe6da5b0e726a94041c5a856afd4aed4ed22c7c99c0",
+          "logical_path": "knowledge/transcripts/2026/2026-01-05_藤校分享生活褶皱里的申请答案.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-05_藤校分享生活褶皱里的申请答案.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 254399,
+          "content_sha256": "1d2d246ba188d943ec9b298bef4f61d25679295afa40ada0173a2bdd775ff301",
+          "logical_path": "knowledge/transcripts/2026/2026-01-05_藤校分享生活褶皱里的申请答案.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-01-05_藤校分享生活褶皱里的申请答案.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 240496,
+          "content_sha256": "fad08cd4780622402cd15ed4ea75e995cf2707137274b35a4ae8553406c515f1",
+          "logical_path": "knowledge/transcripts/2026/2026-01-05_藤校分享生活褶皱里的申请答案.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-01-05_藤校分享生活褶皱里的申请答案.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-01-05｜藤校分享：生活褶皱里的申请答案",
+      "transcript_validation": {
+        "changed_sentence_count": 730,
+        "duration_seconds": 10808.34,
+        "sentence_count": 1668,
+        "srt_cue_count": 1668,
+        "text_line_count": 1668
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+ 与跨学科地图",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量",
+        "failures": "6. 失败与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "2db64d876fd8a010e6ad700d7f8e238eba8b0b266802753663cf5d08b1de00b3",
+      "lecture_date": "2026-01-15",
+      "lecture_id": "lecture_20260115_b25093d1f07d",
+      "source_key": "2026-01-15_屡创大藤第一的传奇是如何成就的",
+      "sources": [
+        {
+          "bytes": 21260,
+          "content_sha256": "44d235d6d3a925889b99cc8dab12acfedd6efbf99de618bb58a11c9a496aee8a",
+          "logical_path": "knowledge/analysis/2026-01-15_屡创大藤第一的传奇是如何成就的.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-01-15_屡创大藤第一的传奇是如何成就的.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4628622,
+          "content_sha256": "23dc8bd217332719b17066d9d98713a502872b32769134be7a487bd7a8269041",
+          "logical_path": "knowledge/transcripts/2026/2026-01-15_屡创大藤第一的传奇是如何成就的.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-15_屡创大藤第一的传奇是如何成就的.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2229,
+          "content_sha256": "cf4db11fc4a24a05c50662c24fd98e8768e3c3bcd3c1e9913dfb8577cb9f7712",
+          "logical_path": "knowledge/transcripts/2026/2026-01-15_屡创大藤第一的传奇是如何成就的.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-15_屡创大藤第一的传奇是如何成就的.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 227146,
+          "content_sha256": "1ceb496549abef21bed0f35dd5bcca706e6d379c6d60080676ea2b260ff561b7",
+          "logical_path": "knowledge/transcripts/2026/2026-01-15_屡创大藤第一的传奇是如何成就的.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-01-15_屡创大藤第一的传奇是如何成就的.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 214872,
+          "content_sha256": "6d9f3dd45c10db77a03f31fdf2d93691460b2c7281ca82bc4051dce728901bca",
+          "logical_path": "knowledge/transcripts/2026/2026-01-15_屡创大藤第一的传奇是如何成就的.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-01-15_屡创大藤第一的传奇是如何成就的.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-01-15｜屡创大藤第一的传奇是如何成就的",
+      "transcript_validation": {
+        "changed_sentence_count": 912,
+        "duration_seconds": 10283.33,
+        "sentence_count": 1487,
+        "srt_cue_count": 1487,
+        "text_line_count": 1487
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. 学术、竞赛与 AI+ 判断",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量与缺失",
+        "failures": "6. 失败案例与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "d6a6e3639e44b945a7103e53ab4d92cac42b3befcbfd4b804ac505a03c7829d3",
+      "lecture_date": "2026-01-20",
+      "lecture_id": "lecture_20260120_dc64c96f9d57",
+      "source_key": "2026-01-20_避开GPA看不见的坑与超车指南",
+      "sources": [
+        {
+          "bytes": 15830,
+          "content_sha256": "0ba8f21bbc5fb7f44791301ed7ce58d39009db0af86e07574c7355a0a3a39116",
+          "logical_path": "knowledge/analysis/2026-01-20_避开GPA看不见的坑与超车指南.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-01-20_避开GPA看不见的坑与超车指南.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 5082538,
+          "content_sha256": "28b7327f15e7c2acf732370c4d1e510613bf5e448dd4c058a529de3770a9405b",
+          "logical_path": "knowledge/transcripts/2026/2026-01-20_避开GPA看不见的坑与超车指南.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-20_避开GPA看不见的坑与超车指南.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1939,
+          "content_sha256": "ee300d2b96bfbfe948616832c75d80d0fe3e5f6baec6b4a327d25da963775cb7",
+          "logical_path": "knowledge/transcripts/2026/2026-01-20_避开GPA看不见的坑与超车指南.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-20_避开GPA看不见的坑与超车指南.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 235299,
+          "content_sha256": "197138a88252e82cf92fca89a860b9b0ef573428df55488aabb55cbfa86a3593",
+          "logical_path": "knowledge/transcripts/2026/2026-01-20_避开GPA看不见的坑与超车指南.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-01-20_避开GPA看不见的坑与超车指南.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 222098,
+          "content_sha256": "4d55e3ca56de3f440efd46f593c3ce45caa58e17a693fbadea52f32ef7da57c8",
+          "logical_path": "knowledge/transcripts/2026/2026-01-20_避开GPA看不见的坑与超车指南.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-01-20_避开GPA看不见的坑与超车指南.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-01-20｜避开 GPA 看不见的坑与超车指南",
+      "transcript_validation": {
+        "changed_sentence_count": 485,
+        "duration_seconds": 10435.22,
+        "sentence_count": 1590,
+        "srt_cue_count": 1590,
+        "text_line_count": 1590
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+ 与跨学科机会",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量",
+        "failures": "6. 失败与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "741ca69effa3fdb3cc7f5005373cf0adce670c314674fae3a65104284d6e4252",
+      "lecture_date": "2026-01-26",
+      "lecture_id": "lecture_20260126_c92a0273dbe9",
+      "source_key": "2026-01-26_交叉学科20蓝海依旧",
+      "sources": [
+        {
+          "bytes": 15846,
+          "content_sha256": "3ed13439703448878467489d18287e2d9dff62905c0f7647e944bc8d6163af4f",
+          "logical_path": "knowledge/analysis/2026-01-26_交叉学科20蓝海依旧.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-01-26_交叉学科20蓝海依旧.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 5256462,
+          "content_sha256": "e53ace9fe9e7430558604914a0bd26ae9c1b2d48f4996f70e01d810cbf46596f",
+          "logical_path": "knowledge/transcripts/2026/2026-01-26_交叉学科20蓝海依旧.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-26_交叉学科20蓝海依旧.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2037,
+          "content_sha256": "13276eb457869baf03f6c6b1c066e57f0cd5a4f7ada080da7e4ce5d2b6bb4c7c",
+          "logical_path": "knowledge/transcripts/2026/2026-01-26_交叉学科20蓝海依旧.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-01-26_交叉学科20蓝海依旧.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 249375,
+          "content_sha256": "f415e53a5f00fb39a5222eb2284c7ed8823d42fe4090801bc21fd3888a4e2369",
+          "logical_path": "knowledge/transcripts/2026/2026-01-26_交叉学科20蓝海依旧.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-01-26_交叉学科20蓝海依旧.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 233663,
+          "content_sha256": "e1319191fefc1f4dae0b2d0b0ce6884c8d91861f0314c771cb6bcbb49e025668",
+          "logical_path": "knowledge/transcripts/2026/2026-01-26_交叉学科20蓝海依旧.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-01-26_交叉学科20蓝海依旧.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-01-26｜交叉学科 2.0：蓝海依旧",
+      "transcript_validation": {
+        "changed_sentence_count": 873,
+        "duration_seconds": 10575.02,
+        "sentence_count": 1869,
+        "srt_cue_count": 1869,
+        "text_line_count": 1869
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量",
+        "failures": "6. 失败与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "6d2ca00b20bea6292e5ac0abfefb972e2eca59dc33094f5329d707bb7a669235",
+      "lecture_date": "2026-03-06",
+      "lecture_id": "lecture_20260306_45b8f41be672",
+      "source_key": "2026-03-06_科研竞赛还能为爬藤加Buff吗",
+      "sources": [
+        {
+          "bytes": 16532,
+          "content_sha256": "152aeb9a3d2cc96566e0c4c8779fdc9eb09c3bffb7a38476f5ee36588c2ee175",
+          "logical_path": "knowledge/analysis/2026-03-06_科研竞赛还能为爬藤加Buff吗.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-06_科研竞赛还能为爬藤加Buff吗.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3714527,
+          "content_sha256": "fb938914c359c1b731866bc73d864b1b6d984f96ecd7c4724cb340937947c767",
+          "logical_path": "knowledge/transcripts/2026/2026-03-06_科研竞赛还能为爬藤加Buff吗.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-06_科研竞赛还能为爬藤加Buff吗.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1871,
+          "content_sha256": "f319e43f61086b99b9951b63194eabbaf8cc058300bf102d3f5a53687a78363b",
+          "logical_path": "knowledge/transcripts/2026/2026-03-06_科研竞赛还能为爬藤加Buff吗.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-06_科研竞赛还能为爬藤加Buff吗.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 176334,
+          "content_sha256": "56cc01d064d069ea5890604b1375fb26d4bcd79c96571c8659d54309a003561e",
+          "logical_path": "knowledge/transcripts/2026/2026-03-06_科研竞赛还能为爬藤加Buff吗.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-06_科研竞赛还能为爬藤加Buff吗.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 165986,
+          "content_sha256": "540c478f741abeeac5bc1da546d610e274b84d5dd377d1fb2dbd720e4b103eb2",
+          "logical_path": "knowledge/transcripts/2026/2026-03-06_科研竞赛还能为爬藤加Buff吗.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-06_科研竞赛还能为爬藤加Buff吗.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-03-06｜科研竞赛还能为爬藤加 Buff 吗",
+      "transcript_validation": {
+        "changed_sentence_count": 409,
+        "duration_seconds": 8731.7,
+        "sentence_count": 1273,
+        "srt_cue_count": 1273,
+        "text_line_count": 1273
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+ 与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 学校与案例卡片",
+        "evidence": "9. 证据质量",
+        "failures": "6. 失败与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "b9fdcb6f2b8742db16f89be447e5aa598632fb4e49c2bdb6c27bc827a6c836a3",
+      "lecture_date": "2026-03-14",
+      "lecture_id": "lecture_20260314_18aaf177e1f9",
+      "source_key": "2026-03-14_头部PK非头部美高爬藤形势分析",
+      "sources": [
+        {
+          "bytes": 13036,
+          "content_sha256": "0a9431cca1fd328e44cb166aa0fd24d026dd1fd22e28bf240e655fa1fa7fb779",
+          "logical_path": "knowledge/analysis/2026-03-14_头部PK非头部美高爬藤形势分析.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-14_头部PK非头部美高爬藤形势分析.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3548256,
+          "content_sha256": "227546e7770fc17136f56ea3212b4dad29ea9e4ccaf99aef1146864e55cb6523",
+          "logical_path": "knowledge/transcripts/2026/2026-03-14_头部PK非头部美高爬藤形势分析.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-14_头部PK非头部美高爬藤形势分析.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1735,
+          "content_sha256": "d0a97b1acfd33095b1718fc7f15bf0541d2c212a345f3b00a9795731dafa3324",
+          "logical_path": "knowledge/transcripts/2026/2026-03-14_头部PK非头部美高爬藤形势分析.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-14_头部PK非头部美高爬藤形势分析.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 158473,
+          "content_sha256": "0bea95ae949787c19942578446078830d5b3bfea54151cb32791159c6c66aec6",
+          "logical_path": "knowledge/transcripts/2026/2026-03-14_头部PK非头部美高爬藤形势分析.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-14_头部PK非头部美高爬藤形势分析.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 150537,
+          "content_sha256": "4112f7d0f086796c84f7c3e57f590828de448d8f41b5fc100bcadd95faddad35",
+          "logical_path": "knowledge/transcripts/2026/2026-03-14_头部PK非头部美高爬藤形势分析.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-14_头部PK非头部美高爬藤形势分析.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-03-14｜头部 PK 非头部美高：爬藤形势分析",
+      "transcript_validation": {
+        "changed_sentence_count": 595,
+        "duration_seconds": 7688.29,
+        "sentence_count": 1005,
+        "srt_cue_count": 1005,
+        "text_line_count": 1005
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+ 机会与深度",
+        "basics": "1. 基础信息",
+        "cases": "4. 代表性案例卡片",
+        "evidence": "9. 证据质量",
+        "failures": "6. 失败与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "8e9862b34ba03ae9bca6f9ac1680649fa6dcec9bca07f39dffddf2dd343de74e",
+      "lecture_date": "2026-03-24",
+      "lecture_id": "lecture_20260324_53a7493c68ff",
+      "source_key": "2026-03-24_非对称竞争跨界叙事博弈藤校",
+      "sources": [
+        {
+          "bytes": 15750,
+          "content_sha256": "ce00519fc67d44e08da0958d0b4fff2e511a4f52bbe3c83880f9700faa9dc1f5",
+          "logical_path": "knowledge/analysis/2026-03-24_非对称竞争跨界叙事博弈藤校.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-24_非对称竞争跨界叙事博弈藤校.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3856306,
+          "content_sha256": "bb7e14dfe8d4bec76086b7ae65ea6324a558631d3b000d16dbdbcd1a5a385b18",
+          "logical_path": "knowledge/transcripts/2026/2026-03-24_非对称竞争跨界叙事博弈藤校.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-24_非对称竞争跨界叙事博弈藤校.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1841,
+          "content_sha256": "d580e376ac93e0e7ad2ccacd00eb2b702897d8216ebb7549fe20daa71bba2968",
+          "logical_path": "knowledge/transcripts/2026/2026-03-24_非对称竞争跨界叙事博弈藤校.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-24_非对称竞争跨界叙事博弈藤校.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 182149,
+          "content_sha256": "dcaa9e6fe48ebef859b26b483f0ae166bded685c600c4f54db589b69a0781433",
+          "logical_path": "knowledge/transcripts/2026/2026-03-24_非对称竞争跨界叙事博弈藤校.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-24_非对称竞争跨界叙事博弈藤校.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 171324,
+          "content_sha256": "1d2a11162e5bb43cc2164bfade71c9203725a599e14464e92ddb40e44337d601",
+          "logical_path": "knowledge/transcripts/2026/2026-03-24_非对称竞争跨界叙事博弈藤校.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-24_非对称竞争跨界叙事博弈藤校.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-03-24｜非对称竞争：跨界叙事博弈藤校",
+      "transcript_validation": {
+        "changed_sentence_count": 502,
+        "duration_seconds": 8007.05,
+        "sentence_count": 1326,
+        "srt_cue_count": 1326,
+        "text_line_count": 1326
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+ 与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量",
+        "failures": "6. 失败与反例",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约 300 字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "b8bcf2620f716551847fb3732e2edd6459913f47c97001acd1b9c5863dbb5a46",
+      "lecture_date": "2026-03-25",
+      "lecture_id": "lecture_20260325_b08f8e83d2df",
+      "source_key": "2026-03-25_申请没有既定公式更没完美闭环",
+      "sources": [
+        {
+          "bytes": 12349,
+          "content_sha256": "91ac6a52581d94d2e937be826d8ac6e9ace07dc1434adc7a849ba231604d5202",
+          "logical_path": "knowledge/analysis/2026-03-25_申请没有既定公式更没完美闭环.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-25_申请没有既定公式更没完美闭环.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4696096,
+          "content_sha256": "7a8ce67a474aeaff923e4c64850290887e842b0387bc0894675f9a93575e2195",
+          "logical_path": "knowledge/transcripts/2026/2026-03-25_申请没有既定公式更没完美闭环.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-25_申请没有既定公式更没完美闭环.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1896,
+          "content_sha256": "0696cc0a7acb245eddd5c56862c0e11332932abe0cc18cd9d4a1419f58415889",
+          "logical_path": "knowledge/transcripts/2026/2026-03-25_申请没有既定公式更没完美闭环.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-25_申请没有既定公式更没完美闭环.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 219049,
+          "content_sha256": "5fe18d377de4eff91d8ec2c5b269b4ec5930efacd2568f62d6a10ede90eed4fa",
+          "logical_path": "knowledge/transcripts/2026/2026-03-25_申请没有既定公式更没完美闭环.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-25_申请没有既定公式更没完美闭环.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 206577,
+          "content_sha256": "955ac920a9afc934ba500e261a821af6407600dbfc8e0a73867557f6ad7b1468",
+          "logical_path": "knowledge/transcripts/2026/2026-03-25_申请没有既定公式更没完美闭环.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-25_申请没有既定公式更没完美闭环.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026-03-25｜申请没有既定公式，更没有完美闭环",
+      "transcript_validation": {
+        "changed_sentence_count": 487,
+        "duration_seconds": 8934.62,
+        "sentence_count": 1509,
+        "srt_cue_count": 1509,
+        "text_line_count": 1509
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科项目",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据质量与边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话（按逐字稿保守整理）",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 申请趋势清单"
+      },
+      "bundle_hash": "524700a1051fc2c9f666c281ed328b1f4465b1d8771532bffab05481a17378dd",
+      "lecture_date": "2026-03-27",
+      "lecture_id": "lecture_20260327_b771da35dd5f",
+      "source_key": "2026-03-27_RD放榜首场与学美的麻辣对谈",
+      "sources": [
+        {
+          "bytes": 9100,
+          "content_sha256": "569625c1a2d3b1f9458977c50dea76572e4b065a460d3824632bb54efc7db813",
+          "logical_path": "knowledge/analysis/2026-03-27_RD放榜首场与学美的麻辣对谈.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-27_RD放榜首场与学美的麻辣对谈.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3714031,
+          "content_sha256": "d3b176aa2bae947d72c8f8b1ccd241521c5983696dffdc5a8257c4fd64f59c07",
+          "logical_path": "knowledge/transcripts/2026/2026-03-27_RD放榜首场与学美的麻辣对谈.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-27_RD放榜首场与学美的麻辣对谈.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1912,
+          "content_sha256": "632ffbf81b19e814c78691e8e7bb85a4ead5c28293d8303b13170cc0436e108a",
+          "logical_path": "knowledge/transcripts/2026/2026-03-27_RD放榜首场与学美的麻辣对谈.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-27_RD放榜首场与学美的麻辣对谈.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 179082,
+          "content_sha256": "4423894546c060178a0c69374c0e3b67b988f990feb8b966c3fcf01dd4312b0f",
+          "logical_path": "knowledge/transcripts/2026/2026-03-27_RD放榜首场与学美的麻辣对谈.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-27_RD放榜首场与学美的麻辣对谈.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 167366,
+          "content_sha256": "da3db61ff58a82f61db39832e24124606b4dc0746cca5e1507b9ba489c30bf98",
+          "logical_path": "knowledge/transcripts/2026/2026-03-27_RD放榜首场与学美的麻辣对谈.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-27_RD放榜首场与学美的麻辣对谈.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "RD放榜首场与学美的麻辣对谈",
+      "transcript_validation": {
+        "changed_sentence_count": 698,
+        "duration_seconds": 8873.19,
+        "sentence_count": 1425,
+        "srt_cue_count": 1425,
+        "text_line_count": 1425
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科项目",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "bb3f4924b08686aee9cbc53396685537fef83ce5fd630519b203ea86785ed16e",
+      "lecture_date": "2026-03-28",
+      "lecture_id": "lecture_20260328_552e1407e914",
+      "source_key": "2026-03-28_IvyDay开榜爬藤团队真心话",
+      "sources": [
+        {
+          "bytes": 8144,
+          "content_sha256": "f9103a90480946d1746aefef26b7f1c0a7ec63ad2f13ace586014508d63b69c0",
+          "logical_path": "knowledge/analysis/2026-03-28_IvyDay开榜爬藤团队真心话.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-28_IvyDay开榜爬藤团队真心话.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 5108746,
+          "content_sha256": "c4bf7d43fbd5b72c78da30f5f82bc5e4bd6e416a2f6023448342967dbe39a335",
+          "logical_path": "knowledge/transcripts/2026/2026-03-28_IvyDay开榜爬藤团队真心话.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-28_IvyDay开榜爬藤团队真心话.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2255,
+          "content_sha256": "32b5864e70f947954e7e01c8b86dd2b873e6a71c85637f5ad74b7154c9e293e8",
+          "logical_path": "knowledge/transcripts/2026/2026-03-28_IvyDay开榜爬藤团队真心话.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-28_IvyDay开榜爬藤团队真心话.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 234354,
+          "content_sha256": "fdba18256f9d3663b10e8da9a579e3c203e0dded44dbfcb3336cd5a2b2cbdaf5",
+          "logical_path": "knowledge/transcripts/2026/2026-03-28_IvyDay开榜爬藤团队真心话.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-28_IvyDay开榜爬藤团队真心话.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 221153,
+          "content_sha256": "ac73ccb5a4e53ab941de1055f105e93f8efc41d64a3de556bc016bc36c3dadc7",
+          "logical_path": "knowledge/transcripts/2026/2026-03-28_IvyDay开榜爬藤团队真心话.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-28_IvyDay开榜爬藤团队真心话.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "Ivy Day开榜爬藤团队真心话",
+      "transcript_validation": {
+        "changed_sentence_count": 782,
+        "duration_seconds": 10245.12,
+        "sentence_count": 1590,
+        "srt_cue_count": 1590,
+        "text_line_count": 1590
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "6be9f964c4857dda05b5d5b9429a427df96472793b04b2d6d32c4f37ce211fb3",
+      "lecture_date": "2026-03-29",
+      "lecture_id": "lecture_20260329_22e4653bb356",
+      "source_key": "2026-03-29_RD放榜藤思藤校选手做对了什么",
+      "sources": [
+        {
+          "bytes": 6673,
+          "content_sha256": "022a46a8c65ccc4fd800f37f63d6bfd560cc0f7b5ff709a7ee3045cbf394d4ea",
+          "logical_path": "knowledge/analysis/2026-03-29_RD放榜藤思藤校选手做对了什么.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-29_RD放榜藤思藤校选手做对了什么.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4824165,
+          "content_sha256": "35d9c996e4aa6fef35c442d54cd10846d01e9ed9f0d77fe40bb63b1598342423",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_RD放榜藤思藤校选手做对了什么.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-29_RD放榜藤思藤校选手做对了什么.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2035,
+          "content_sha256": "1c5de8fcb27e736685948a6e3cd5fad3cc1396e1621e00d8113827eebbf3baa2",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_RD放榜藤思藤校选手做对了什么.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-29_RD放榜藤思藤校选手做对了什么.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 225498,
+          "content_sha256": "e3c1f02ee310d972d352d01c7ce676924fab3e5af47913a1ea1bf7faee359be5",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_RD放榜藤思藤校选手做对了什么.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-29_RD放榜藤思藤校选手做对了什么.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 212783,
+          "content_sha256": "424809e3ed8ba6b1fa6e60078d233683180935857e51a871c2f732e47fc1987a",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_RD放榜藤思藤校选手做对了什么.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-29_RD放榜藤思藤校选手做对了什么.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "RD放榜藤思藤校选手做对了什么",
+      "transcript_validation": {
+        "changed_sentence_count": 599,
+        "duration_seconds": 9483.02,
+        "sentence_count": 1536,
+        "srt_cue_count": 1536,
+        "text_line_count": 1536
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "7f28909b13908f2c762ee4109a6364c87ac52752e8c4136c520cdc2ab30ce6df",
+      "lecture_date": "2026-03-29",
+      "lecture_id": "lecture_20260329_bbdab777bf86",
+      "source_key": "2026-03-29_SAT高分的手到擒来与死去活来",
+      "sources": [
+        {
+          "bytes": 6558,
+          "content_sha256": "8c0b37d183327aa169c71a19d2d1ba0b5b49502aa05ecbc6b3a33eed62abc0df",
+          "logical_path": "knowledge/analysis/2026-03-29_SAT高分的手到擒来与死去活来.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-29_SAT高分的手到擒来与死去活来.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4934488,
+          "content_sha256": "d9d3c0b45abe178bf8a66ae5c04993345b9d807ed276b83cf50f733a378cb90f",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_SAT高分的手到擒来与死去活来.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-29_SAT高分的手到擒来与死去活来.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1778,
+          "content_sha256": "d1939eaf3ddc2514ef77ddda15018c90092c0986329999cacdf8014980412369",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_SAT高分的手到擒来与死去活来.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-29_SAT高分的手到擒来与死去活来.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 226431,
+          "content_sha256": "b7c374981349feceddb1298b7c4446d907bae43697a4095fced1d9f2172bc20b",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_SAT高分的手到擒来与死去活来.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-29_SAT高分的手到擒来与死去活来.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 213824,
+          "content_sha256": "539216393838ba641eba46cfa71ed5f8b4b2be353c5be2fed78912f8ed48d318",
+          "logical_path": "knowledge/transcripts/2026/2026-03-29_SAT高分的手到擒来与死去活来.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-29_SAT高分的手到擒来与死去活来.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "SAT高分的手到擒来与死去活来",
+      "transcript_validation": {
+        "changed_sentence_count": 595,
+        "duration_seconds": 9950.65,
+        "sentence_count": 1524,
+        "srt_cue_count": 1524,
+        "text_line_count": 1524
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "393f4410f54cc43fb75061b6d34d7d1fda33dab75a862c869c36b8048187530b",
+      "lecture_date": "2026-03-30",
+      "lecture_id": "lecture_20260330_fe986eaa6438",
+      "source_key": "2026-03-30_无大奖无暑校如何上加州理工",
+      "sources": [
+        {
+          "bytes": 6790,
+          "content_sha256": "eba101ed3bea47fa4a610cdf70f120e911f33be42a227a994932522d74557299",
+          "logical_path": "knowledge/analysis/2026-03-30_无大奖无暑校如何上加州理工.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-30_无大奖无暑校如何上加州理工.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3867078,
+          "content_sha256": "d7be05d9b94cf47eb10d38089ff6ffe27dfc6abd6a1ddc368819a42184d28d3b",
+          "logical_path": "knowledge/transcripts/2026/2026-03-30_无大奖无暑校如何上加州理工.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-30_无大奖无暑校如何上加州理工.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2177,
+          "content_sha256": "4202bc55b35e3ab618c527c5cf07d4b182a17f0d90123ccec9de7579639abef6",
+          "logical_path": "knowledge/transcripts/2026/2026-03-30_无大奖无暑校如何上加州理工.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-30_无大奖无暑校如何上加州理工.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 195858,
+          "content_sha256": "b23928c220bb09e05f6d39f87a7d891e2a575ca820c1a39a6186f872782bb466",
+          "logical_path": "knowledge/transcripts/2026/2026-03-30_无大奖无暑校如何上加州理工.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-30_无大奖无暑校如何上加州理工.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 184709,
+          "content_sha256": "2298dcc9c3874d354e8378d8f96708b8dee48a96212549f073f53f36227e2ae6",
+          "logical_path": "knowledge/transcripts/2026/2026-03-30_无大奖无暑校如何上加州理工.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-30_无大奖无暑校如何上加州理工.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "无大奖无暑校如何上加州理工",
+      "transcript_validation": {
+        "changed_sentence_count": 548,
+        "duration_seconds": 8272.84,
+        "sentence_count": 1362,
+        "srt_cue_count": 1362,
+        "text_line_count": 1362
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "d8cdbb06b2ccb45027f6ee05027b457a3b58e4615e4188b1d15c62445b8fe9fd",
+      "lecture_date": "2026-03-31",
+      "lecture_id": "lecture_20260331_d5cef6e0f390",
+      "source_key": "2026-03-31_拆解爬藤背后的真实科研叙事",
+      "sources": [
+        {
+          "bytes": 7670,
+          "content_sha256": "b26c747f2b85375d46fc9cdf3637f553b8dbb957d9a4692b3e2dee007216800b",
+          "logical_path": "knowledge/analysis/2026-03-31_拆解爬藤背后的真实科研叙事.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-03-31_拆解爬藤背后的真实科研叙事.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3263443,
+          "content_sha256": "3aa53761c0d464a13b8a82695e4794cbadba2136a1c947b480648585ad816c7a",
+          "logical_path": "knowledge/transcripts/2026/2026-03-31_拆解爬藤背后的真实科研叙事.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-31_拆解爬藤背后的真实科研叙事.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2077,
+          "content_sha256": "2232fe1e24728bca080a2c4b4ac6489f586be3b778b0ed8d1e00be444a10102b",
+          "logical_path": "knowledge/transcripts/2026/2026-03-31_拆解爬藤背后的真实科研叙事.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-03-31_拆解爬藤背后的真实科研叙事.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 154884,
+          "content_sha256": "461a0313aaa0000b6b1e98c8fd6c58c625fb81ab10a96ad6636f4f5626d66a4b",
+          "logical_path": "knowledge/transcripts/2026/2026-03-31_拆解爬藤背后的真实科研叙事.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-03-31_拆解爬藤背后的真实科研叙事.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 145733,
+          "content_sha256": "5023ec0f232aba568b8c2362ad316e2d3e1742533ded2a684675f3f5c0e40b3c",
+          "logical_path": "knowledge/transcripts/2026/2026-03-31_拆解爬藤背后的真实科研叙事.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-03-31_拆解爬藤背后的真实科研叙事.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "拆解爬藤背后的真实科研叙事",
+      "transcript_validation": {
+        "changed_sentence_count": 448,
+        "duration_seconds": 7484.2,
+        "sentence_count": 1140,
+        "srt_cue_count": 1140,
+        "text_line_count": 1140
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "cdc8632a04bb992fcf53d005d781574fde6bb7611515056c7203ab331ca28b9f",
+      "lecture_date": "2026-04-01",
+      "lecture_id": "lecture_20260401_7a9c860381c7",
+      "source_key": "2026-04-01_发榜后普娃爬藤要如何叠Buff",
+      "sources": [
+        {
+          "bytes": 5916,
+          "content_sha256": "73c7f942e6c6a26de69e6b124dd9fd630b60a45b0a5ba3b43a87d5980c30e879",
+          "logical_path": "knowledge/analysis/2026-04-01_发榜后普娃爬藤要如何叠Buff.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-01_发榜后普娃爬藤要如何叠Buff.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 10208574,
+          "content_sha256": "601de338453497cd618ae72eae1ff271d9871eccab631eccfacc12334bf7d88c",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_发榜后普娃爬藤要如何叠Buff.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-01_发榜后普娃爬藤要如何叠Buff.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2276,
+          "content_sha256": "c5c621a5c269bd76d45fb41e183c173ae070af523e4899f4a4b26d78adefaf56",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_发榜后普娃爬藤要如何叠Buff.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-01_发榜后普娃爬藤要如何叠Buff.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 467524,
+          "content_sha256": "679f16155b62e3f260b672a748bc721d4fbd0e427582410be936f74d39c909b5",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_发榜后普娃爬藤要如何叠Buff.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-01_发榜后普娃爬藤要如何叠Buff.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 440526,
+          "content_sha256": "1ab70ac484ecb3589621478fadf5b43a16887b04ef3f05ec702b8847dc42ccaa",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_发榜后普娃爬藤要如何叠Buff.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-01_发榜后普娃爬藤要如何叠Buff.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "发榜后普娃爬藤要如何叠Buff",
+      "transcript_validation": {
+        "changed_sentence_count": 1192,
+        "duration_seconds": 19677.36,
+        "sentence_count": 3123,
+        "srt_cue_count": 3123,
+        "text_line_count": 3123
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "ad7ac34e89ef073202436744dc6211f12a0562c6e2d84c458c5c4dffccb94121",
+      "lecture_date": "2026-04-01",
+      "lecture_id": "lecture_20260401_74253128bca2",
+      "source_key": "2026-04-01_海狸专场对话4位藤校顶尖导师",
+      "sources": [
+        {
+          "bytes": 6500,
+          "content_sha256": "d09e346a0fc1f5407434170c16dca8a770c39322972c3c4bf0b271ed2207ba72",
+          "logical_path": "knowledge/analysis/2026-04-01_海狸专场对话4位藤校顶尖导师.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-01_海狸专场对话4位藤校顶尖导师.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 5067744,
+          "content_sha256": "dd5dd0092fc6c2e75ae215b6f0dfff56e07ae7a9c561ad7778e78218a715b48d",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_海狸专场对话4位藤校顶尖导师.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-01_海狸专场对话4位藤校顶尖导师.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2014,
+          "content_sha256": "fc37b85ac7f3c5e06e7df62788878b665f76da445326d0c69272419aabfa37c2",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_海狸专场对话4位藤校顶尖导师.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-01_海狸专场对话4位藤校顶尖导师.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 228708,
+          "content_sha256": "e615231d9ed074a70e6e9816bc62c2cf7b7be301f12fdad820268e19da0e7e27",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_海狸专场对话4位藤校顶尖导师.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-01_海狸专场对话4位藤校顶尖导师.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 217019,
+          "content_sha256": "ac1c28a61362eb9d1802851a003e1fa0e3dc6ad9868857c20a237321e1e4938c",
+          "logical_path": "knowledge/transcripts/2026/2026-04-01_海狸专场对话4位藤校顶尖导师.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-01_海狸专场对话4位藤校顶尖导师.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "海狸专场对话4位藤校顶尖导师",
+      "transcript_validation": {
+        "changed_sentence_count": 714,
+        "duration_seconds": 10392.59,
+        "sentence_count": 1422,
+        "srt_cue_count": 1422,
+        "text_line_count": 1422
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "a65318cedf78b67b3e771b009558f88b7948387bd0335b6700ec229937f5449b",
+      "lecture_date": "2026-04-02",
+      "lecture_id": "lecture_20260402_768ee1a28da8",
+      "source_key": "2026-04-02_纵观26申请季名校画像新趋势",
+      "sources": [
+        {
+          "bytes": 5716,
+          "content_sha256": "2498eacd1c842cc4ab9e922db7b44a6e1e515fd2c41baedf9a6c213d71ba4820",
+          "logical_path": "knowledge/analysis/2026-04-02_纵观26申请季名校画像新趋势.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-02_纵观26申请季名校画像新趋势.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4161026,
+          "content_sha256": "5a4d365049b618b6e38489cf64e49196ac61c2e0b7bfc18ea6a99bb208759c55",
+          "logical_path": "knowledge/transcripts/2026/2026-04-02_纵观26申请季名校画像新趋势.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-02_纵观26申请季名校画像新趋势.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1956,
+          "content_sha256": "7fa97e952097decf7d7222361b516ada0f3ecf232518ab5753770ecff7bf9346",
+          "logical_path": "knowledge/transcripts/2026/2026-04-02_纵观26申请季名校画像新趋势.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-02_纵观26申请季名校画像新趋势.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 203616,
+          "content_sha256": "bbacc7771f1fd6452be31ef7260b7482c9cc171abda35d0c31a8f036e6cc0a65",
+          "logical_path": "knowledge/transcripts/2026/2026-04-02_纵观26申请季名校画像新趋势.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-02_纵观26申请季名校画像新趋势.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 192953,
+          "content_sha256": "91a3b465897bafcfd46156b5909d7fba336431c71af790bbd8ce2136dff5b717",
+          "logical_path": "knowledge/transcripts/2026/2026-04-02_纵观26申请季名校画像新趋势.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-02_纵观26申请季名校画像新趋势.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "纵观26申请季名校画像新趋势",
+      "transcript_validation": {
+        "changed_sentence_count": 758,
+        "duration_seconds": 9505.66,
+        "sentence_count": 1308,
+        "srt_cue_count": 1308,
+        "text_line_count": 1308
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "75c920de733aa2647a344dc96e8bd230da5ae85a630fc7666db89e0c3fdac827",
+      "lecture_date": "2026-04-08",
+      "lecture_id": "lecture_20260408_e7d8166cad49",
+      "source_key": "2026-04-08_算法时代为何录取的关键点在人",
+      "sources": [
+        {
+          "bytes": 6061,
+          "content_sha256": "21e9f11b71a0431d6117564d6504f7596fef918784ffce7a5762df6f8648d0e3",
+          "logical_path": "knowledge/analysis/2026-04-08_算法时代为何录取的关键点在人.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-08_算法时代为何录取的关键点在人.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4908082,
+          "content_sha256": "b1cdd89a25ab2700e6bb3697a69ac60448468babe40fc96a89915f1892daec87",
+          "logical_path": "knowledge/transcripts/2026/2026-04-08_算法时代为何录取的关键点在人.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-08_算法时代为何录取的关键点在人.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2048,
+          "content_sha256": "10d4a30fa34b46a5163f0997884071b65898647f90766efdaf5ecd1db75f2935",
+          "logical_path": "knowledge/transcripts/2026/2026-04-08_算法时代为何录取的关键点在人.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-08_算法时代为何录取的关键点在人.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 232434,
+          "content_sha256": "8cbbdb9e3a53f6c4a0ba20f6071c52390a9f6dd909a7570a0e1807ccf9265ac5",
+          "logical_path": "knowledge/transcripts/2026/2026-04-08_算法时代为何录取的关键点在人.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-08_算法时代为何录取的关键点在人.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 219917,
+          "content_sha256": "c734087ea617543d9c58c33fe293922b4b4acdb110809987b9d0e7a1779d2f9d",
+          "logical_path": "knowledge/transcripts/2026/2026-04-08_算法时代为何录取的关键点在人.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-08_算法时代为何录取的关键点在人.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "算法时代为何录取的关键点在人",
+      "transcript_validation": {
+        "changed_sentence_count": 572,
+        "duration_seconds": 9987.05,
+        "sentence_count": 1514,
+        "srt_cue_count": 1514,
+        "text_line_count": 1514
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "e130ea05e25751a9844759b7764e9a00b69465f426bef84928209c4080df277d",
+      "lecture_date": "2026-04-09",
+      "lecture_id": "lecture_20260409_c7c91aa0df44",
+      "source_key": "2026-04-09_凭远顾问畅聊陆高海高破局案例",
+      "sources": [
+        {
+          "bytes": 6803,
+          "content_sha256": "66ec5267e4f3297e7e99cdf92cc2d467949af9653f6aa1dc13dbbeb690799752",
+          "logical_path": "knowledge/analysis/2026-04-09_凭远顾问畅聊陆高海高破局案例.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-09_凭远顾问畅聊陆高海高破局案例.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4784088,
+          "content_sha256": "cb3b7dab0b8268212fcb4d26ed795d25084dad006733ba64db2df4a4caf75345",
+          "logical_path": "knowledge/transcripts/2026/2026-04-09_凭远顾问畅聊陆高海高破局案例.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-09_凭远顾问畅聊陆高海高破局案例.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1984,
+          "content_sha256": "66de6a08bfad6811911e8f447716b7200b141a4c47cdb171ab20b08978e63dd0",
+          "logical_path": "knowledge/transcripts/2026/2026-04-09_凭远顾问畅聊陆高海高破局案例.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-09_凭远顾问畅聊陆高海高破局案例.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 216287,
+          "content_sha256": "63453fe7cddb18b99208e05908687363960753241a8a99606369a9e50c93e9bf",
+          "logical_path": "knowledge/transcripts/2026/2026-04-09_凭远顾问畅聊陆高海高破局案例.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-09_凭远顾问畅聊陆高海高破局案例.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 204256,
+          "content_sha256": "a25eaef1ecb8ec302ae8a0f99bd5dc7b6a59344421f950c2a1a8ffae481a7d16",
+          "logical_path": "knowledge/transcripts/2026/2026-04-09_凭远顾问畅聊陆高海高破局案例.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-09_凭远顾问畅聊陆高海高破局案例.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "凭远顾问畅聊陆高海高破局案例",
+      "transcript_validation": {
+        "changed_sentence_count": 809,
+        "duration_seconds": 9998.31,
+        "sentence_count": 1460,
+        "srt_cue_count": 1460,
+        "text_line_count": 1460
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "6ed6e864e2eb3a3eb40b9505db27600c060a762cb3e3881f7f3d31c799ed6928",
+      "lecture_date": "2026-04-13",
+      "lecture_id": "lecture_20260413_941778904025",
+      "source_key": "2026-04-13_解码2026顶尖录取后的学术方案",
+      "sources": [
+        {
+          "bytes": 6657,
+          "content_sha256": "a52db2ca95d04438eaa517223b5f9071103ef510918302d0df88306ff0fc5b61",
+          "logical_path": "knowledge/analysis/2026-04-13_解码2026顶尖录取后的学术方案.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-13_解码2026顶尖录取后的学术方案.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3583963,
+          "content_sha256": "ad02f182a6fb4275e040ee4d142340639b7be7cac9558999a77247f2be2a7949",
+          "logical_path": "knowledge/transcripts/2026/2026-04-13_解码2026顶尖录取后的学术方案.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-13_解码2026顶尖录取后的学术方案.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1851,
+          "content_sha256": "eb578ac20849cc0d55bcc3739ec6b6d19e84fe779c55cf8db09e6a82feb0bc58",
+          "logical_path": "knowledge/transcripts/2026/2026-04-13_解码2026顶尖录取后的学术方案.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-13_解码2026顶尖录取后的学术方案.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 174383,
+          "content_sha256": "195d52a75a53b203ed19b9844096cbea95c0bd747e25c30b2e1e3bae7c709072",
+          "logical_path": "knowledge/transcripts/2026/2026-04-13_解码2026顶尖录取后的学术方案.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-13_解码2026顶尖录取后的学术方案.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 163324,
+          "content_sha256": "a2670e2e3e7ecf290f05bc2b907e24034a4dbc3ff5400075dd0570b61a153477",
+          "logical_path": "knowledge/transcripts/2026/2026-04-13_解码2026顶尖录取后的学术方案.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-13_解码2026顶尖录取后的学术方案.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "解码2026顶尖录取后的学术方案",
+      "transcript_validation": {
+        "changed_sentence_count": 431,
+        "duration_seconds": 7428.79,
+        "sentence_count": 1352,
+        "srt_cue_count": 1352,
+        "text_line_count": 1352
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "a3f2477c1c8933f7853d56fcafeef3dc3f76efe8b6a1c68f684a237ba2017397",
+      "lecture_date": "2026-04-14",
+      "lecture_id": "lecture_20260414_776c3cfcfe56",
+      "source_key": "2026-04-14_打破藤校玄学揭开3大录取谎言",
+      "sources": [
+        {
+          "bytes": 7467,
+          "content_sha256": "7d0cfd83d58d6fd44f3bd4d6db43a33ad2eb36ddff81356999430f9096b1e48b",
+          "logical_path": "knowledge/analysis/2026-04-14_打破藤校玄学揭开3大录取谎言.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-14_打破藤校玄学揭开3大录取谎言.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4089874,
+          "content_sha256": "0e1f53c7c83a2463e26272207600c17c5d28e3fb6dcc629c4e5138d3aa9bb4b8",
+          "logical_path": "knowledge/transcripts/2026/2026-04-14_打破藤校玄学揭开3大录取谎言.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-14_打破藤校玄学揭开3大录取谎言.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2023,
+          "content_sha256": "5bd71553a4c06be70222c95ad8259a7ac622ad9ea9d082e28ee83537c0e5d6fc",
+          "logical_path": "knowledge/transcripts/2026/2026-04-14_打破藤校玄学揭开3大录取谎言.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-14_打破藤校玄学揭开3大录取谎言.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 190988,
+          "content_sha256": "eab8dc0203731615780e0f55473626a295cf419fd1e258e38b6c802382f0dd61",
+          "logical_path": "knowledge/transcripts/2026/2026-04-14_打破藤校玄学揭开3大录取谎言.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-14_打破藤校玄学揭开3大录取谎言.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 180118,
+          "content_sha256": "0f83e0c4c70d048e90362fc3efc9ec9bb330c34230435f9eef7c21ce7616037c",
+          "logical_path": "knowledge/transcripts/2026/2026-04-14_打破藤校玄学揭开3大录取谎言.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-14_打破藤校玄学揭开3大录取谎言.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "打破藤校玄学揭开3大录取谎言",
+      "transcript_validation": {
+        "changed_sentence_count": 498,
+        "duration_seconds": 8998.54,
+        "sentence_count": 1331,
+        "srt_cue_count": 1331,
+        "text_line_count": 1331
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "be794e85e2ab3d15ef1a858a4c69906c5cfdef8437958f1a57764dc8a8c545c5",
+      "lecture_date": "2026-04-15",
+      "lecture_id": "lecture_20260415_9c70cb97b499",
+      "source_key": "2026-04-15_文理均衡无大奖如何冲美本前十",
+      "sources": [
+        {
+          "bytes": 8043,
+          "content_sha256": "a84df7c267f258c53eab35b714e393ab735063b8e138a20c163952004b9bf93c",
+          "logical_path": "knowledge/analysis/2026-04-15_文理均衡无大奖如何冲美本前十.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-15_文理均衡无大奖如何冲美本前十.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4408130,
+          "content_sha256": "eaf3ff04600e827886d8497c6f52aac1232161f5afc44d9a245325d2fd93eaf2",
+          "logical_path": "knowledge/transcripts/2026/2026-04-15_文理均衡无大奖如何冲美本前十.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-15_文理均衡无大奖如何冲美本前十.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2024,
+          "content_sha256": "43fc36e817d9fb4a7e14783830e85016500196e2c85f1a0771c0b23487da8be6",
+          "logical_path": "knowledge/transcripts/2026/2026-04-15_文理均衡无大奖如何冲美本前十.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-15_文理均衡无大奖如何冲美本前十.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 201512,
+          "content_sha256": "a0385248b42ce838e19da6ee07df093e8e8f3f4b383c0400b2b22f536878a469",
+          "logical_path": "knowledge/transcripts/2026/2026-04-15_文理均衡无大奖如何冲美本前十.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-15_文理均衡无大奖如何冲美本前十.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 190363,
+          "content_sha256": "58a3d1f2dc9be37f119f393d5882662ebe22140e3483b10dbe2b425a96cda021",
+          "logical_path": "knowledge/transcripts/2026/2026-04-15_文理均衡无大奖如何冲美本前十.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-15_文理均衡无大奖如何冲美本前十.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "文理均衡无大奖如何冲美本前十",
+      "transcript_validation": {
+        "changed_sentence_count": 603,
+        "duration_seconds": 8164.85,
+        "sentence_count": 1362,
+        "srt_cue_count": 1362,
+        "text_line_count": 1362
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "f254711ee7475e747fa072108b13360d0f699a1f5ea25ddd5a8679b87d85d027",
+      "lecture_date": "2026-04-16",
+      "lecture_id": "lecture_20260416_265e039f09a7",
+      "source_key": "2026-04-16_早规划深探索真成长美本申请避坑",
+      "sources": [
+        {
+          "bytes": 7626,
+          "content_sha256": "fb0bfabd3e66f1bb8cc5bfa81650fb10b4bcffaa1aae3877ab8ddac30044d451",
+          "logical_path": "knowledge/analysis/2026-04-16_早规划深探索真成长美本申请避坑.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-16_早规划深探索真成长美本申请避坑.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4643050,
+          "content_sha256": "f7824ef30a5455c4a8901bb553140c4aa37ddb3f498e0c9016c4a916b8378663",
+          "logical_path": "knowledge/transcripts/2026/2026-04-16_早规划深探索真成长美本申请避坑.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-16_早规划深探索真成长美本申请避坑.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1807,
+          "content_sha256": "0290b1619d39b9983461e92f76aba402185c870038b4f7ab4cae3ba7d940cd28",
+          "logical_path": "knowledge/transcripts/2026/2026-04-16_早规划深探索真成长美本申请避坑.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-16_早规划深探索真成长美本申请避坑.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 215304,
+          "content_sha256": "dc90232ac6e40fc1dc0ba2edebb7470db796259354fc36d28724ccdd2d3bac58",
+          "logical_path": "knowledge/transcripts/2026/2026-04-16_早规划深探索真成长美本申请避坑.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-16_早规划深探索真成长美本申请避坑.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 203057,
+          "content_sha256": "ffe715b2399c88ece8bf4d53788f8105367b0dddc488483ca70b29bd98674b31",
+          "logical_path": "knowledge/transcripts/2026/2026-04-16_早规划深探索真成长美本申请避坑.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-16_早规划深探索真成长美本申请避坑.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "早规划深探索真成长美本申请避坑",
+      "transcript_validation": {
+        "changed_sentence_count": 791,
+        "duration_seconds": 9766.19,
+        "sentence_count": 1484,
+        "srt_cue_count": 1484,
+        "text_line_count": 1484
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "57078b715600904653c60cf58acbae37df9f765b0919281e3fee74436f9023e5",
+      "lecture_date": "2026-04-18",
+      "lecture_id": "lecture_20260418_69abd9149b9c",
+      "source_key": "2026-04-18_美本顶校录取逻辑一次讲清",
+      "sources": [
+        {
+          "bytes": 6797,
+          "content_sha256": "b27070742c515e61583d2e35e0ae76dbd96ba5bc703effa099d4a22f25570c67",
+          "logical_path": "knowledge/analysis/2026-04-18_美本顶校录取逻辑一次讲清.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-18_美本顶校录取逻辑一次讲清.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3959372,
+          "content_sha256": "f9554a3d8df65176a8498db059e2933cc6079039db4241122d598e387c0f4559",
+          "logical_path": "knowledge/transcripts/2026/2026-04-18_美本顶校录取逻辑一次讲清.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-18_美本顶校录取逻辑一次讲清.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1674,
+          "content_sha256": "d1f32f049a258d3bdb26ed2d8b51c0d13838abd18ee4a3b89507911d7a5e4042",
+          "logical_path": "knowledge/transcripts/2026/2026-04-18_美本顶校录取逻辑一次讲清.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-18_美本顶校录取逻辑一次讲清.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 184011,
+          "content_sha256": "3311e3273244991f28e0c1a306c05108e6f10d612e7c8f5c5d0ffd25e66819a1",
+          "logical_path": "knowledge/transcripts/2026/2026-04-18_美本顶校录取逻辑一次讲清.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-18_美本顶校录取逻辑一次讲清.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 173537,
+          "content_sha256": "722e77cf35eb1cc2cca36e04b7254104df98b25ec4f6a177c7a7c1f528234fba",
+          "logical_path": "knowledge/transcripts/2026/2026-04-18_美本顶校录取逻辑一次讲清.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-18_美本顶校录取逻辑一次讲清.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "美本顶校录取逻辑一次讲清",
+      "transcript_validation": {
+        "changed_sentence_count": 521,
+        "duration_seconds": 8033.93,
+        "sentence_count": 1287,
+        "srt_cue_count": 1287,
+        "text_line_count": 1287
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "1a4592450a53f03f136e205a3e0846d86f12ed33d1ce1cacf0e5f32cfab78457",
+      "lecture_date": "2026-04-20",
+      "lecture_id": "lecture_20260420_a6b5f081dbf7",
+      "source_key": "2026-04-20_3位2026er的真实录取经",
+      "sources": [
+        {
+          "bytes": 8676,
+          "content_sha256": "1226e29e817e728b52b86a0e4970b55803d46db78b3f316fccce30556c6f0c8f",
+          "logical_path": "knowledge/analysis/2026-04-20_3位2026er的真实录取经.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-20_3位2026er的真实录取经.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4791192,
+          "content_sha256": "c4e41ddcbbf8794dc84392cfd52b968389f32e159e708a27d927f8a8083fbfe1",
+          "logical_path": "knowledge/transcripts/2026/2026-04-20_3位2026er的真实录取经.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-20_3位2026er的真实录取经.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2165,
+          "content_sha256": "91004330e074b3add803e73f28cc3b826cbb670f82512cbf315aec6f2df2adc4",
+          "logical_path": "knowledge/transcripts/2026/2026-04-20_3位2026er的真实录取经.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-20_3位2026er的真实录取经.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 220763,
+          "content_sha256": "b927db5d499817e8b9d4b8032643571c8cf7d1fbf9902f93fe5012834315802a",
+          "logical_path": "knowledge/transcripts/2026/2026-04-20_3位2026er的真实录取经.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-20_3位2026er的真实录取经.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 208588,
+          "content_sha256": "0064d3ff95d77cac9545650cb4798247c7cf311141492221bafd858aaa693c01",
+          "logical_path": "knowledge/transcripts/2026/2026-04-20_3位2026er的真实录取经.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-20_3位2026er的真实录取经.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "3位2026er的真实录取经",
+      "transcript_validation": {
+        "changed_sentence_count": 681,
+        "duration_seconds": 9795.64,
+        "sentence_count": 1476,
+        "srt_cue_count": 1476,
+        "text_line_count": 1476
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "eb605006ac576ebc4e0c6c9c7ad700c065219e969379a52eb7589756020c92e9",
+      "lecture_date": "2026-04-21",
+      "lecture_id": "lecture_20260421_a7071414431f",
+      "source_key": "2026-04-21_剧透的美本申请时代坚守恒定价值",
+      "sources": [
+        {
+          "bytes": 7539,
+          "content_sha256": "b901dfa9eb9824fa5f5ffd2977a3b9d96b300a8367d7570c9cdd51017ce7e74c",
+          "logical_path": "knowledge/analysis/2026-04-21_剧透的美本申请时代坚守恒定价值.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-21_剧透的美本申请时代坚守恒定价值.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4016195,
+          "content_sha256": "17f898e9c89eccce3ea31a6589b8c6be1ee0b1d0aaaa042c845f554cf69bd5f9",
+          "logical_path": "knowledge/transcripts/2026/2026-04-21_剧透的美本申请时代坚守恒定价值.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-21_剧透的美本申请时代坚守恒定价值.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1831,
+          "content_sha256": "5dfb148b74f759ace6080f187b57cbb4e27ef07f554b4488adfd7ac6799229c1",
+          "logical_path": "knowledge/transcripts/2026/2026-04-21_剧透的美本申请时代坚守恒定价值.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-21_剧透的美本申请时代坚守恒定价值.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 186921,
+          "content_sha256": "fb417a5220c811dcc1d67e5ad9caf208c2a98a5b17debba58360d756ba33211a",
+          "logical_path": "knowledge/transcripts/2026/2026-04-21_剧透的美本申请时代坚守恒定价值.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-21_剧透的美本申请时代坚守恒定价值.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 175205,
+          "content_sha256": "ad56275d1c666496547ee10e278caec3bb87f40599b87c5b97edf8fc806fab31",
+          "logical_path": "knowledge/transcripts/2026/2026-04-21_剧透的美本申请时代坚守恒定价值.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-21_剧透的美本申请时代坚守恒定价值.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "剧透的美本申请时代坚守恒定价值",
+      "transcript_validation": {
+        "changed_sentence_count": 839,
+        "duration_seconds": 8949.62,
+        "sentence_count": 1425,
+        "srt_cue_count": 1425,
+        "text_line_count": 1425
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "a881ae62ce7cba61dd90723cd85d6c7798c75adcdd43885c90d322119722c74d",
+      "lecture_date": "2026-04-22",
+      "lecture_id": "lecture_20260422_e84eccbad205",
+      "source_key": "2026-04-22_跨学科能力爬藤申请新buff",
+      "sources": [
+        {
+          "bytes": 6525,
+          "content_sha256": "58836e365f76eb4c7004ac8cf7048b1c0a89d89c637980a083e5273a05dc9bf1",
+          "logical_path": "knowledge/analysis/2026-04-22_跨学科能力爬藤申请新buff.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-22_跨学科能力爬藤申请新buff.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4000091,
+          "content_sha256": "c92401590aea86ec07ba443caa274d019113deabdd72f5268e0e8888f25158c4",
+          "logical_path": "knowledge/transcripts/2026/2026-04-22_跨学科能力爬藤申请新buff.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-22_跨学科能力爬藤申请新buff.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1755,
+          "content_sha256": "47803ca9e0d3c1cce2675c7fe1b3504cf022e34593232225b3e43ea4d2c74659",
+          "logical_path": "knowledge/transcripts/2026/2026-04-22_跨学科能力爬藤申请新buff.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-22_跨学科能力爬藤申请新buff.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 189966,
+          "content_sha256": "bf481d436a8a7083844e905b295bdc4e7b0824f466b112cca6ece4b1a6604413",
+          "logical_path": "knowledge/transcripts/2026/2026-04-22_跨学科能力爬藤申请新buff.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-22_跨学科能力爬藤申请新buff.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 178934,
+          "content_sha256": "7a1ae8924507fdc68203c9896c468da04c3452ddbaab120d12f85e74c7029086",
+          "logical_path": "knowledge/transcripts/2026/2026-04-22_跨学科能力爬藤申请新buff.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-22_跨学科能力爬藤申请新buff.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "跨学科能力爬藤申请新buff",
+      "transcript_validation": {
+        "changed_sentence_count": 365,
+        "duration_seconds": 8352.13,
+        "sentence_count": 1349,
+        "srt_cue_count": 1349,
+        "text_line_count": 1349
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "668973af995ef2b2d956c6af075af1b50d3cb525896c230451daccc02340e3e0",
+      "lecture_date": "2026-04-29",
+      "lecture_id": "lecture_20260429_93268de7a6f7",
+      "source_key": "2026-04-29_满分履历折戟名校是活动不够原创",
+      "sources": [
+        {
+          "bytes": 9018,
+          "content_sha256": "7bdea92cb2fc826770cc9e3fbebb6c18d15c29cfebf707aeb9ff100271fe8c83",
+          "logical_path": "knowledge/analysis/2026-04-29_满分履历折戟名校是活动不够原创.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-04-29_满分履历折戟名校是活动不够原创.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4464235,
+          "content_sha256": "8d68e00a3cf82eb66c0d772f94f6f3266369eff98102d2606f2d8556be1a3ae7",
+          "logical_path": "knowledge/transcripts/2026/2026-04-29_满分履历折戟名校是活动不够原创.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-29_满分履历折戟名校是活动不够原创.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1681,
+          "content_sha256": "61174ba07ab2aee0cdf591c3585f9a7f1619039feefb039512f038dc6d0f93ca",
+          "logical_path": "knowledge/transcripts/2026/2026-04-29_满分履历折戟名校是活动不够原创.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-04-29_满分履历折戟名校是活动不够原创.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 208282,
+          "content_sha256": "4bec2247498b41f149529f00466bd4c77ef2c7ffec377d716bc815a48f802c7d",
+          "logical_path": "knowledge/transcripts/2026/2026-04-29_满分履历折戟名校是活动不够原创.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-04-29_满分履历折戟名校是活动不够原创.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 196674,
+          "content_sha256": "7d8f22bc250095c3e3f3576daba04b3bf2848830fe272c1e4311249b129be2bc",
+          "logical_path": "knowledge/transcripts/2026/2026-04-29_满分履历折戟名校是活动不够原创.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-04-29_满分履历折戟名校是活动不够原创.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "满分履历折戟名校是活动不够原创",
+      "transcript_validation": {
+        "changed_sentence_count": 369,
+        "duration_seconds": 8913.66,
+        "sentence_count": 1413,
+        "srt_cue_count": 1413,
+        "text_line_count": 1413
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "e560a7122fe121996b9c8914d9e0e2fb1cfd2b643124f63dd248d9a08aa2ce04",
+      "lecture_date": "2026-05-12",
+      "lecture_id": "lecture_20260512_92a84d83ad37",
+      "source_key": "2026-05-12_从普高到布朗他被录取的关键是",
+      "sources": [
+        {
+          "bytes": 7292,
+          "content_sha256": "ed121faa1d84546ea82d5be8b77b602bf83c6d81ccafae36ab6bf662a2250836",
+          "logical_path": "knowledge/analysis/2026-05-12_从普高到布朗他被录取的关键是.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-05-12_从普高到布朗他被录取的关键是.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4674688,
+          "content_sha256": "ed2504662af6c946e339959d18c614dbd7ca3544dd82e5562f4a58cc57667e9d",
+          "logical_path": "knowledge/transcripts/2026/2026-05-12_从普高到布朗他被录取的关键是.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-12_从普高到布朗他被录取的关键是.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2128,
+          "content_sha256": "becb78ab1bf185daa38945676171644e203cdaa0b3e9fea434a9ed9685a3c42c",
+          "logical_path": "knowledge/transcripts/2026/2026-05-12_从普高到布朗他被录取的关键是.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-12_从普高到布朗他被录取的关键是.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 215379,
+          "content_sha256": "4b6ef5d9cd1684490ba392bf7e3181e25c87f5b18edbb134eec198984b15a8c5",
+          "logical_path": "knowledge/transcripts/2026/2026-05-12_从普高到布朗他被录取的关键是.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-05-12_从普高到布朗他被录取的关键是.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 203546,
+          "content_sha256": "5a5cc15fc031f92b19ecd33b884c02f86d6c17fc6230da4035c488c0028a059a",
+          "logical_path": "knowledge/transcripts/2026/2026-05-12_从普高到布朗他被录取的关键是.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-05-12_从普高到布朗他被录取的关键是.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "从普高到布朗他被录取的关键是",
+      "transcript_validation": {
+        "changed_sentence_count": 597,
+        "duration_seconds": 8990.35,
+        "sentence_count": 1438,
+        "srt_cue_count": 1438,
+        "text_line_count": 1438
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "174054d8e7f2b92c970a27bb763ada55874c94f1417e49685f0de7da5503bb97",
+      "lecture_date": "2026-05-18",
+      "lecture_id": "lecture_20260518_6ade1ad9ee56",
+      "source_key": "2026-05-18_爬藤背后的长线养成系统",
+      "sources": [
+        {
+          "bytes": 6699,
+          "content_sha256": "5dbcee605a23fff1da0ce05e32d5df3b927807aa557efd4067325557dc45a3fe",
+          "logical_path": "knowledge/analysis/2026-05-18_爬藤背后的长线养成系统.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-05-18_爬藤背后的长线养成系统.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3641379,
+          "content_sha256": "469cc9837ddac447484db129a336fa3515afde621ce630dc6ae4aaf3893fd9ab",
+          "logical_path": "knowledge/transcripts/2026/2026-05-18_爬藤背后的长线养成系统.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-18_爬藤背后的长线养成系统.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1794,
+          "content_sha256": "fac16a447bb619334ee13a6296290b4b247a4a186bb49e191c1ff5f6fbdba8c9",
+          "logical_path": "knowledge/transcripts/2026/2026-05-18_爬藤背后的长线养成系统.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-18_爬藤背后的长线养成系统.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 170600,
+          "content_sha256": "ede6fe4e13451a689d851c206d1170fabd0ec82be51e2e4e179ea79c2b3a997a",
+          "logical_path": "knowledge/transcripts/2026/2026-05-18_爬藤背后的长线养成系统.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-05-18_爬藤背后的长线养成系统.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 160846,
+          "content_sha256": "ec34cf1c1589e14bd2148cdda4c9d3fad2a3cd94d6e9962f0b0a507152ca5e49",
+          "logical_path": "knowledge/transcripts/2026/2026-05-18_爬藤背后的长线养成系统.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-05-18_爬藤背后的长线养成系统.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "爬藤背后的长线养成系统",
+      "transcript_validation": {
+        "changed_sentence_count": 531,
+        "duration_seconds": 8308.26,
+        "sentence_count": 1207,
+        "srt_cue_count": 1207,
+        "text_line_count": 1207
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "b889ff421a0192d407d3bec4706c349ea2c6554339d4034ed887346c61e4880f",
+      "lecture_date": "2026-05-20",
+      "lecture_id": "lecture_20260520_497f95b8c700",
+      "source_key": "2026-05-20_用一份努力跑赢三件事",
+      "sources": [
+        {
+          "bytes": 6437,
+          "content_sha256": "cba37d8ff1223e45c2d6d44fb21323e44a3a9051abd74e80d16efd4ccb68fbf1",
+          "logical_path": "knowledge/analysis/2026-05-20_用一份努力跑赢三件事.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-05-20_用一份努力跑赢三件事.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3146845,
+          "content_sha256": "c0c982d7acc7eaed9f6285ada64dbeddeff5010911bfbe6759add14f382041fe",
+          "logical_path": "knowledge/transcripts/2026/2026-05-20_用一份努力跑赢三件事.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-20_用一份努力跑赢三件事.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1929,
+          "content_sha256": "39042a53b132ba29846b8b7bb798b55eedd36b4fbdea02407ccd8adebd9d4ddb",
+          "logical_path": "knowledge/transcripts/2026/2026-05-20_用一份努力跑赢三件事.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-20_用一份努力跑赢三件事.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 162551,
+          "content_sha256": "ece78e75fdfff59360e18c163351eb855c8e981c2f08d93856ae5e66b5c6fdff",
+          "logical_path": "knowledge/transcripts/2026/2026-05-20_用一份努力跑赢三件事.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-05-20_用一份努力跑赢三件事.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 153949,
+          "content_sha256": "209de552cab43f91353fefa1c2fce8d765da0e60db4bca1dec8c4f4738715f95",
+          "logical_path": "knowledge/transcripts/2026/2026-05-20_用一份努力跑赢三件事.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-05-20_用一份努力跑赢三件事.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "用一份努力跑赢三件事",
+      "transcript_validation": {
+        "changed_sentence_count": 579,
+        "duration_seconds": 8280.03,
+        "sentence_count": 1079,
+        "srt_cue_count": 1079,
+        "text_line_count": 1079
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "43a09e2cd413b446129b52872a557a58aac58e2fb8b8e5e4dcef98c3f1880177",
+      "lecture_date": "2026-05-25",
+      "lecture_id": "lecture_20260525_8858b1cb6dce",
+      "source_key": "2026-05-25_2026ISEF赛后复盘",
+      "sources": [
+        {
+          "bytes": 6813,
+          "content_sha256": "fb2fe4c1f594d99be92543141f2800b4e876b67b3cda423886f491b2cd95bc55",
+          "logical_path": "knowledge/analysis/2026-05-25_2026ISEF赛后复盘.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-05-25_2026ISEF赛后复盘.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3480699,
+          "content_sha256": "3b371e05a9d9e5ec32e8d6cd0319de8fa509326ed13b90341808908dd5c981f6",
+          "logical_path": "knowledge/transcripts/2026/2026-05-25_2026ISEF赛后复盘.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-25_2026ISEF赛后复盘.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2200,
+          "content_sha256": "d2291ce752fbe53539d472a646fdc52d3788c68d465125cd958e16182f46458f",
+          "logical_path": "knowledge/transcripts/2026/2026-05-25_2026ISEF赛后复盘.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-05-25_2026ISEF赛后复盘.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 167473,
+          "content_sha256": "01e919dcc4d99583afdc157716b09348872846b3fc40ce5bc638b656fea1758e",
+          "logical_path": "knowledge/transcripts/2026/2026-05-25_2026ISEF赛后复盘.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-05-25_2026ISEF赛后复盘.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 157035,
+          "content_sha256": "7647ba62c43265377112824fb77e5141f4aa6579c7a87f0f516a054333947769",
+          "logical_path": "knowledge/transcripts/2026/2026-05-25_2026ISEF赛后复盘.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-05-25_2026ISEF赛后复盘.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2026 ISEF赛后复盘",
+      "transcript_validation": {
+        "changed_sentence_count": 522,
+        "duration_seconds": 7642.72,
+        "sentence_count": 1283,
+        "srt_cue_count": 1283,
+        "text_line_count": 1283
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "7f340dd97eba2b1ec956008a1d190cb74d3007af90419fb7b04a4a931041d68c",
+      "lecture_date": "2026-06-03",
+      "lecture_id": "lecture_20260603_10b103df0902",
+      "source_key": "2026-06-03_大藤前20意外录取背后逻辑",
+      "sources": [
+        {
+          "bytes": 5841,
+          "content_sha256": "abae8e44cedf5994cbe92c3efe3fc0d0ed57605c8fbdf5b059b2c9153d816f9f",
+          "logical_path": "knowledge/analysis/2026-06-03_大藤前20意外录取背后逻辑.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-06-03_大藤前20意外录取背后逻辑.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 4992867,
+          "content_sha256": "629e5777aa49266e39405f8adc601e06d6b77e8f8086eb83762a475a1d3ac47a",
+          "logical_path": "knowledge/transcripts/2026/2026-06-03_大藤前20意外录取背后逻辑.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-03_大藤前20意外录取背后逻辑.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1883,
+          "content_sha256": "6e0ecbd99386a95ff4ec5011955aaf88d77b58c92dc8f3ff8cf780918d479a2c",
+          "logical_path": "knowledge/transcripts/2026/2026-06-03_大藤前20意外录取背后逻辑.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-03_大藤前20意外录取背后逻辑.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 230223,
+          "content_sha256": "51bfb2b470ba86fecb5e552fe4a3516b40fedf9f5e36f2006f49534c4de10270",
+          "logical_path": "knowledge/transcripts/2026/2026-06-03_大藤前20意外录取背后逻辑.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-06-03_大藤前20意外录取背后逻辑.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 217139,
+          "content_sha256": "66817843830de2e24c61d41f9d4376205fdbdc2dd3e28abce16b62e73417fd3f",
+          "logical_path": "knowledge/transcripts/2026/2026-06-03_大藤前20意外录取背后逻辑.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-06-03_大藤前20意外录取背后逻辑.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "大藤前20意外录取背后逻辑",
+      "transcript_validation": {
+        "changed_sentence_count": 742,
+        "duration_seconds": 10665.25,
+        "sentence_count": 1577,
+        "srt_cue_count": 1577,
+        "text_line_count": 1577
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "12123bf71c82780d6a30041ba2639b98102384f521384a2099f1754dade62438",
+      "lecture_date": "2026-06-08",
+      "lecture_id": "lecture_20260608_a5e60ab05d74",
+      "source_key": "2026-06-08_交叉学科在美本申请中的利弊",
+      "sources": [
+        {
+          "bytes": 6889,
+          "content_sha256": "7932be48ddf5d8ac359c54a3796fdd95527f1f6713f6a4693e6f310637a2781c",
+          "logical_path": "knowledge/analysis/2026-06-08_交叉学科在美本申请中的利弊.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-06-08_交叉学科在美本申请中的利弊.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3418879,
+          "content_sha256": "83c4c84f12480245250c132f0b08e0d42220126a25bdbe371995dce5afa6b654",
+          "logical_path": "knowledge/transcripts/2026/2026-06-08_交叉学科在美本申请中的利弊.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-08_交叉学科在美本申请中的利弊.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2223,
+          "content_sha256": "edf63a40827fcb710ba8f53d46f6d47f210d0430f323a8fe27b234bea6737d0f",
+          "logical_path": "knowledge/transcripts/2026/2026-06-08_交叉学科在美本申请中的利弊.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-08_交叉学科在美本申请中的利弊.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 157570,
+          "content_sha256": "7da1bf2c663cd21656d7f1718d3ebf2b3778c943c73c7007ee6989d7f9042eb3",
+          "logical_path": "knowledge/transcripts/2026/2026-06-08_交叉学科在美本申请中的利弊.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-06-08_交叉学科在美本申请中的利弊.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 148644,
+          "content_sha256": "10f195032d0f0c667556d3d295fb2ac6af86a75175c08e3bd69e2e5cc23d31c3",
+          "logical_path": "knowledge/transcripts/2026/2026-06-08_交叉学科在美本申请中的利弊.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-06-08_交叉学科在美本申请中的利弊.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "交叉学科在美本申请中的利弊",
+      "transcript_validation": {
+        "changed_sentence_count": 638,
+        "duration_seconds": 8172.76,
+        "sentence_count": 1115,
+        "srt_cue_count": 1115,
+        "text_line_count": 1115
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "942cb90487f4150e626d74ba9af4460c5db3adbb55a7307d38348bbd154a86e4",
+      "lecture_date": "2026-06-15",
+      "lecture_id": "lecture_20260615_ef79b2994b91",
+      "source_key": "2026-06-15_Agent时代普娃也有好出路",
+      "sources": [
+        {
+          "bytes": 6295,
+          "content_sha256": "4f8aac3347c031a3af7712d5ed34b6aff3e3682248defb794220d7f2c9f2ebc1",
+          "logical_path": "knowledge/analysis/2026-06-15_Agent时代普娃也有好出路.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-06-15_Agent时代普娃也有好出路.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3792529,
+          "content_sha256": "2f17c26e36d8c3b824f8defa33cee27855eafc552199b999fd97be652d782b41",
+          "logical_path": "knowledge/transcripts/2026/2026-06-15_Agent时代普娃也有好出路.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-15_Agent时代普娃也有好出路.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 2055,
+          "content_sha256": "0d3fa677288ac7b7f10ca19a7f30219ef753bac9fd30a0d8746298f100bfd994",
+          "logical_path": "knowledge/transcripts/2026/2026-06-15_Agent时代普娃也有好出路.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-15_Agent时代普娃也有好出路.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 180339,
+          "content_sha256": "e3a7033f5077ebeaedcd395350c3ae0ba1f42c49db468d97b110bae87c5f3490",
+          "logical_path": "knowledge/transcripts/2026/2026-06-15_Agent时代普娃也有好出路.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-06-15_Agent时代普娃也有好出路.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 169172,
+          "content_sha256": "8a83a32d3c527988c01d191ccf0e14354b114a8626014c1049444584fbb023e5",
+          "logical_path": "knowledge/transcripts/2026/2026-06-15_Agent时代普娃也有好出路.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-06-15_Agent时代普娃也有好出路.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "Agent时代普娃也有好出路",
+      "transcript_validation": {
+        "changed_sentence_count": 574,
+        "duration_seconds": 8055.38,
+        "sentence_count": 1364,
+        "srt_cue_count": 1364,
+        "text_line_count": 1364
+      }
+    },
+    {
+      "analysis_sections": {
+        "actions": "8. 醋溜科技行动建议",
+        "ai_cross_disciplinary": "5. AI+与跨学科",
+        "basics": "1. 基础信息",
+        "cases": "4. 案例卡片",
+        "evidence": "9. 证据边界",
+        "failures": "6. 失败与避坑",
+        "quotes": "7. 关键原话",
+        "summary": "2. 约300字摘要",
+        "trends": "3. 趋势清单"
+      },
+      "bundle_hash": "4d2aa36a2acb3eef7be08782011d7e8e9935d25e46a8645580479582ce13650f",
+      "lecture_date": "2026-06-29",
+      "lecture_id": "lecture_20260629_abdb96cc1922",
+      "source_key": "2026-06-29_2027ISEF制胜关键策略",
+      "sources": [
+        {
+          "bytes": 8226,
+          "content_sha256": "029b86ba67a0a0e2c2be8b771080310ccfe3e507f37db605906a5ab94233effe",
+          "logical_path": "knowledge/analysis/2026-06-29_2027ISEF制胜关键策略.md",
+          "mime_type": "text/markdown",
+          "relative_path": "2026-06-29_2027ISEF制胜关键策略.md",
+          "role": "analysis_markdown",
+          "root_id": "analysis"
+        },
+        {
+          "bytes": 3937795,
+          "content_sha256": "8a134ed8fd43e65c9196972d7870d9a70c4f3ae5f73dd70238d0c84c9e0a03da",
+          "logical_path": "knowledge/transcripts/2026/2026-06-29_2027ISEF制胜关键策略.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-29_2027ISEF制胜关键策略.json",
+          "role": "transcript_json",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 1953,
+          "content_sha256": "5f58508c808baebfb0f1461c32b5970e8ff81202e8e2fee159fc7d65fd8d9f98",
+          "logical_path": "knowledge/transcripts/2026/2026-06-29_2027ISEF制胜关键策略.qa.json",
+          "mime_type": "application/json",
+          "relative_path": "2026-06-29_2027ISEF制胜关键策略.qa.json",
+          "role": "transcript_qa",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 184211,
+          "content_sha256": "e26228d8819637d17e1e72edbdb26c9ffcd30d34f8a6b3bef16e434d8ee943a8",
+          "logical_path": "knowledge/transcripts/2026/2026-06-29_2027ISEF制胜关键策略.srt",
+          "mime_type": "application/x-subrip",
+          "relative_path": "2026-06-29_2027ISEF制胜关键策略.srt",
+          "role": "transcript_srt",
+          "root_id": "transcripts_2026"
+        },
+        {
+          "bytes": 173503,
+          "content_sha256": "1562bb693b3778d2547762e3278d9eb7ad4c6c9c8e5e6ea8f30c41fd1326879c",
+          "logical_path": "knowledge/transcripts/2026/2026-06-29_2027ISEF制胜关键策略.txt",
+          "mime_type": "text/plain",
+          "relative_path": "2026-06-29_2027ISEF制胜关键策略.txt",
+          "role": "transcript_text",
+          "root_id": "transcripts_2026"
+        }
+      ],
+      "title": "2027 ISEF制胜关键策略",
+      "transcript_validation": {
+        "changed_sentence_count": 569,
+        "duration_seconds": 9071.07,
+        "sentence_count": 1313,
+        "srt_cue_count": 1313,
+        "text_line_count": 1313
+      }
+    }
+  ],
+  "manifest_version": "1.0.0",
+  "mapping_version": "1.0.0",
+  "source_policies": [
+    {
+      "allowed_index_targets": [
+        "lectures",
+        "cases"
+      ],
+      "database_document_type": "analysis_markdown",
+      "index_policy": "eligible",
+      "privacy_classification": "internal_anonymized_knowledge",
+      "role": "analysis_markdown"
+    },
+    {
+      "allowed_index_targets": [
+        "transcript_segments"
+      ],
+      "database_document_type": "transcript_json",
+      "index_policy": "privacy_review_required",
+      "privacy_classification": "restricted_source_evidence",
+      "role": "transcript_json"
+    },
+    {
+      "allowed_index_targets": [],
+      "database_document_type": "attachment",
+      "index_policy": "validation_only",
+      "privacy_classification": "restricted_source_metadata",
+      "role": "transcript_qa"
+    },
+    {
+      "allowed_index_targets": [],
+      "database_document_type": "transcript_srt",
+      "index_policy": "validation_only",
+      "privacy_classification": "restricted_source_evidence",
+      "role": "transcript_srt"
+    },
+    {
+      "allowed_index_targets": [],
+      "database_document_type": "attachment",
+      "index_policy": "validation_only",
+      "privacy_classification": "restricted_source_evidence",
+      "role": "transcript_text"
+    }
+  ],
+  "source_roots": [
+    {
+      "lecture_year": null,
+      "root_id": "analysis",
+      "source_roles": [
+        "analysis_markdown"
+      ]
+    },
+    {
+      "lecture_year": 2025,
+      "root_id": "transcripts_2025",
+      "source_roles": [
+        "transcript_json",
+        "transcript_qa",
+        "transcript_srt",
+        "transcript_text"
+      ]
+    },
+    {
+      "lecture_year": 2026,
+      "root_id": "transcripts_2026",
+      "source_roles": [
+        "transcript_json",
+        "transcript_qa",
+        "transcript_srt",
+        "transcript_text"
+      ]
+    }
+  ]
+}

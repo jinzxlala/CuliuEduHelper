@@ -6,9 +6,9 @@
 
 - 项目名称：醋溜教育智能助手（CuliuEduHelper）。
 - MVP 主架构：Node.js／TypeScript 单仓库、Next.js 全栈应用、独立 Node Worker、PostgreSQL、Redis／BullMQ、Meilisearch，以及可替换的模型适配层。
-- 当前已完成本地 Meilisearch 预备环境、工程脚手架与质量基线、阶段 0 数据基础设施与边界，以及阶段 1 的首个独立模块“搜索领域契约与服务层”。
-- 模型接口、搜索业务页面、正式数据导入器和完整用户流程尚未实现；不要把搜索服务基础层误报为阶段 1 或业务 MVP 已完成。
-- `data_origin/` 中的资料尚未导入搜索引擎；不要在没有明确任务和数据映射方案时直接批量写入索引。
+- 当前已完成本地 Meilisearch 预备环境、工程脚手架与质量基线、阶段 0 数据基础设施与边界，以及阶段 1 的“搜索领域契约与服务层”和“48 场知识来源清单与证据映射”。
+- 模型接口、搜索业务页面、正式数据导入器和完整用户流程尚未实现；不要把来源清单或搜索服务基础层误报为阶段 1 或业务 MVP 已完成。
+- `data_origin/` 中的资料尚未导入搜索引擎；下一模块必须读取已验证的 `knowledge/source-manifest.v1.json`，不得绕过来源哈希、角色映射和逐字稿隐私门禁直接批量写入索引。
 - MVP 的搜索优先采用关键词、筛选和证据定位。向量检索、混合检索、同义词和召回调优应等至少 50 条中文金标查询建立后再决定。
 
 ## 2. 已完成的本地 Meilisearch 环境
@@ -130,7 +130,7 @@ pnpm install --frozen-lockfile
 pnpm check
 ```
 
-`pnpm check` 依次执行格式检查、潜在密钥扫描、Lint、严格类型检查、迁移一致性、34 个单元测试、Web／Worker 生产构建，以及首页和 `/api/health` 的真实 HTTP 冒烟测试。上述流程已在本机环境和一次性官方 Node.js 22 Docker 容器中通过。开发机当前 Node.js 主版本不是 22 时会出现 engine 警告，正式兼容性以 Node.js 22／CI 验收为准。
+`pnpm check` 依次执行格式检查、潜在密钥扫描、Lint、严格类型检查、迁移一致性、47 个单元测试、Web／Worker 生产构建，以及首页和 `/api/health` 的真实 HTTP 冒烟测试。上述流程已在本机环境和一次性官方 Node.js 22.23.2 Docker 容器中通过。开发机当前 Node.js 主版本不是 22 时会出现 engine 警告，正式兼容性以 Node.js 22／CI 验收为准。
 
 `infra/.env` 中的 `DEEPSEEK_API_KEY` 已做存在、非空、格式与最小长度检查，但本模块未调用 DeepSeek；不得在日志、文档、测试夹具或回复中输出密钥值。后续模型模块仍须通过服务端适配器读取。
 
@@ -177,9 +177,41 @@ git diff --check
 - 仓库级 `pnpm check` 与 `pnpm test:integration` 已在 Windows 本机和 Node.js 22.23.2 Linux 一次性容器中通过；集成总计 5 项 PostgreSQL、1 项 Redis／BullMQ 和 6 项 Meilisearch 测试；
 - 测试结束后临时索引数为 0，三个正式索引文档数仍均为 0；`data_origin/` 未被读取或导入。
 
-本模块明确不包含正式 48 份来源映射、增量 Worker 导入、50 条金标查询、Web 搜索页面、同义词或向量检索。下一轮不得跳过来源清单与证据映射直接批量写索引。
+该服务层模块本身不包含正式来源映射或数据导入；来源映射现由下一节所述的独立模块提供。增量 Worker 导入、50 条金标查询、Web 搜索页面、同义词或向量检索仍未实现。
 
-## 10. 破坏性操作与工作区保护
+## 10. 阶段 1 知识来源清单与证据映射
+
+截至 2026-08-01，阶段 1 的第二个独立模块已完成并验证：
+
+- `packages/knowledge-ingest` 提供 Node.js／TypeScript 的只读清单生成器、严格 Zod Schema、来源解析器、哈希复验和 CLI；根命令为 `pnpm knowledge:manifest:build`；
+- `knowledge/source-manifest.v1.json` 确定性记录 48 场讲座、每场 5 个来源角色，共 240 个文件；当前语料库哈希为 `6e0e05d877bce46f09d17f5e1d00d16a96c08a916125646bb45f4394cbbb7008`；
+- 48 份分析 Markdown 与外部 48 组 `.json`、`.qa.json`、`.srt`、`.txt` 文件名完全对应，无缺项、额外日期组或重复角色；`_整理汇总.json` 被显式标记为非一手聚合文件并排除；
+- 每个分析稿必须具备基础信息、摘要、趋势、案例、AI+、失败、关键原话、行动建议和证据边界九类语义章节；
+- 逐字稿 JSON、SRT 和带时间戳 TXT 的 68,133 个片段已逐条验证数量、正文和起止时间一致；QA JSON 的句子数与 30,821 个实际文本变更统计也已核对；
+- 清单只包含逻辑相对路径、原始字节 SHA-256、大小、标题、章节名和统计，不包含正文、外部物理根路径或源 JSON 内嵌的绝对路径；绝对路径泄漏检查为 0；
+- 分析稿可映射到 `lectures`／`cases`；逐字稿 JSON 属于受限证据，只有通过独立隐私复核和匿名化门禁后才可映射到 `transcript_segments`；SRT、TXT 和 QA JSON 只用于校验，不得直接进入索引；
+- `docs/adr/0003-knowledge-source-inventory.md` 记录决策，`knowledge/README.md` 记录重建和验证命令；
+- 新包 13 项测试全部通过，覆盖确定性、缺项／多项、UTF-8 与 Schema、章节、时间／文本／QA 一致性、哈希篡改、绝对路径防泄漏和已提交清单完整性；
+- 仓库级 `pnpm check` 以及 5 项 PostgreSQL、1 项 Redis／BullMQ、6 项 Meilisearch 集成测试均在 Windows 本机和 Node.js 22.23.2 Linux 一次性容器中通过；三个服务当前均为 `healthy`；
+- 测试后 Meilisearch 临时索引数为 0，`lectures`、`cases`、`transcript_segments` 文档数仍均为 0；本模块没有写 PostgreSQL、Redis、Meilisearch 或对象存储，也没有修改来源文件；
+- `infra/.env` 继续被 Git 忽略；`DEEPSEEK_API_KEY` 只确认存在、非占位且格式长度合理，未读取或输出密钥值，本模块没有调用 DeepSeek。
+
+重新生成真实清单时，先构建包，再给出两个本机逐字稿根目录：
+
+```powershell
+pnpm --filter @culiu/knowledge-ingest build
+$transcript2025 = '<2025逐字稿目录>'
+$transcript2026 = '<2026逐字稿目录>'
+pnpm knowledge:manifest:build `
+  --analysis-root '.\data_origin' `
+  --transcript-root "2025=$transcript2025" `
+  --transcript-root "2026=$transcript2026" `
+  --output '.\knowledge\source-manifest.v1.json'
+```
+
+本模块明确不包含来源正文解析成搜索文档、PostgreSQL 来源记录、增量 Worker 导入、逐字稿隐私批准、50 条金标查询或 Web 页面。清单存在不等于逐字稿已获准索引。
+
+## 11. 破坏性操作与工作区保护
 
 以下命令会永久删除本地 PostgreSQL、Redis 和 Meilisearch 的全部命名卷，只有在用户明确要求重置全部本地数据时才能执行：
 
@@ -195,14 +227,15 @@ docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml down
 
 当前工作区可能包含用户已有的删除和未跟踪文件。不要擅自恢复、覆盖、移动、删除、暂存或提交与当前任务无关的内容。尤其不要假设所有 `git status` 变化都由当前 Agent 产生。
 
-## 11. 下一阶段建议边界
+## 12. 下一阶段建议边界
 
-阶段 0 与阶段 1 的搜索契约／服务层已完成。下一个独立模块继续 `dev_plan.md` 阶段 1，合理顺序是：
+阶段 0 与阶段 1 的搜索契约、服务层和来源清单已完成。下一个独立模块继续 `dev_plan.md` 阶段 1，合理顺序是：
 
-1. 明确 `data_origin/` 到 `lectures`、`cases`、`transcript_segments` 的只读来源清单与证据映射；
-2. 编写可重复、可审计、相同哈希零业务变更的 Worker 导入器；
-3. 建立至少 50 条中文搜索金标查询；
-4. 评估 Meilisearch 中文召回、筛选和证据时间戳跳转；
-5. 只有评测证明关键词检索不足时，再讨论同义词、向量或混合检索。
+1. 以 `knowledge/source-manifest.v1.json` 为唯一批次入口，编写可重复、可审计、相同哈希零业务变更的 Worker 导入器；
+2. 将分析稿保守解析为 `lectures`／`cases`，把来源关系、导入批次、失败原因和重试状态写入 PostgreSQL；
+3. 在逐字稿隐私复核机制完成前，不生成或发布 `transcript_segments`；
+4. 建立至少 50 条中文搜索金标查询；
+5. 评估 Meilisearch 中文召回、筛选和证据时间戳跳转；
+6. 只有评测证明关键词检索不足时，再讨论同义词、向量或混合检索。
 
 不要在这一阶段提前引入 Skill Registry、Multi-Agent 运行时、AnythingLLM、向量数据库或真实学生数据。

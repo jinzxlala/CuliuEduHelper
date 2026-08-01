@@ -4,4 +4,5 @@ data_origin/
 docs/
 infra/.env
 infra/*.ps1
+knowledge/source-manifest.v1.json
 pnpm-lock.yaml

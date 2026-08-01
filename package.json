@@ -16,6 +16,7 @@
     "dev": "turbo run dev --parallel",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "knowledge:manifest:build": "node packages/knowledge-ingest/dist/cli/build-manifest.js",
     "lint": "pnpm lint:root && turbo run lint",
     "lint:root": "eslint eslint.config.mjs scripts/*.mjs",
     "migration:check": "pnpm --filter @culiu/database db:check",
