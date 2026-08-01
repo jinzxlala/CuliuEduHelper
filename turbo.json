@@ -23,11 +23,17 @@
       "passThroughEnv": [
         "DATABASE_POOL_MAX",
         "DATABASE_URL",
+        "KNOWLEDGE_ANALYSIS_ROOT",
+        "KNOWLEDGE_MANIFEST_PATH",
+        "KNOWLEDGE_TRANSCRIPT_2025_ROOT",
+        "KNOWLEDGE_TRANSCRIPT_2026_ROOT",
+        "LOCAL_STORAGE_ROOT",
         "MEILI_ADMIN_API_KEY",
         "MEILI_HOST",
         "MEILI_MASTER_KEY",
         "MEILI_SEARCH_API_KEY",
-        "REDIS_URL"
+        "REDIS_URL",
+        "WORKER_CONCURRENCY"
       ],
       "outputs": []
     },

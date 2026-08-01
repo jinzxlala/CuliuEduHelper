@@ -7,13 +7,15 @@ export const AuthorizationSnapshotReferenceSchema = z.object({
   contextHash: z.string().regex(/^[0-9a-f]{64}$/u),
 });
 
+const TaskIdempotencyKeySchema = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[A-Za-z0-9_-]+$/u);
+
 export const SystemProbeTaskSchema = z.object({
   authorization: AuthorizationSnapshotReferenceSchema,
-  idempotencyKey: z
-    .string()
-    .min(1)
-    .max(128)
-    .regex(/^[A-Za-z0-9_-]+$/u),
+  idempotencyKey: TaskIdempotencyKeySchema,
   payload: z.object({
     correlationId: z.uuid(),
   }),
@@ -21,6 +23,36 @@ export const SystemProbeTaskSchema = z.object({
   taskName: z.literal("system.probe"),
 });
 
-export const TaskEnvelopeSchema = z.discriminatedUnion("taskName", [SystemProbeTaskSchema]);
+export const KnowledgeImportTaskSchema = z.object({
+  authorization: AuthorizationSnapshotReferenceSchema,
+  idempotencyKey: TaskIdempotencyKeySchema,
+  payload: z
+    .object({
+      correlationId: z.uuid(),
+      corpusHash: z.string().regex(/^[0-9a-f]{64}$/u),
+      corpusId: z
+        .string()
+        .regex(/^[a-z][a-z0-9_]*$/u)
+        .max(128),
+      manifestVersion: z
+        .string()
+        .regex(/^\d+\.\d+\.\d+$/u)
+        .max(32),
+      mappingVersion: z
+        .string()
+        .regex(/^\d+\.\d+\.\d+$/u)
+        .max(32),
+      sourceProfile: z.literal("eduknow-local-v1"),
+    })
+    .strict(),
+  taskId: z.uuid(),
+  taskName: z.literal("knowledge.import"),
+});
+
+export const TaskEnvelopeSchema = z.discriminatedUnion("taskName", [
+  SystemProbeTaskSchema,
+  KnowledgeImportTaskSchema,
+]);
 export type TaskEnvelope = z.infer<typeof TaskEnvelopeSchema>;
 export type TaskName = TaskEnvelope["taskName"];
+export type KnowledgeImportTask = z.infer<typeof KnowledgeImportTaskSchema>;

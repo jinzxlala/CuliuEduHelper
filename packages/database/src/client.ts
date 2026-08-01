@@ -1,10 +1,11 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Pool, type PoolClient } from "pg";
 
 import type { DatabaseConfig } from "./config.js";
 import * as schema from "./schema.js";
 
 export type Database = NodePgDatabase<typeof schema>;
+export type DatabaseConnection = PoolClient;
 
 export interface DatabaseClient {
   close: () => Promise<void>;

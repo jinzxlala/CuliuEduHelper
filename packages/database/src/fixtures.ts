@@ -17,6 +17,8 @@ export const REDACTED_FIXTURE_IDS = {
   authorizationContext: "00000000-0000-4000-8000-000000000004",
   evidenceLocator: "00000000-0000-4000-8000-000000000007",
   evidenceObject: "00000000-0000-4000-8000-000000000006",
+  knowledgeAuthorizationContext: "00000000-0000-4000-8000-000000000010",
+  knowledgeServiceUser: "00000000-0000-4000-8000-000000000009",
   sourceDocument: "00000000-0000-4000-8000-000000000005",
   student: "00000000-0000-4000-8000-000000000002",
   studentFact: "00000000-0000-4000-8000-000000000008",
@@ -33,6 +35,28 @@ export async function seedRedactedFixtures(database: Database): Promise<void> {
         email: "advisor@example.invalid",
         id: REDACTED_FIXTURE_IDS.advisorUser,
         role: "advisor",
+      })
+      .onConflictDoNothing();
+
+    await transaction
+      .insert(appUsers)
+      .values({
+        displayName: "Synthetic Knowledge Importer",
+        email: "knowledge-importer@example.invalid",
+        id: REDACTED_FIXTURE_IDS.knowledgeServiceUser,
+        role: "service",
+      })
+      .onConflictDoNothing();
+
+    await transaction
+      .insert(authorizationContextSnapshots)
+      .values({
+        actorUserId: REDACTED_FIXTURE_IDS.knowledgeServiceUser,
+        allowedActions: ["knowledge.import"],
+        contextHash: "d".repeat(64),
+        expiresAt: new Date("2099-01-01T00:00:00.000Z"),
+        id: REDACTED_FIXTURE_IDS.knowledgeAuthorizationContext,
+        maxAccessLevel: "restricted",
       })
       .onConflictDoNothing();
 

@@ -1,7 +1,7 @@
 {
   "boundary_rules": {
     "manifest_contains_body_content": false,
-    "manifest_purpose": "inventory_only_no_import",
+    "manifest_purpose": "verified_inventory_import_entrypoint",
     "raw_embedded_paths_are_excluded": true,
     "source_files_read_only": true,
     "student_data_allowed": false

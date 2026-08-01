@@ -1,0 +1,1 @@
+DROP INDEX "knowledge_import_source_batch_document_unique";

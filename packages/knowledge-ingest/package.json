@@ -17,13 +17,18 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint .",
+    "knowledge:validate": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/validate-import-input.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@culiu/database": "workspace:*",
+    "@culiu/search": "workspace:*",
+    "@culiu/storage": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "tsx": "4.23.1",
     "vitest": "4.1.10"
   }
 }

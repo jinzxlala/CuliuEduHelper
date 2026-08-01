@@ -1,4 +1,7 @@
-import { buildWorkerHealth } from "./health.js";
+import { runWorker } from "./runtime.js";
 
-const status = buildWorkerHealth();
-process.stdout.write(`${JSON.stringify(status)}\n`);
+void runWorker().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : "Worker startup failed.";
+  process.stderr.write(`${message}\n`);
+  process.exitCode = 1;
+});

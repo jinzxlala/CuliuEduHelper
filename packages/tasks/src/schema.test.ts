@@ -29,4 +29,28 @@ describe("TaskEnvelopeSchema", () => {
       TaskEnvelopeSchema.parse({ ...validTask, idempotencyKey: "student:unsafe:key" }),
     ).toThrow();
   });
+
+  it("accepts only the fixed server-side knowledge source profile", () => {
+    const importTask = {
+      ...validTask,
+      idempotencyKey: "knowledge_import_001",
+      payload: {
+        correlationId: validTask.payload.correlationId,
+        corpusHash: "b".repeat(64),
+        corpusId: "eduknow_knowledge_sources_v1",
+        manifestVersion: "1.0.0",
+        mappingVersion: "1.0.0",
+        sourceProfile: "eduknow-local-v1",
+      },
+      taskName: "knowledge.import",
+    } as const;
+
+    expect(TaskEnvelopeSchema.parse(importTask)).toEqual(importTask);
+    expect(() =>
+      TaskEnvelopeSchema.parse({
+        ...importTask,
+        payload: { ...importTask.payload, sourceProfile: "user-controlled-path" },
+      }),
+    ).toThrow();
+  });
 });

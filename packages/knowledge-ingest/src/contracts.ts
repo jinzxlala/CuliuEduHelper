@@ -177,7 +177,7 @@ export const KnowledgeSourceManifestSchema = z
     boundary_rules: z
       .object({
         manifest_contains_body_content: z.literal(false),
-        manifest_purpose: z.literal("inventory_only_no_import"),
+        manifest_purpose: z.literal("verified_inventory_import_entrypoint"),
         raw_embedded_paths_are_excluded: z.literal(true),
         source_files_read_only: z.literal(true),
         student_data_allowed: z.literal(false),

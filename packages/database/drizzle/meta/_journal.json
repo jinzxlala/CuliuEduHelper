@@ -8,6 +8,34 @@
       "when": 1785587633914,
       "tag": "0000_loose_hellfire_club",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785596965310,
+      "tag": "0001_open_bug",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785600129434,
+      "tag": "0002_calm_gwen_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785602578305,
+      "tag": "0003_curly_the_hood",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785603977739,
+      "tag": "0004_confused_tinkerer",
+      "breakpoints": true
     }
   ]
 }

@@ -7,14 +7,24 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "tsx watch src/index.ts",
+    "dev": "node --env-file-if-exists=../../infra/.env --import tsx --watch src/index.ts",
+    "knowledge:enqueue": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/enqueue-knowledge-import.ts",
+    "knowledge:status": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/knowledge-import-status.ts",
+    "knowledge:smoke": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/knowledge-import-smoke.ts",
     "lint": "eslint .",
-    "start": "node dist/index.js",
+    "start": "node --env-file-if-exists=../../infra/.env dist/index.js",
     "test": "vitest run",
+    "test:integration": "node --env-file-if-exists=../../infra/.env node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@culiu/shared": "workspace:*"
+    "@culiu/database": "workspace:*",
+    "@culiu/knowledge-ingest": "workspace:*",
+    "@culiu/search": "workspace:*",
+    "@culiu/shared": "workspace:*",
+    "@culiu/storage": "workspace:*",
+    "@culiu/tasks": "workspace:*",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "tsx": "4.23.1",

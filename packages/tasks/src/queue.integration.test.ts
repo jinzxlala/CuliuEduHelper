@@ -27,6 +27,7 @@ describe("BullMQ foundation", () => {
     const worker = createTaskWorker({
       connection: workerConnection,
       handlers: {
+        "knowledge.import": () => Promise.resolve({ status: "not-used" }),
         "system.probe": () => {
           processed += 1;
           resolveCompletion?.();
