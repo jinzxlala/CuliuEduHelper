@@ -123,6 +123,25 @@ export const informationNatureEnum = pgEnum("information_nature", [
   "advisor_judgment",
 ]);
 export const confidenceLevelEnum = pgEnum("confidence_level", ["high", "medium", "low", "unknown"]);
+export const courseCatalogStatusEnum = pgEnum("course_catalog_status", [
+  "draft",
+  "approved",
+  "archived",
+]);
+export const courseDifficultyEnum = pgEnum("course_difficulty", [
+  "foundation",
+  "intermediate",
+  "advanced",
+]);
+export const courseDeliveryModeEnum = pgEnum("course_delivery_mode", ["scheduled", "self_paced"]);
+export const courseRuleTypeEnum = pgEnum("course_rule_type", [
+  "prerequisite",
+  "mutual_exclusion",
+  "age_range",
+  "time_conflict",
+  "load_limit",
+]);
+export const courseRuleSeverityEnum = pgEnum("course_rule_severity", ["hard", "warning"]);
 
 export const appUsers = pgTable(
   "app_user",
@@ -670,6 +689,201 @@ export const claimEvidence = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.profileClaimId, table.evidenceLocatorId] })],
+);
+
+export const courses = pgTable(
+  "course",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: varchar("code", { length: 64 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_code_unique").on(sql`lower(${table.code})`),
+    check("course_code_check", sql`${table.code} ~ '^[A-Z][A-Z0-9_-]{1,63}$'`),
+  ],
+);
+
+export const courseVersions = pgTable(
+  "course_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    courseId: uuid("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    sourceCourseVersionId: uuid("source_course_version_id").references(
+      (): AnyPgColumn => courseVersions.id,
+      { onDelete: "restrict" },
+    ),
+    status: courseCatalogStatusEnum("status").notNull().default("draft"),
+    title: varchar("title", { length: 200 }).notNull(),
+    stage: varchar("stage", { length: 128 }).notNull(),
+    difficulty: courseDifficultyEnum("difficulty").notNull(),
+    summary: text("summary").notNull(),
+    objectives: jsonb("objectives").$type<string[]>().notNull(),
+    capabilityTags: jsonb("capability_tags").$type<string[]>().notNull(),
+    subjectTags: jsonb("subject_tags").$type<string[]>().notNull(),
+    projectTypes: jsonb("project_types").$type<string[]>().notNull(),
+    deliverables: jsonb("deliverables").$type<string[]>().notNull(),
+    notSuitableConditions: jsonb("not_suitable_conditions").$type<string[]>().notNull(),
+    deliveryMode: courseDeliveryModeEnum("delivery_mode").notNull(),
+    termStartDate: date("term_start_date"),
+    termEndDate: date("term_end_date"),
+    durationWeeks: integer("duration_weeks").notNull(),
+    totalInstructionMinutes: integer("total_instruction_minutes").notNull(),
+    weeklyLoadMinutes: integer("weekly_load_minutes").notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    invalidationReason: varchar("invalidation_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_version_course_version_unique").on(table.courseId, table.version),
+    uniqueIndex("course_version_source_unique")
+      .on(table.sourceCourseVersionId)
+      .where(sql`${table.sourceCourseVersionId} is not null`),
+    uniqueIndex("course_version_current_approved_unique")
+      .on(table.courseId)
+      .where(sql`${table.status} = 'approved'`),
+    index("course_version_status_created_idx").on(table.status, table.createdAt),
+    check("course_version_version_check", sql`${table.version} > 0`),
+    check(
+      "course_version_text_check",
+      sql`char_length(trim(${table.title})) between 1 and 200 and char_length(trim(${table.stage})) between 1 and 128 and char_length(trim(${table.summary})) between 1 and 4000`,
+    ),
+    check(
+      "course_version_json_arrays_check",
+      sql`jsonb_typeof(${table.objectives}) = 'array' and jsonb_array_length(${table.objectives}) between 1 and 30 and jsonb_typeof(${table.capabilityTags}) = 'array' and jsonb_array_length(${table.capabilityTags}) between 1 and 50 and jsonb_typeof(${table.subjectTags}) = 'array' and jsonb_array_length(${table.subjectTags}) between 1 and 30 and jsonb_typeof(${table.projectTypes}) = 'array' and jsonb_array_length(${table.projectTypes}) <= 30 and jsonb_typeof(${table.deliverables}) = 'array' and jsonb_array_length(${table.deliverables}) between 1 and 30 and jsonb_typeof(${table.notSuitableConditions}) = 'array' and jsonb_array_length(${table.notSuitableConditions}) <= 30`,
+    ),
+    check(
+      "course_version_effort_check",
+      sql`${table.durationWeeks} between 1 and 104 and ${table.totalInstructionMinutes} between 1 and 100000 and ${table.weeklyLoadMinutes} between 1 and 10080`,
+    ),
+    check(
+      "course_version_term_check",
+      sql`(${table.deliveryMode} = 'scheduled' and ${table.termStartDate} is not null and ${table.termEndDate} is not null and ${table.termEndDate} >= ${table.termStartDate}) or (${table.deliveryMode} = 'self_paced' and ((${table.termStartDate} is null and ${table.termEndDate} is null) or (${table.termStartDate} is not null and ${table.termEndDate} is not null and ${table.termEndDate} >= ${table.termStartDate})))`,
+    ),
+    check(
+      "course_version_state_check",
+      sql`(${table.status} = 'draft' and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} = 'archived' and ((${table.approvedByUserId} is null and ${table.approvedAt} is null) or (${table.approvedByUserId} is not null and ${table.approvedAt} is not null)) and char_length(trim(${table.invalidationReason})) > 0)`,
+    ),
+  ],
+);
+
+export const courseScheduleSessions = pgTable(
+  "course_schedule_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    courseVersionId: uuid("course_version_id")
+      .notNull()
+      .references(() => courseVersions.id, { onDelete: "restrict" }),
+    weekday: integer("weekday").notNull(),
+    startMinute: integer("start_minute").notNull(),
+    endMinute: integer("end_minute").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_schedule_session_unique").on(
+      table.courseVersionId,
+      table.weekday,
+      table.startMinute,
+      table.endMinute,
+    ),
+    index("course_schedule_version_idx").on(table.courseVersionId),
+    check("course_schedule_weekday_check", sql`${table.weekday} between 1 and 7`),
+    check(
+      "course_schedule_minute_check",
+      sql`${table.startMinute} between 0 and 1439 and ${table.endMinute} between 1 and 1440 and ${table.endMinute} > ${table.startMinute}`,
+    ),
+  ],
+);
+
+export const courseRules = pgTable(
+  "course_rule",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: varchar("key", { length: 128 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_rule_key_unique").on(sql`lower(${table.key})`),
+    check("course_rule_key_check", sql`${table.key} ~ '^[a-z][a-z0-9_.-]{2,127}$'`),
+  ],
+);
+
+export const courseRuleVersions = pgTable(
+  "course_rule_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ruleId: uuid("rule_id")
+      .notNull()
+      .references(() => courseRules.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    sourceRuleVersionId: uuid("source_rule_version_id").references(
+      (): AnyPgColumn => courseRuleVersions.id,
+      { onDelete: "restrict" },
+    ),
+    status: courseCatalogStatusEnum("status").notNull().default("draft"),
+    ruleType: courseRuleTypeEnum("rule_type").notNull(),
+    severity: courseRuleSeverityEnum("severity").notNull(),
+    subjectCourseId: uuid("subject_course_id").references(() => courses.id, {
+      onDelete: "restrict",
+    }),
+    relatedCourseId: uuid("related_course_id").references(() => courses.id, {
+      onDelete: "restrict",
+    }),
+    minAge: integer("min_age"),
+    maxAge: integer("max_age"),
+    maxWeeklyMinutes: integer("max_weekly_minutes"),
+    maxConcurrentCourses: integer("max_concurrent_courses"),
+    message: varchar("message", { length: 500 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    invalidationReason: varchar("invalidation_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_rule_version_rule_version_unique").on(table.ruleId, table.version),
+    uniqueIndex("course_rule_version_source_unique")
+      .on(table.sourceRuleVersionId)
+      .where(sql`${table.sourceRuleVersionId} is not null`),
+    uniqueIndex("course_rule_version_current_approved_unique")
+      .on(table.ruleId)
+      .where(sql`${table.status} = 'approved'`),
+    index("course_rule_version_type_status_idx").on(table.ruleType, table.status),
+    check("course_rule_version_number_check", sql`${table.version} > 0`),
+    check(
+      "course_rule_version_message_check",
+      sql`char_length(trim(${table.message})) between 1 and 500`,
+    ),
+    check(
+      "course_rule_version_payload_check",
+      sql`(${table.ruleType} = 'prerequisite' and ${table.subjectCourseId} is not null and ${table.relatedCourseId} is not null and ${table.subjectCourseId} <> ${table.relatedCourseId} and ${table.minAge} is null and ${table.maxAge} is null and ${table.maxWeeklyMinutes} is null and ${table.maxConcurrentCourses} is null) or (${table.ruleType} = 'mutual_exclusion' and ${table.subjectCourseId} is not null and ${table.relatedCourseId} is not null and ${table.subjectCourseId}::text < ${table.relatedCourseId}::text and ${table.minAge} is null and ${table.maxAge} is null and ${table.maxWeeklyMinutes} is null and ${table.maxConcurrentCourses} is null) or (${table.ruleType} = 'age_range' and ${table.subjectCourseId} is not null and ${table.relatedCourseId} is null and (${table.minAge} is not null or ${table.maxAge} is not null) and (${table.minAge} is null or ${table.minAge} between 3 and 100) and (${table.maxAge} is null or ${table.maxAge} between 3 and 100) and (${table.minAge} is null or ${table.maxAge} is null or ${table.maxAge} >= ${table.minAge}) and ${table.maxWeeklyMinutes} is null and ${table.maxConcurrentCourses} is null) or (${table.ruleType} = 'time_conflict' and ${table.subjectCourseId} is null and ${table.relatedCourseId} is null and ${table.minAge} is null and ${table.maxAge} is null and ${table.maxWeeklyMinutes} is null and ${table.maxConcurrentCourses} is null) or (${table.ruleType} = 'load_limit' and ${table.subjectCourseId} is null and ${table.relatedCourseId} is null and ${table.minAge} is null and ${table.maxAge} is null and (${table.maxWeeklyMinutes} is not null or ${table.maxConcurrentCourses} is not null) and (${table.maxWeeklyMinutes} is null or ${table.maxWeeklyMinutes} between 1 and 10080) and (${table.maxConcurrentCourses} is null or ${table.maxConcurrentCourses} between 1 and 50))`,
+    ),
+    check(
+      "course_rule_version_state_check",
+      sql`(${table.status} = 'draft' and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} = 'archived' and ((${table.approvedByUserId} is null and ${table.approvedAt} is null) or (${table.approvedByUserId} is not null and ${table.approvedAt} is not null)) and char_length(trim(${table.invalidationReason})) > 0)`,
+    ),
+  ],
 );
 
 export const knowledgeImportBatches = pgTable(

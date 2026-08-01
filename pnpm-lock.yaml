@@ -164,6 +164,25 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@22.20.1)(vite@8.2.0(@types/node@22.20.1)(esbuild@0.28.1)(tsx@4.23.1))
 
+  packages/course-planning:
+    dependencies:
+      '@culiu/authorization':
+        specifier: workspace:*
+        version: link:../authorization
+      '@culiu/database':
+        specifier: workspace:*
+        version: link:../database
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.20.3)(pg@8.22.0)
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@22.20.1)(vite@8.2.0(@types/node@22.20.1)(esbuild@0.28.1)(tsx@4.23.1))
+
   packages/database:
     dependencies:
       drizzle-orm:

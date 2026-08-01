@@ -239,3 +239,25 @@ docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml down -v
 ```
 
 执行后可重新运行初始化脚本，恢复三个空索引。当前 Meilisearch 索引设计为可由正式数据库和原始文件重建，不应作为唯一事实来源。
+
+## 课程目录与确定性规则
+
+`@culiu/course-planning` 提供服务端课程目录基础能力：
+
+- 创建课程稳定身份及不可变草稿版本；
+- 通过来源版本创建修订，批准或归档课程版本；
+- 创建、修订、批准或归档先修、互斥、年龄、时间冲突和负荷上限规则；
+- 读取当前已批准的课程与规则快照，并对指定课程组合执行确定性校验。
+
+课程与规则正式记录保存在 PostgreSQL。当前 MVP 约定只有有效的 `admin` 可以维护和批准目录，`advisor` 与 `auditor` 可以读取已批准快照；浏览器端不得直接写数据库。模型不能覆盖硬规则，规则失败时也不需要调用模型。
+
+本仓库目前没有获批的真实课程目录，自动化测试只在随机临时数据库中使用明确标注的虚构课程，并在测试结束后删除。学生规划、替代方案、例外批准和 Markdown 导出尚未包含在本模块中。
+
+模块验证命令：
+
+```powershell
+pnpm --filter @culiu/course-planning test
+pnpm --filter @culiu/course-planning test:integration
+```
+
+集成测试要求本地 PostgreSQL 在线，会自动创建随机临时数据库、应用全部迁移并在结束后删除；不会向本地开发库写入虚构课程。
