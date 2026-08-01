@@ -91,6 +91,8 @@ function Write-EnvValues {
         "POSTGRES_PASSWORD",
         "DATABASE_URL",
         "DATABASE_POOL_MAX",
+        "NEXTAUTH_SECRET",
+        "NEXTAUTH_URL",
         "REDIS_PASSWORD",
         "REDIS_URL",
         "LOCAL_STORAGE_ROOT",
@@ -132,6 +134,12 @@ function Ensure-LocalEnv {
     }
     if (Test-MissingOrPlaceholder -Values $values -Key "DATABASE_POOL_MAX") {
         $values["DATABASE_POOL_MAX"] = "10"
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "NEXTAUTH_SECRET") {
+        $values["NEXTAUTH_SECRET"] = New-SecureToken
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "NEXTAUTH_URL") {
+        $values["NEXTAUTH_URL"] = "http://127.0.0.1:3000"
     }
     if (Test-MissingOrPlaceholder -Values $values -Key "REDIS_PASSWORD") {
         $values["REDIS_PASSWORD"] = New-SecureToken

@@ -12,12 +12,12 @@ export default function HomePage(): JSX.Element {
             先从可追溯的讲座报告与匿名案例中找到依据，再由顾问完成判断。搜索不依赖大模型，原始证据与业务结论保持分离。
           </p>
           <div className="home-actions">
-            <Link className="primary-button button-link" href="/search">
+            <Link className="primary-button button-link" href="/login">
+              内部账号登录
+            </Link>
+            <Link className="secondary-button button-link" href="/search">
               进入知识搜索
             </Link>
-            <a className="secondary-button button-link" href="/api/health">
-              检查 Web 状态
-            </a>
           </div>
         </div>
         <div className="home-visual" aria-hidden="true">

@@ -47,6 +47,11 @@ select {
   font: inherit;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 code {
   overflow-wrap: anywhere;
   color: #44544c;
@@ -106,6 +111,167 @@ code {
   align-items: center;
   justify-content: center;
   text-decoration: none;
+}
+
+.text-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--green);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: min(460px, 100%);
+  padding: clamp(1.8rem, 6vw, 3.5rem);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: 0 28px 80px rgb(30 44 37 / 10%);
+}
+
+.login-card h1,
+.student-hero h1 {
+  margin: 0;
+  font-family: Georgia, "Songti SC", "SimSun", serif;
+  font-size: clamp(2.1rem, 7vw, 3.6rem);
+  letter-spacing: -0.035em;
+}
+
+.login-card > p:not(.eyebrow, .login-boundary),
+.student-hero > p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.8rem;
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.45rem;
+  color: #405148;
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.login-form input {
+  min-height: 48px;
+  padding: 0 0.8rem;
+  border: 1px solid #bcc8c1;
+  border-radius: 9px;
+  background: white;
+}
+
+.login-form input:focus {
+  border-color: var(--green);
+  outline: 3px solid rgb(13 103 83 / 14%);
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.8rem;
+  border-radius: 8px;
+  background: #fff1eb;
+  color: #8a351f;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.login-boundary {
+  margin: 1.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.student-hero {
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.student-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding-top: 1.4rem;
+}
+
+.student-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.student-card h2 {
+  margin: 0.55rem 0 0;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 1rem;
+}
+
+.privacy-badge {
+  padding: 0.24rem 0.48rem;
+  border-radius: 999px;
+  background: var(--mint);
+  color: var(--green-dark);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.student-empty {
+  margin-top: 1.4rem;
+}
+
+.fact-list {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1rem 0 0;
+}
+
+.fact-list div {
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fafbf8;
+}
+
+.fact-list dt {
+  color: var(--green-dark);
+  font-weight: 800;
+}
+
+.fact-list dd {
+  margin: 0.45rem 0;
+  overflow-wrap: anywhere;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 0.84rem;
+}
+
+.fact-list small {
+  color: var(--muted);
 }
 
 .full-width {
@@ -712,7 +878,8 @@ mark {
   }
 
   .principle-grid,
-  .search-layout {
+  .search-layout,
+  .student-grid {
     grid-template-columns: 1fr;
   }
 
@@ -760,6 +927,10 @@ mark {
     align-items: flex-start;
     flex-direction: column;
     justify-content: center;
+  }
+
+  .account-actions {
+    flex-wrap: wrap;
   }
 
   .detail-card {

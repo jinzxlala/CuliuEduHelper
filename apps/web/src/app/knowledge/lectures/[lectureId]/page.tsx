@@ -7,6 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
+import { requireActiveSessionPrincipal } from "../../../../lib/auth-session";
 import { getKnowledgeSearchService } from "../../../../lib/knowledge-search";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ function DetailSection({
 export default async function LectureDetailPage({
   params,
 }: Readonly<{ params: Promise<{ lectureId: string }> }>): Promise<JSX.Element> {
+  await requireActiveSessionPrincipal();
   const { lectureId } = await params;
   if (!MeilisearchDocumentIdSchema.safeParse(lectureId).success) notFound();
 

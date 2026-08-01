@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
+import { requireActiveSessionPrincipal } from "../../../../lib/auth-session";
 import { getKnowledgeSearchService } from "../../../../lib/knowledge-search";
 import { formatTimestamp } from "../../../../lib/search-page-state";
 
@@ -26,6 +27,7 @@ function TextRow({ label, value }: Readonly<{ label: string; value: string }>): 
 export default async function CaseDetailPage({
   params,
 }: Readonly<{ params: Promise<{ caseId: string }> }>): Promise<JSX.Element> {
+  await requireActiveSessionPrincipal();
   const { caseId } = await params;
   if (!MeilisearchDocumentIdSchema.safeParse(caseId).success) notFound();
 

@@ -1,5 +1,5 @@
 {
-  "name": "@culiu/database",
+  "name": "@culiu/authorization",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,35 +9,26 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./runtime": {
-      "types": "./dist/runtime.d.ts",
-      "import": "./dist/runtime.js"
     }
   },
   "files": [
-    "dist",
-    "drizzle"
+    "dist"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "db:check": "drizzle-kit check",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/migrate.ts",
-    "db:seed": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/seed.ts",
+    "create-initial-admin": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/create-initial-admin.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "test:integration": "node --env-file-if-exists=../../infra/.env node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@culiu/database": "workspace:*",
+    "@node-rs/argon2": "2.0.2",
     "drizzle-orm": "0.45.2",
-    "pg": "8.22.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@types/pg": "8.20.3",
-    "drizzle-kit": "0.31.10",
     "tsx": "4.23.1",
     "vitest": "4.1.10"
   }

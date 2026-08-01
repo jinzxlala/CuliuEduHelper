@@ -23,6 +23,8 @@
       "passThroughEnv": [
         "DATABASE_POOL_MAX",
         "DATABASE_URL",
+        "NEXTAUTH_SECRET",
+        "NEXTAUTH_URL",
         "KNOWLEDGE_ANALYSIS_ROOT",
         "KNOWLEDGE_MANIFEST_PATH",
         "KNOWLEDGE_TRANSCRIPT_2025_ROOT",

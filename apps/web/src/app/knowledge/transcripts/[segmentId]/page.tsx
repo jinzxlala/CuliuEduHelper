@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
 
+import { requireActiveSessionPrincipal } from "../../../../lib/auth-session";
 import { getKnowledgeSearchService } from "../../../../lib/knowledge-search";
 import { formatTimestamp } from "../../../../lib/search-page-state";
 
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function TranscriptDetailPage({
   params,
 }: Readonly<{ params: Promise<{ segmentId: string }> }>): Promise<JSX.Element> {
+  await requireActiveSessionPrincipal();
   const { segmentId } = await params;
   if (!MeilisearchDocumentIdSchema.safeParse(segmentId).success) notFound();
 

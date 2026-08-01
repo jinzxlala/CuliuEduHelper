@@ -9,6 +9,8 @@ import Link from "next/link";
 import type { JSX } from "react";
 
 import { HighlightedText } from "../../components/highlighted-text";
+import { SignOutButton } from "../../components/sign-out-button";
+import { requireActiveSessionPrincipal } from "../../lib/auth-session";
 import { getKnowledgeSearchService } from "../../lib/knowledge-search";
 import { runKnowledgeSearch } from "../../lib/knowledge-search-runner";
 import {
@@ -363,6 +365,7 @@ function Pagination({
 export default async function SearchPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<RawSearchParams> }>): Promise<JSX.Element> {
+  const principal = await requireActiveSessionPrincipal();
   const state = parseSearchPageState(await searchParams);
   let result: Awaited<ReturnType<typeof runKnowledgeSearch>> | undefined;
   let unavailable = false;
@@ -379,7 +382,11 @@ export default async function SearchPage({
         <Link className="brand" href="/">
           醋溜教育智能助手
         </Link>
-        <span>内部知识库 · MVP</span>
+        <div className="account-actions">
+          <Link href="/students">已授权学生</Link>
+          <span>{principal.displayName}</span>
+          <SignOutButton />
+        </div>
       </header>
 
       <section className="search-hero">

@@ -11,6 +11,7 @@ apps/web       Next.js页面和业务API
 apps/worker    独立后台任务进程
 packages/shared 共享Schema与类型
 packages/database PostgreSQL Schema、迁移与脱敏fixtures
+packages/authorization 内部账号、Argon2id密码与学生级授权上下文
 packages/knowledge-ingest 知识源清单、校验、保守解析与幂等导入
 packages/search Meilisearch文档契约、查询、金标评测与原子重建
 packages/storage 本地不可变证据存储
@@ -54,6 +55,38 @@ pnpm test:integration
 ```
 
 本地不可变文件适配器按SHA-256寻址，将匿名知识与学生证据写入不同路径。`.local-data/`和`infra/.env`均不进入Git。浏览器端不得读取数据库、Redis或存储密钥。
+
+## 内部账号与学生级授权
+
+基础设施脚本会在`infra/.env`缺少配置时生成至少32字节的`NEXTAUTH_SECRET`，并保留已有值。本地`NEXTAUTH_URL`默认为`http://127.0.0.1:3000`；腾讯云部署必须改为实际HTTPS地址，以启用带`Secure`前缀的会话Cookie。Auth.js使用Credentials与最长8小时的JWT会话；Cookie固定为`HttpOnly`、`SameSite=Lax`，生产HTTPS环境同时启用`Secure`。
+
+首次正式使用前，通过一次性CLI创建第一个管理员。命令不接受密码参数，也没有默认密码；密码必须通过进程环境变量提供，至少14位并包含大小写字母、数字和符号。以下PowerShell流程避免将密码写入命令历史：
+
+```powershell
+$securePassword = Read-Host "首次管理员密码" -AsSecureString
+$passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
+try {
+  $env:CULIU_BOOTSTRAP_ADMIN_PASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
+  pnpm auth:admin:create -- --email admin@example.com --display-name "系统管理员"
+}
+finally {
+  Remove-Item Env:CULIU_BOOTSTRAP_ADMIN_PASSWORD -ErrorAction SilentlyContinue
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
+}
+```
+
+一旦数据库中存在任意可交互的密码账号，该命令会永久拒绝再次初始化；后续账号应由尚待开发的受审计用户管理流程创建。管理员身份不自动获得全部学生资料，所有账号都必须存在仍有效的显式学生授权。当前入口为：
+
+```text
+/login                 内部账号登录
+/students              只列出当前账号仍可读取的学生
+/students/<student-id> 经服务端授权上下文保护的学生档案
+/api/students/<id>     同样执行账号、学生、操作和数据等级校验的业务API
+```
+
+每次学生读取都会创建15分钟的最小作用域授权快照，并在实际查询前重新检查账号状态、当前授权、操作和访问等级。即使已有会话，账号停用或学生授权撤销也会立即阻断后续学生API访问；客户端篡改学生ID统一返回404，避免泄露学生是否存在。
+
+Web运行时冒烟使用独立的随机临时PostgreSQL数据库执行错误密码、登录Cookie、授权学生、跨学生参数和停用账号测试，结束后删除整个临时数据库，不向本地正式库写入可变测试账号或不可删除的审计残留。
 
 ## 本地 Meilisearch
 
