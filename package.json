@@ -1,0 +1,37 @@
+{
+  "name": "culiu-edu-helper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Internal evidence-linked education planning application",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=22 <23",
+    "pnpm": ">=11 <12"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "check": "pnpm format:check && pnpm secrets:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm smoke:web",
+    "dev": "turbo run dev --parallel",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm lint:root && turbo run lint",
+    "lint:root": "eslint eslint.config.mjs scripts/*.mjs",
+    "secrets:check": "node scripts/check-secrets.mjs",
+    "smoke:web": "node scripts/smoke-web-runtime.mjs",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@next/eslint-plugin-next": "15.5.22",
+    "@types/node": "22.20.1",
+    "eslint": "9.39.5",
+    "globals": "16.4.0",
+    "prettier": "3.6.2",
+    "turbo": "2.10.8",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.65.0"
+  }
+}

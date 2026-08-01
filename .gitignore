@@ -1,0 +1,18 @@
+# Local secrets
+/infra/.env
+
+# Node.js and workspace artifacts
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local environment files remain private; examples stay versioned.
+.env
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example

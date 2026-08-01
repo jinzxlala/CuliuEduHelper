@@ -1,0 +1,23 @@
+{
+  "name": "@culiu/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint .",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@culiu/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "4.23.1",
+    "vitest": "4.1.10"
+  }
+}
