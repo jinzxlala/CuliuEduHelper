@@ -1,0 +1,488 @@
+{
+  "approval": {
+    "reviewed_at": null,
+    "reviewed_by": null,
+    "status": "draft"
+  },
+  "corpus": {
+    "corpus_hash": "6e0e05d877bce46f09d17f5e1d00d16a96c08a916125646bb45f4394cbbb7008",
+    "corpus_id": "eduknow_knowledge_sources_v1",
+    "manifest_version": "1.0.0",
+    "mapping_version": "1.0.0"
+  },
+  "drafted_at": "2026-08-02T00:00:00+08:00",
+  "drafted_by": "Code Agent",
+  "fixture_id": "eduknow_search_gold_v1",
+  "fixture_version": "1.0.0",
+  "queries": [
+    {
+      "critical": true,
+      "description": "中文主题词定位海狸学院榜单讲座",
+      "expected_hit_ids": ["lecture_20251204_462c077301ff"],
+      "id": "gold_lecture_001",
+      "input": { "filters": {}, "query": "海狸学院 项目榜单" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "精确短语定位凭远早申讲座",
+      "expected_hit_ids": ["lecture_20251217_04179e7643c6"],
+      "id": "gold_lecture_002",
+      "input": { "filters": {}, "query": "\"屡创第一\" 凭远" },
+      "tags": ["exact_phrase", "chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "组合词定位最新录取画像讲座",
+      "expected_hit_ids": ["lecture_20251218_94e2e9f6d2dd"],
+      "id": "gold_lecture_003",
+      "input": { "filters": {}, "query": "最新录取画像 王牌" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "机构别称与主题组合定位棒呆讲座",
+      "expected_hit_ids": ["lecture_20251218_047520c95ace"],
+      "id": "gold_lecture_004",
+      "input": { "filters": {}, "query": "棒呆 爬藤 核心策略" },
+      "tags": ["alias_or_abbreviation", "chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "英文缩写与中文主题混合定位CMC讲座",
+      "expected_hit_ids": ["lecture_20251219_d62425d9f058"],
+      "id": "gold_lecture_005",
+      "input": { "filters": {}, "query": "CMC 早申风向" },
+      "tags": ["mixed_language", "alias_or_abbreviation"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "机构名与早申数据定位三士渡讲座",
+      "expected_hit_ids": ["lecture_20251219_07fb5dec2f8d"],
+      "id": "gold_lecture_006",
+      "input": { "filters": {}, "query": "三士渡 早申数据" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "成长路径关键词定位斯沃斯莫尔讲座",
+      "expected_hit_ids": ["lecture_20251222_a3ce77606cff"],
+      "id": "gold_lecture_007",
+      "input": { "filters": {}, "query": "体制内 辍学 斯沃斯莫尔" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "趋势词定位藤校画像重构讲座",
+      "expected_hit_ids": ["lecture_20251224_6500fa2967a7"],
+      "id": "gold_lecture_008",
+      "input": { "filters": {}, "query": "藤校 青睐 画像重构" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "圆桌主题词定位早申讨论",
+      "expected_hit_ids": ["lecture_20251224_45f787d6277a"],
+      "id": "gold_lecture_009",
+      "input": { "filters": {}, "query": "大咖 圆桌 早申" },
+      "tags": ["chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "数字与专业词组合定位案例拆解讲座",
+      "expected_hit_ids": ["lecture_20251225_c5bacf73742f"],
+      "id": "gold_lecture_010",
+      "input": { "filters": {}, "query": "30枚 王牌专业" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "主题短语定位留学成长性讲座",
+      "expected_hit_ids": ["lecture_20251226_4efdd28d912a"],
+      "id": "gold_lecture_011",
+      "input": { "filters": {}, "query": "留学 成长性" },
+      "tags": ["chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "录取特质主题定位特优生讲座",
+      "expected_hit_ids": ["lecture_20251230_5bc9b7491364"],
+      "id": "gold_lecture_012",
+      "input": { "filters": {}, "query": "特优生 早申 录取者特质" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "精确短语定位生活褶皱主题",
+      "expected_hit_ids": ["lecture_20260105_2655d5915015"],
+      "id": "gold_lecture_013",
+      "input": { "filters": {}, "query": "\"生活褶皱\" 申请答案" },
+      "tags": ["exact_phrase", "chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "GPA缩写与中文风险词混合检索",
+      "expected_hit_ids": ["lecture_20260120_dc64c96f9d57"],
+      "id": "gold_lecture_014",
+      "input": { "filters": {}, "query": "GPA 看不见的坑 超车" },
+      "tags": ["mixed_language", "alias_or_abbreviation", "evidence_boundary"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "交叉学科主题定位蓝海讲座",
+      "expected_hit_ids": ["lecture_20260126_c92a0273dbe9"],
+      "id": "gold_lecture_015",
+      "input": { "filters": {}, "query": "交叉学科 蓝海" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "英文Buff与中文科研竞赛混合检索",
+      "expected_hit_ids": ["lecture_20260306_45b8f41be672"],
+      "id": "gold_lecture_016",
+      "input": { "filters": {}, "query": "科研竞赛 Buff" },
+      "tags": ["mixed_language", "alias_or_abbreviation"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "对比主题定位美高形势讲座",
+      "expected_hit_ids": ["lecture_20260314_18aaf177e1f9"],
+      "id": "gold_lecture_017",
+      "input": { "filters": {}, "query": "头部 非头部 美高" },
+      "tags": ["chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "跨界叙事主题定位非对称竞争讲座",
+      "expected_hit_ids": ["lecture_20260324_53a7493c68ff"],
+      "id": "gold_lecture_018",
+      "input": { "filters": {}, "query": "非对称竞争 跨界叙事" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "否定式主题定位无既定公式讲座",
+      "expected_hit_ids": ["lecture_20260325_b08f8e83d2df"],
+      "id": "gold_lecture_019",
+      "input": { "filters": {}, "query": "申请 没有既定公式 完美闭环" },
+      "tags": ["negative_condition", "chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "Ivy Day英文名称与中文开榜混合检索",
+      "expected_hit_ids": ["lecture_20260328_552e1407e914"],
+      "id": "gold_lecture_020",
+      "input": { "filters": {}, "query": "Ivy Day 开榜" },
+      "tags": ["mixed_language", "alias_or_abbreviation"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "SAT缩写与中文情境词混合检索",
+      "expected_hit_ids": ["lecture_20260329_bbdab777bf86"],
+      "id": "gold_lecture_021",
+      "input": { "filters": {}, "query": "SAT高分 死去活来" },
+      "tags": ["mixed_language", "alias_or_abbreviation"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "负面条件组合定位加州理工讲座",
+      "expected_hit_ids": ["lecture_20260330_fe986eaa6438"],
+      "id": "gold_lecture_022",
+      "input": { "filters": {}, "query": "无大奖 无暑校 加州理工" },
+      "tags": ["negative_condition", "chinese_tokenization"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "主题短语定位真实科研叙事讲座",
+      "expected_hit_ids": ["lecture_20260331_d5cef6e0f390"],
+      "id": "gold_lecture_023",
+      "input": { "filters": {}, "query": "真实科研叙事" },
+      "tags": ["exact_phrase", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "算法时代主题定位以人为关键的讲座",
+      "expected_hit_ids": ["lecture_20260408_e7d8166cad49"],
+      "id": "gold_lecture_024",
+      "input": { "filters": {}, "query": "算法时代 录取 关键点在人" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "lectures"
+    },
+    {
+      "critical": false,
+      "description": "ISEF缩写与赛后复盘定位2026讲座",
+      "expected_hit_ids": ["lecture_20260525_8858b1cb6dce"],
+      "id": "gold_lecture_025",
+      "input": { "filters": {}, "query": "ISEF 赛后复盘" },
+      "tags": ["mixed_language", "alias_or_abbreviation"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "日期硬过滤区分2027 ISEF策略与较早ISEF讲座",
+      "expected_hit_ids": ["lecture_20260629_abdb96cc1922"],
+      "forbidden_hit_ids": ["lecture_20260525_8858b1cb6dce"],
+      "id": "gold_lecture_026",
+      "input": {
+        "filters": { "dateFrom": "2026-06-28", "dateTo": "2026-06-28" },
+        "query": "ISEF 制胜策略"
+      },
+      "tags": ["hard_filter", "negative_condition", "mixed_language"],
+      "target": "lectures"
+    },
+    {
+      "critical": true,
+      "description": "数学哲学与性教育社区行动组合定位",
+      "expected_hit_ids": ["case_20251218_94e2e9f6d2dd_002"],
+      "id": "gold_case_001",
+      "input": { "filters": {}, "query": "哲学 纯数学 性教育" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "无障碍出行主题定位视障案例",
+      "expected_hit_ids": ["case_20251218_94e2e9f6d2dd_003"],
+      "id": "gold_case_002",
+      "input": { "filters": {}, "query": "视障 行动不便 出行" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "方言化AI心理支持主题定位",
+      "expected_hit_ids": ["case_20251219_07fb5dec2f8d_002"],
+      "id": "gold_case_003",
+      "input": { "filters": {}, "query": "方言化AI 心理支持" },
+      "tags": ["mixed_language", "evidence_boundary"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "数据科学STS与人文作品组合定位",
+      "expected_hit_ids": ["case_20251219_d62425d9f058_002"],
+      "id": "gold_case_004",
+      "input": { "filters": {}, "query": "数据科学 STS 人文作品" },
+      "tags": ["mixed_language", "alias_or_abbreviation"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "音乐脑科学健康组合定位",
+      "expected_hit_ids": ["case_20251219_d62425d9f058_003"],
+      "id": "gold_case_005",
+      "input": { "filters": {}, "query": "音乐 脑科学 健康" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "科研自主性与知识生产组合定位STS案例",
+      "expected_hit_ids": ["case_20251222_a3ce77606cff_003"],
+      "id": "gold_case_006",
+      "input": { "filters": {}, "query": "科研自主性 STS 知识生产" },
+      "tags": ["mixed_language", "evidence_boundary"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "罕见主题词定位食肉苔藓案例",
+      "expected_hit_ids": ["case_20251224_45f787d6277a_001"],
+      "id": "gold_case_007",
+      "input": { "filters": {}, "query": "食肉苔藓" },
+      "tags": ["exact_phrase", "chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "观鸟湿地自然声音组合定位跨学科案例",
+      "expected_hit_ids": ["case_20251224_45f787d6277a_003"],
+      "id": "gold_case_008",
+      "input": { "filters": {}, "query": "长期观鸟 湿地 自然声音" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "气候情绪与减排行动组合定位",
+      "expected_hit_ids": ["case_20251224_6500fa2967a7_001"],
+      "id": "gold_case_009",
+      "input": { "filters": {}, "query": "气候变化 情绪 减排行动" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "凝聚态与天体物理组合定位",
+      "expected_hit_ids": ["case_20251224_6500fa2967a7_004"],
+      "id": "gold_case_010",
+      "input": { "filters": {}, "query": "凝聚态物理 天体物理 宇宙结构" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "主题乐园商业工程与童年空间组合定位",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_001"],
+      "id": "gold_case_011",
+      "input": { "filters": {}, "query": "主题乐园 商业 工程 童年空间" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "语音语调和抑郁倾向组合定位",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_004"],
+      "id": "gold_case_012",
+      "input": { "filters": {}, "query": "语音语调 抑郁倾向" },
+      "tags": ["chinese_tokenization", "evidence_boundary"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "部落承认土地历史与政策经济学组合定位",
+      "expected_hit_ids": ["case_20251226_4efdd28d912a_001"],
+      "id": "gold_case_013",
+      "input": { "filters": {}, "query": "部落承认 土地历史 政策经济学" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "精神和身体压力与冰球表现组合定位",
+      "expected_hit_ids": ["case_20251226_4efdd28d912a_002"],
+      "id": "gold_case_014",
+      "input": { "filters": {}, "query": "精神压力 身体压力 冰球" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "连续科研主线定位同一种疾病案例",
+      "expected_hit_ids": ["case_20251230_5bc9b7491364_001"],
+      "id": "gold_case_015",
+      "input": { "filters": {}, "query": "三段科研 同一种疾病" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "文化遗产与社区行动组合定位古建筑保护案例",
+      "expected_hit_ids": ["case_20251230_5bc9b7491364_004"],
+      "id": "gold_case_016",
+      "input": { "filters": {}, "query": "古建筑保护 文化遗产 社区行动" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "甲醛监测与处理装置组合定位",
+      "expected_hit_ids": ["case_20260306_45b8f41be672_003"],
+      "id": "gold_case_017",
+      "input": { "filters": {}, "query": "甲醛监测 处理装置" },
+      "tags": ["chinese_tokenization", "field_weight"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "洞穴鼠妇与生物多样性组合定位",
+      "expected_hit_ids": ["case_20260306_45b8f41be672_002"],
+      "id": "gold_case_018",
+      "input": { "filters": {}, "query": "洞穴鼠妇 生物多样性" },
+      "tags": ["chinese_tokenization"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "水污染数据与光纤装置组合定位失败案例",
+      "expected_hit_ids": ["case_20260324_53a7493c68ff_002"],
+      "id": "gold_case_019",
+      "input": { "filters": {}, "query": "水污染数据 光纤装置" },
+      "tags": ["chinese_tokenization", "evidence_boundary"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "柑橘废弃物与外卖包装组合定位失败案例",
+      "expected_hit_ids": ["case_20260328_552e1407e914_001"],
+      "id": "gold_case_020",
+      "input": { "filters": {}, "query": "柑橘废弃物 外卖包装" },
+      "tags": ["chinese_tokenization", "evidence_boundary"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "可信度硬过滤只允许medium案例",
+      "expected_hit_ids": ["case_20260115_b25093d1f07d_001"],
+      "forbidden_hit_ids": ["case_20260115_b25093d1f07d_002"],
+      "id": "gold_case_021",
+      "input": { "filters": { "confidence": ["medium"] }, "query": "" },
+      "tags": ["hard_filter", "negative_condition"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "学校硬过滤定位Swarthmore哲学案例",
+      "expected_hit_ids": ["case_20251222_a3ce77606cff_004"],
+      "forbidden_hit_ids": ["case_20251218_94e2e9f6d2dd_002"],
+      "id": "gold_case_022",
+      "input": { "filters": { "schools": ["Swarthmore"] }, "query": "哲学" },
+      "tags": ["hard_filter", "negative_condition", "mixed_language"],
+      "target": "cases"
+    },
+    {
+      "critical": true,
+      "description": "案例性质硬过滤只允许诚信风险案例",
+      "expected_hit_ids": ["case_20251224_6500fa2967a7_005"],
+      "forbidden_hit_ids": ["case_20251224_6500fa2967a7_004"],
+      "id": "gold_case_023",
+      "input": { "filters": { "caseTypes": ["诚信风险案例"] }, "query": "" },
+      "tags": ["hard_filter", "negative_condition", "evidence_boundary"],
+      "target": "cases"
+    },
+    {
+      "critical": false,
+      "description": "失败案例性质过滤AI相关项目并排除学生录取案例",
+      "expected_hit_ids": [
+        "case_20260324_53a7493c68ff_004",
+        "case_20260520_497f95b8c700_002",
+        "case_20260629_abdb96cc1922_001"
+      ],
+      "forbidden_hit_ids": ["case_20251219_d62425d9f058_002"],
+      "id": "gold_case_024",
+      "input": { "filters": { "caseTypes": ["失败与反例"] }, "query": "AI" },
+      "tags": ["hard_filter", "negative_condition", "mixed_language", "evidence_boundary"],
+      "target": "cases"
+    }
+  ],
+  "schema_version": "1.0.0",
+  "thresholds": {
+    "critical_hit_rate_min": 1,
+    "filter_accuracy_min": 1,
+    "p95_latency_ms_max": 500,
+    "top_5_hit_rate_min": 0.85
+  }
+}

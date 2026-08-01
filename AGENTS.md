@@ -6,8 +6,8 @@
 
 - 项目名称：醋溜教育智能助手（CuliuEduHelper）。
 - MVP 主架构：Node.js／TypeScript 单仓库、Next.js 全栈应用、独立 Node Worker、PostgreSQL、Redis／BullMQ、Meilisearch，以及可替换的模型适配层。
-- 当前已完成本地 Meilisearch 预备环境、工程脚手架与质量基线、阶段 0 数据基础设施与边界，以及阶段 1 的搜索领域契约、48 场知识来源清单和正式 Worker 导入链路。
-- 模型接口、搜索业务页面、50 条中文金标查询和完整用户流程尚未实现；不要把知识导入完成误报为阶段 1 全部完成或业务 MVP 已完成。
+- 当前已完成本地 Meilisearch 预备环境、工程脚手架与质量基线、阶段 0 数据基础设施与边界，以及阶段 1 的搜索领域契约、48 场知识来源清单、正式 Worker 导入链路和版本化中文搜索评测器。
+- 50 条中文金标查询已有 Code Agent 草案并通过技术评测，但仍待项目负责人逐条确认；搜索业务页面、逐字稿时间戳业务验收、模型接口和完整用户流程尚未实现。不要把技术评测全绿误报为阶段 1 业务门禁或业务 MVP 已完成。
 - `data_origin/` 中的分析稿已通过 `knowledge/source-manifest.v1.json` 导入 PostgreSQL、不可变本地对象存储和 Meilisearch；任何重导仍必须通过清单哈希、角色映射和逐字稿隐私门禁，不能直接批量写索引。
 - MVP 的搜索优先采用关键词、筛选和证据定位。向量检索、混合检索、同义词和召回调优应等至少 50 条中文金标查询建立后再决定。
 
@@ -130,7 +130,7 @@ pnpm install --frozen-lockfile
 pnpm check
 ```
 
-`pnpm check` 依次执行格式检查、潜在密钥扫描、Lint、严格类型检查、迁移一致性、59 个单元测试、Web／Worker 生产构建，以及首页和 `/api/health` 的真实 HTTP 冒烟测试。上述流程已在本机环境和一次性官方 Node.js 22.23.2 Docker 容器中通过。开发机当前 Node.js 主版本不是 22 时会出现 engine 警告，正式兼容性以 Node.js 22／CI 验收为准。
+`pnpm check` 依次执行格式检查、潜在密钥扫描、Lint、严格类型检查、迁移一致性、71 个单元测试、Web／Worker 生产构建，以及首页和 `/api/health` 的真实 HTTP 冒烟测试。上述流程已在本机环境和一次性官方 Node.js 22.23.2 Docker 容器中通过。开发机当前 Node.js 主版本不是 22 时会出现 engine 警告，正式兼容性以 Node.js 22／CI 验收为准。
 
 `infra/.env` 中的 `DEEPSEEK_API_KEY` 已做存在、非空、格式与最小长度检查，但本模块未调用 DeepSeek；不得在日志、文档、测试夹具或回复中输出密钥值。后续模型模块仍须通过服务端适配器读取。
 
@@ -144,7 +144,7 @@ pnpm check
 - `packages/tasks` 提供 BullMQ 任务信封、Zod 复验、幂等任务 ID 与冻结授权上下文引用；任务不得携带新的学生 ID 来扩大 Worker 权限范围；
 - `packages/storage` 提供 SHA-256 寻址的本地不可变文件适配器，`knowledge/` 与 `student/<student-id>/` 路径严格分离，不提供覆盖或删除接口；
 - `docs/adr/0002-data-infrastructure-boundaries.md` 是本模块边界决策记录；
-- `pnpm test:integration` 已在 Windows 本机和 Node.js 22 Linux 容器中通过；当前仓库总计 9 项 PostgreSQL、1 项 Redis／BullMQ、6 项 Meilisearch 和 3 项 Worker 集成测试；
+- `pnpm test:integration` 已在 Windows 本机通过；当前仓库总计 9 项 PostgreSQL、1 项 Redis／BullMQ、7 项 Meilisearch 和 3 项 Worker 集成测试。与本轮相关的 7 项 Meilisearch 集成测试另在 Node.js 22 Linux 容器中复跑通过；
 - PostgreSQL 与 Redis 重启后均恢复为 `healthy`，脱敏学生夹具仍保持 1 行，证明命名卷持久化有效；
 - `infra/.env` 仍被 Git 忽略，`DEEPSEEK_API_KEY` 仅确认已配置，未读取或输出其值。
 
@@ -173,11 +173,11 @@ git diff --check
 - 三个索引名必须安全且互不相同；正式名称和测试名称均不得绕过该校验；
 - 服务端优先读取作用域更小的 `MEILI_SEARCH_API_KEY`／`MEILI_ADMIN_API_KEY`，本地开发可回退到 `MEILI_MASTER_KEY`；浏览器端仍禁止持有任何密钥；
 - `infra/setup-meilisearch.ps1` 已在 Windows PowerShell 5.1 下验证可正确读取根 JSON 数组，并完成幂等初始化及中文关键词／精确短语冒烟；
-- 17 项搜索单元测试和 6 项真实 Meilisearch 集成测试已通过，覆盖严格 Schema、引用完整性、配置密钥优先级、硬过滤、分面、高亮、短语检索、证据读取、索引幂等和三索引原子替换；
-- 仓库级 `pnpm check` 与 `pnpm test:integration` 已在 Windows 本机和 Node.js 22.23.2 Linux 一次性容器中通过；当前集成总计 9 项 PostgreSQL、1 项 Redis／BullMQ、6 项 Meilisearch 和 3 项 Worker 测试；
+- 搜索包当前29项单元测试和7项真实 Meilisearch 集成测试已通过；其中原服务层覆盖严格 Schema、引用完整性、配置密钥优先级、硬过滤、分面、高亮、短语检索、证据读取、索引幂等和三索引原子替换，新增评测测试见第12节；
+- 仓库级 `pnpm check` 与 `pnpm test:integration` 已在 Windows 本机通过；`pnpm check`和7项Meilisearch集成测试另在Node.js 22.23.2 Linux一次性容器中通过。当前集成总计9项PostgreSQL、1项Redis／BullMQ、7项Meilisearch和3项Worker测试；
 - 搜索服务层自身不负责导入；当前正式索引内容由第 11 节的 Worker 导入器发布和重建。
 
-该服务层模块本身不包含正式来源映射或数据导入；来源映射由下一节提供，正式导入由第 11 节提供。50 条金标查询、Web 搜索页面、同义词或向量检索仍未实现。
+该服务层模块本身不包含正式来源映射或数据导入；来源映射由下一节提供，正式导入由第11节提供，金标评测由第12节提供。Web搜索页面、同义词或向量检索仍未实现。
 
 ## 10. 阶段 1 知识来源清单与证据映射
 
@@ -209,7 +209,7 @@ pnpm knowledge:manifest:build `
   --output '.\knowledge\source-manifest.v1.json'
 ```
 
-本模块本身不包含来源正文解析、PostgreSQL 来源记录或 Worker 导入；这些已由第 11 节实现。逐字稿隐私批准、50 条金标查询和 Web 页面仍未实现。清单存在不等于逐字稿已获准索引。
+本模块本身不包含来源正文解析、PostgreSQL 来源记录或 Worker 导入；这些已由第11节实现。50条金标查询草案及评测器已由第12节实现；逐字稿隐私批准、金标业务确认和Web页面仍未完成。清单存在不等于逐字稿已获准索引。
 
 ## 11. 阶段 1 正式知识导入 Worker
 
@@ -237,9 +237,34 @@ pnpm knowledge:import:status
 pnpm knowledge:import:smoke
 ```
 
-下一模块应建立至少 50 条中文金标查询并完成召回／筛选评估；在评测前不得凭经验加入同义词、向量或混合检索。
+下一模块的技术工作应实现内部搜索页面、详情和证据查看流程；50条查询仍须由项目负责人逐条确认，在确认前不得把阶段1标记为业务完成，也不得凭当前草案结果加入同义词、向量或混合检索。
 
-## 12. 破坏性操作与工作区保护
+## 12. 阶段 1 版本化中文搜索金标评测
+
+截至2026-08-02，阶段1的第四个独立模块已完成技术实现和验证：
+
+- `knowledge/search-gold.v1.json`提供绑定`corpus_id + corpus_hash + mapping_version + manifest_version`的版本化fixture；当前恰好50条查询，其中26条讲座查询、24条案例查询和17条关键查询；
+- fixture覆盖中文切分、中英文混合名称和缩写、精确短语、字段权重观察、证据边界、负面条件、日期／学校／可信度／案例性质硬过滤和禁止命中；相同目标与搜索输入不得重复计分；
+- 所有查询均由Code Agent起草，`approval.status=draft`，审核人和审核时间固定为空。项目负责人未逐条核对前，禁止改为`approved`或宣称为“顾问标注完成”；
+- `packages/search`提供严格Zod Schema、语料身份校验、Top-5评测器和CLI。评测器通过正式`KnowledgeSearchService`调用，分别计算全部查询命中率、关键查询命中率、硬过滤准确率、禁止命中检查以及端到端P95延迟；
+- 技术阈值不可弱化到Top-5低于85%、关键查询低于100%、硬过滤低于100%或P95高于500ms。普通评测在技术失败时返回非零；`--require-approved`还会在fixture未获批准时返回退出码2；
+- 本机正式索引实测为50/50 Top-5命中、17/17关键查询命中、硬过滤100%、禁止命中100%，最近一次端到端P95约44ms；`technical_gate_passed=true`，但由于仍是草案，`release_gate_passed=false`；
+- 代码审查修复了空过滤数组误判，并增加重复查询、防虚假硬过滤标签、错误目标ID、阈值弱化、伪审批、语料错配和禁止命中等反例测试；
+- 仓库当前共71项单元测试和20项集成测试通过；完整`pnpm check`和20项集成测试在Windows本机通过，`pnpm check`及7项Meilisearch集成测试在官方Node.js 22.23.2 Linux容器复跑通过；
+- `docs/adr/0004-search-gold-evaluation.md`记录评测口径。当前正式`transcript_segments`仍为0，因此本版不伪造逐字稿正向金标；解除隐私门禁后必须升级fixture并增加时间戳证据查询；
+- `infra/.env`继续被Git忽略；`DEEPSEEK_API_KEY`仅确认存在、非空、非占位且长度满足门禁，未输出密钥值，本模块不调用DeepSeek。
+
+常用命令：
+
+```powershell
+pnpm search:gold:validate
+pnpm search:gold:evaluate
+pnpm search:gold:evaluate -- --require-approved
+```
+
+第三条命令当前预期退出码为2，这是未完成人工业务确认的有效门禁，不是技术评测失败。
+
+## 13. 破坏性操作与工作区保护
 
 以下命令会永久删除本地 PostgreSQL、Redis 和 Meilisearch 的全部命名卷，只有在用户明确要求重置全部本地数据时才能执行：
 
@@ -255,15 +280,15 @@ docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml down
 
 当前工作区可能包含用户已有的删除和未跟踪文件。不要擅自恢复、覆盖、移动、删除、暂存或提交与当前任务无关的内容。尤其不要假设所有 `git status` 变化都由当前 Agent 产生。
 
-## 13. 下一阶段建议边界
+## 14. 下一阶段建议边界
 
-阶段 0 与阶段 1 的搜索契约、来源清单和正式知识导入已完成。下一个独立模块继续 `dev_plan.md` 阶段 1，合理顺序是：
+阶段0与阶段1的搜索契约、来源清单、正式知识导入及金标技术评测已完成。下一个独立开发模块继续`dev_plan.md`阶段1，合理顺序是：
 
-1. 建立至少 50 条版本化中文搜索金标查询，由 Code Agent 起草、项目负责人确认；
-2. 评估 Meilisearch 中文召回、筛选、排序和证据定位；
-3. 记录未命中、误命中和过滤错误，并只依据评测调整字段权重或查询协议；
-4. 在逐字稿隐私复核机制完成前，继续禁止生成或发布 `transcript_segments`；
-5. 只有评测证明关键词检索不足时，再讨论同义词、向量或混合检索；
-6. 金标门禁通过后，再实现内部搜索页面和证据查看流程。
+1. 项目负责人逐条检查`knowledge/search-gold.v1.json`的查询意图和预期ID；Code Agent不得代替业务签字；
+2. 实现内部统一搜索页面、分面筛选、分页、关键词高亮和讲座／案例详情；
+3. 详情页显示逻辑来源路径和证据边界；逐字稿未获隐私批准前，不伪造时间戳跳转；
+4. 页面和API只通过服务端搜索模块访问Meilisearch，不向浏览器暴露密钥；
+5. 记录真实使用中的未命中、误命中和过滤错误，只依据确认后的评测调整字段权重或查询协议；
+6. 只有确认后的评测证明关键词检索不足时，再讨论同义词、向量或混合检索。
 
 不要在这一阶段提前引入 Skill Registry、Multi-Agent 运行时、AnythingLLM、向量数据库或真实学生数据。

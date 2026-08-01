@@ -17,6 +17,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "gold:evaluate": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/evaluate-gold-set.ts",
+    "gold:validate": "node --import tsx src/cli/validate-gold-set.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "test:integration": "node --env-file-if-exists=../../infra/.env node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts",
@@ -27,6 +29,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "tsx": "4.23.1",
     "vitest": "4.1.10"
   }
 }

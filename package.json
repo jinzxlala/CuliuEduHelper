@@ -21,6 +21,8 @@
     "knowledge:import:status": "pnpm --filter @culiu/worker knowledge:status",
     "knowledge:import:smoke": "pnpm --filter @culiu/worker knowledge:smoke",
     "knowledge:import:validate": "pnpm --filter @culiu/knowledge-ingest knowledge:validate",
+    "search:gold:evaluate": "pnpm --filter @culiu/search gold:evaluate",
+    "search:gold:validate": "pnpm --filter @culiu/search gold:validate",
     "lint": "pnpm lint:root && turbo run lint",
     "lint:root": "eslint eslint.config.mjs scripts/*.mjs",
     "migration:check": "pnpm --filter @culiu/database db:check",

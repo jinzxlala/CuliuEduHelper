@@ -1,4 +1,4 @@
-# 知识来源清单
+# 知识来源与搜索评测资产
 
 `source-manifest.v1.json` 是 48 场 EDU KNOW 讲座资料的确定性来源清单。本文件只记录逻辑路径、内容哈希、字节数、标题、章节结构和交叉校验统计，不包含分析正文、逐字稿正文、源文件内嵌的本机绝对路径或真实学生资料。
 
@@ -44,3 +44,19 @@ pnpm --filter @culiu/knowledge-ingest test
 ```
 
 测试使用完全虚构的临时夹具，不读取真实来源正文；其中还会校验已提交清单的 Schema、哈希、48 场／240 个文件完整性和绝对路径防泄漏约束。
+
+## 搜索金标查询
+
+`search-gold.v1.json` 是版本化搜索回归集，不是知识来源文件。它只保存查询、结构化过滤条件、预期／禁止命中的文档ID、关键级别、标签和审核状态，不保存来源正文或密钥。
+
+- fixture必须与`source-manifest.v1.json`的语料ID、语料哈希、映射版本和清单版本完全一致；
+- 当前50条查询由Code Agent起草并保持`draft`，需要项目负责人逐条确认后才能改为`approved`；
+- 技术门禁为Top-5命中率不低于85%、关键查询100%、硬过滤100%、禁止命中100%以及端到端P95不超过500ms；
+- 正式索引仍有0条逐字稿正文，因此当前不能用虚构数据替代逐字稿与时间戳业务验收；
+- 评测结果只能揭示当前检索表现，不得反向修改预期ID来掩盖真实召回问题。
+
+```powershell
+pnpm search:gold:validate
+pnpm search:gold:evaluate
+pnpm search:gold:evaluate -- --require-approved
+```

@@ -12,7 +12,7 @@ apps/worker    独立后台任务进程
 packages/shared 共享Schema与类型
 packages/database PostgreSQL Schema、迁移与脱敏fixtures
 packages/knowledge-ingest 知识源清单、校验、保守解析与幂等导入
-packages/search Meilisearch文档契约、查询与原子重建
+packages/search Meilisearch文档契约、查询、金标评测与原子重建
 packages/storage 本地不可变证据存储
 packages/tasks BullMQ任务契约与执行器
 ```
@@ -144,6 +144,27 @@ pnpm knowledge:import:smoke
 所有正式知识发布由PostgreSQL全局advisory lock串行化。PostgreSQL是当前正式版本来源；Worker每次启动都会先用数据库当前版本重建三个Meilisearch索引，搜索交换后若数据库最终提交失败也会执行同样的恢复，避免搜索索引长期偏离正式数据。
 
 当前隐私门禁固定禁止发布逐字稿正文：正式导入结果应为48条讲座、169张案例卡和0条`transcript_segments`。只有后续完成逐字稿隐私复核与匿名化机制后，才能通过新的迁移和映射版本解除该数据库约束。
+
+## 中文搜索金标评测
+
+`knowledge/search-gold.v1.json` 是绑定当前语料哈希、映射版本和清单版本的搜索回归集。当前包含50条Code Agent起草的中文查询，其中17条为关键查询；覆盖中文切分、中英文混合名称和缩写、精确短语、证据边界、日期与案例性质硬过滤及禁止命中。它保持`draft`状态，不能冒充项目负责人的业务确认。
+
+先做离线结构与语料身份校验，再对已导入的本地正式索引执行评测：
+
+```powershell
+pnpm search:gold:validate
+pnpm search:gold:evaluate
+```
+
+评测固定取Top-5，同时计算全部查询命中率、关键查询命中率、硬过滤准确率、禁止命中检查和端到端P95延迟。普通评测在技术指标失败时返回非零退出码；`draft`状态会明确显示`release_gate_passed=false`，但不会掩盖技术结果。
+
+项目负责人逐条核对查询意图和预期ID后，才能填写`approval`中的审核人、审核时间并将状态改为`approved`。业务验收使用更严格的命令：
+
+```powershell
+pnpm search:gold:evaluate -- --require-approved
+```
+
+该命令在技术指标不达标或评测集仍未获批准时均返回非零退出码。当前逐字稿隐私门禁使正式`transcript_segments`数量为0，因此本版不伪造逐字稿正向金标；解除门禁后必须升级fixture版本并加入时间戳证据查询，再重新验收阶段1。不得为了让本评测变绿而先验加入同义词、向量或混合检索。
 
 ### 清空本地搜索数据
 
