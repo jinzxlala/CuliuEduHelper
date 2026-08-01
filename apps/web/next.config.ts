@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ["@culiu/shared"],
+  transpilePackages: ["@culiu/search", "@culiu/shared"],
 };
 
 export default nextConfig;

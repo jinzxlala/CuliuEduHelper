@@ -67,11 +67,24 @@ try {
     throw new Error("Home page smoke test failed.");
   }
 
+  const searchResponse = await fetch(`${baseUrl}/search?q=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD`);
+  const searchPage = await searchResponse.text();
+  if (
+    !searchResponse.ok ||
+    !searchPage.includes("从讲座、案例和原始证据中查找信息") ||
+    ["MEILI_MASTER_KEY", "MEILI_SEARCH_API_KEY", "MEILI_ADMIN_API_KEY"].some((name) =>
+      searchPage.includes(name),
+    )
+  ) {
+    throw new Error("Knowledge search page smoke test failed.");
+  }
+
   console.log(
     JSON.stringify({
       healthService: health.service,
       healthStatus: health.status,
       homeStatus: homeResponse.status,
+      searchStatus: searchResponse.status,
     }),
   );
 } finally {

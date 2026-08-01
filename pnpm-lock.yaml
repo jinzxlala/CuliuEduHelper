@@ -42,6 +42,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@culiu/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@culiu/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -54,6 +57,9 @@ importers:
       react-dom:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
+      server-only:
+        specifier: 0.0.1
+        version: 0.0.1
     devDependencies:
       '@types/react':
         specifier: 19.2.18
@@ -1977,6 +1983,9 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   sharp@0.35.0:
     resolution: {integrity: sha512-BqvG5XbwPZ4NV0DK90d86leEECMsoa8bO0nqnKWlBDYxri4GJ7c4EDInaF6q20lTh/mATmnDIKWJFfXnoVfH5g==}
     engines: {node: '>=20.9.0'}
@@ -3602,6 +3611,8 @@ snapshots:
   scheduler@0.27.0: {}
 
   semver@7.8.5: {}
+
+  server-only@0.0.1: {}
 
   sharp@0.35.0:
     dependencies:
