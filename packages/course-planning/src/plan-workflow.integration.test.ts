@@ -48,6 +48,7 @@ import {
   createManualPlanVersion,
   decidePlanRuleOverride,
   exportApprovedManualPlanMarkdown,
+  readManualPlanningWorkspace,
   readManualPlanVersion,
   requestPlanRuleOverride,
   transitionManualPlanVersion,
@@ -470,6 +471,23 @@ describe("manual plan workflow", () => {
     expect(plan.content.routes).toHaveLength(2);
     expect(plan.content.routeComparison).toHaveLength(6);
     expect(plan.evaluation.hardViolationCount).toBe(1);
+
+    const workspace = await readManualPlanningWorkspace(
+      activeClient().database,
+      actor.readContext,
+      { now: new Date("2026-08-02T09:01:30.000Z") },
+    );
+    expect(workspace.approvedProfile).toMatchObject({ id: actor.profileVersionId, version: 1 });
+    expect(workspace.approvedProfile?.claims.some((claim) => claim.id === actor.claimId)).toBe(
+      true,
+    );
+    expect(workspace.catalog.courses.map((course) => course.code)).toEqual(
+      expect.arrayContaining(["SYN_PLAN_ADVANCED", "SYN_PLAN_ALTERNATIVE", "SYN_PLAN_FOUNDATION"]),
+    );
+    expect(workspace.plans[0]).toMatchObject({ id: plan.id, status: "draft", version: 1 });
+    expect(workspace.plans[0]?.reviews).toEqual([
+      expect.objectContaining({ action: "created", actorDisplayName: advisor.displayName }),
+    ]);
 
     await expect(
       activeClient().pool.query('update "plan_version" set "content" = $1 where "id" = $2', [

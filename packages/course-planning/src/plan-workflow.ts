@@ -25,19 +25,22 @@ import {
   students,
   type Database,
 } from "@culiu/database/runtime";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 
 import {
   DecidePlanRuleOverrideInputSchema,
   CreateManualPlanInputSchema,
   FrozenPlanCatalogSchema,
+  ManualPlanningWorkspaceSchema,
   PlanEvaluationSnapshotSchema,
   PlanTransitionInputSchema,
   RequestPlanRuleOverrideInputSchema,
   StoredManualPlanSchema,
   type CreateManualPlanInput,
   type DecidePlanRuleOverrideInput,
+  type ManualPlanningWorkspace,
   type PlanEvaluationSnapshot,
   type PlanTransitionInput,
   type RequestPlanRuleOverrideInput,
@@ -59,6 +62,8 @@ import { renderManualPlanMarkdown } from "./plan-markdown.js";
 import { loadApprovedCourseCatalog } from "./service.js";
 
 const IdentifierSchema = z.uuid();
+const overrideRequester = alias(appUsers, "plan_override_requester");
+const overrideDecider = alias(appUsers, "plan_override_decider");
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 function asJsonObject(value: object): Record<string, unknown> {
@@ -492,6 +497,140 @@ export async function readManualPlanVersion(
     studentId: context.studentId,
   });
   return planFromRow(row);
+}
+
+export async function readManualPlanningWorkspace(
+  database: Database,
+  rawContext: AuthorizationContext,
+  options: { now?: Date; requestCorrelationId?: string } = {},
+): Promise<ManualPlanningWorkspace> {
+  const now = options.now ?? new Date();
+  const context = await requirePlanContext(database, rawContext, "student:read", now);
+  const planningActor = await loadPlanningActor(database, context.actorUserId);
+  const [catalog, profileRows, planRows] = await Promise.all([
+    loadApprovedCourseCatalog(database, planningActor),
+    database
+      .select({
+        id: profileVersions.id,
+        updatedAt: profileVersions.updatedAt,
+        version: profileVersions.version,
+      })
+      .from(profileVersions)
+      .where(
+        and(
+          eq(profileVersions.studentId, context.studentId),
+          eq(profileVersions.status, "approved"),
+        ),
+      )
+      .orderBy(desc(profileVersions.version))
+      .limit(1),
+    database
+      .select()
+      .from(planVersions)
+      .where(eq(planVersions.studentId, context.studentId))
+      .orderBy(desc(planVersions.version)),
+  ]);
+  const profile = profileRows[0];
+  const claims =
+    profile === undefined
+      ? []
+      : await database
+          .select({
+            category: profileClaims.category,
+            confidence: profileClaims.confidence,
+            id: profileClaims.id,
+            informationNature: profileClaims.informationNature,
+            statement: profileClaims.statement,
+          })
+          .from(profileClaims)
+          .where(eq(profileClaims.profileVersionId, profile.id))
+          .orderBy(asc(profileClaims.createdAt));
+  const planIds = planRows.map((row) => row.id);
+  const [reviewRows, overrideRows] =
+    planIds.length === 0
+      ? [[], []]
+      : await Promise.all([
+          database
+            .select({
+              action: planReviewRecords.action,
+              actorDisplayName: appUsers.displayName,
+              actorType: planReviewRecords.actorType,
+              createdAt: planReviewRecords.createdAt,
+              fromStatus: planReviewRecords.fromStatus,
+              id: planReviewRecords.id,
+              planVersionId: planReviewRecords.planVersionId,
+              reason: planReviewRecords.reason,
+              toStatus: planReviewRecords.toStatus,
+            })
+            .from(planReviewRecords)
+            .leftJoin(appUsers, eq(appUsers.id, planReviewRecords.actorUserId))
+            .where(inArray(planReviewRecords.planVersionId, planIds))
+            .orderBy(asc(planReviewRecords.createdAt)),
+          database
+            .select({
+              createdAt: planRuleOverrides.createdAt,
+              decidedAt: planRuleOverrides.decidedAt,
+              decidedByDisplayName: overrideDecider.displayName,
+              decisionReason: planRuleOverrides.decisionReason,
+              id: planRuleOverrides.id,
+              planVersionId: planRuleOverrides.planVersionId,
+              reason: planRuleOverrides.reason,
+              requestedByDisplayName: overrideRequester.displayName,
+              scopeKey: planRuleOverrides.scopeKey,
+              status: planRuleOverrides.status,
+              updatedAt: planRuleOverrides.updatedAt,
+              violationKey: planRuleOverrides.violationKey,
+            })
+            .from(planRuleOverrides)
+            .innerJoin(
+              overrideRequester,
+              eq(overrideRequester.id, planRuleOverrides.requestedByUserId),
+            )
+            .leftJoin(overrideDecider, eq(overrideDecider.id, planRuleOverrides.decidedByUserId))
+            .where(inArray(planRuleOverrides.planVersionId, planIds))
+            .orderBy(asc(planRuleOverrides.createdAt)),
+        ]);
+  const reviewsByPlan = new Map<string, Omit<(typeof reviewRows)[number], "planVersionId">[]>();
+  for (const { planVersionId, ...review } of reviewRows) {
+    const current = reviewsByPlan.get(planVersionId) ?? [];
+    current.push(review);
+    reviewsByPlan.set(planVersionId, current);
+  }
+  const overridesByPlan = new Map<string, Omit<(typeof overrideRows)[number], "planVersionId">[]>();
+  for (const { planVersionId, ...override } of overrideRows) {
+    const current = overridesByPlan.get(planVersionId) ?? [];
+    current.push(override);
+    overridesByPlan.set(planVersionId, current);
+  }
+  const workspace = ManualPlanningWorkspaceSchema.parse({
+    approvedProfile:
+      profile === undefined
+        ? null
+        : { claims, id: profile.id, updatedAt: profile.updatedAt, version: profile.version },
+    catalog,
+    plans: planRows.map((row) => ({
+      ...planFromRow(row),
+      overrides: overridesByPlan.get(row.id) ?? [],
+      reviews: reviewsByPlan.get(row.id) ?? [],
+    })),
+    studentId: context.studentId,
+  });
+  await database.insert(auditEvents).values({
+    action: "student.plan.workspace.view",
+    actorType: "user",
+    actorUserId: context.actorUserId,
+    details: {
+      authorizationContextId: context.id,
+      planCount: workspace.plans.length,
+      profileVersionId: workspace.approvedProfile?.id ?? null,
+    },
+    objectId: context.studentId,
+    objectType: "student",
+    requestCorrelationId: options.requestCorrelationId ?? randomUUID(),
+    result: "allowed",
+    studentId: context.studentId,
+  });
+  return workspace;
 }
 
 function findHardViolation(

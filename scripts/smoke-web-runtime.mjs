@@ -14,6 +14,7 @@ import {
 } from "../packages/database/dist/index.js";
 import { hashPassword } from "../packages/authorization/dist/index.js";
 import { ProfileRevisionInputSchema } from "../packages/student-profiles/dist/index.js";
+import { createCourse, transitionCourseVersion } from "../packages/course-planning/dist/index.js";
 import {
   createRedisConnection,
   createTaskQueue,
@@ -30,6 +31,7 @@ const workerOutput = [];
 const queueName = `culiu-e2e-${randomUUID()}`;
 const temporaryUserId = randomUUID();
 const temporaryGrantId = randomUUID();
+const temporaryAdminId = randomUUID();
 const temporaryEmail = `${temporaryUserId}@example.invalid`;
 const temporaryPassword = `E2e-${randomBytes(24).toString("base64url")}!9aA`;
 const baseDatabaseConfig = parseDatabaseConfig();
@@ -98,6 +100,11 @@ async function prepareTemporaryAccount() {
   const client = activeDatabaseClient();
   const passwordHash = await hashPassword(temporaryPassword);
   await client.pool.query(
+    `insert into app_user (id, email, display_name, role)
+     values ($1, $2, 'Synthetic Runtime Admin', 'admin')`,
+    [temporaryAdminId, `${temporaryAdminId}@example.invalid`],
+  );
+  await client.pool.query(
     `insert into app_user (id, email, display_name, password_hash, role)
      values ($1, $2, 'Synthetic Runtime Advisor', $3, 'advisor')`,
     [temporaryUserId, temporaryEmail, passwordHash],
@@ -106,9 +113,145 @@ async function prepareTemporaryAccount() {
     `insert into student_authorization
      (id, user_id, student_id, allowed_actions, max_access_level, granted_by_user_id,
         valid_from)
-     values ($1, $2, $3, array['student:read', 'student:write', 'student:profile:generate', 'student:profile:review', 'student:profile:approve'], 'sensitive', $2, now() - interval '1 minute')`,
+     values ($1, $2, $3, array['student:read', 'student:write', 'student:profile:generate', 'student:profile:review', 'student:profile:approve', 'student:plan:write', 'student:plan:review', 'student:plan:approve', 'student:plan:export'], 'sensitive', $2, now() - interval '1 minute')`,
     [temporaryGrantId, temporaryUserId, REDACTED_FIXTURE_IDS.student],
   );
+}
+
+async function prepareSyntheticCourseCatalog() {
+  const client = activeDatabaseClient();
+  const admin = {
+    displayName: "Synthetic Runtime Admin",
+    email: `${temporaryAdminId}@example.invalid`,
+    id: temporaryAdminId,
+    role: "admin",
+  };
+  const courses = [];
+  for (const [code, title] of [
+    ["RUNTIME_FOUNDATION", "Runtime Foundation"],
+    ["RUNTIME_PROJECT", "Runtime Project"],
+    ["RUNTIME_EXPLORATION", "Runtime Exploration"],
+  ]) {
+    const created = await createCourse(client.database, admin, {
+      code,
+      content: {
+        capabilityTags: ["synthetic_reasoning"],
+        deliverables: [`${title} synthetic artifact`],
+        deliveryMode: "self_paced",
+        difficulty: "foundation",
+        durationWeeks: 8,
+        notSuitableConditions: [],
+        objectives: [`Complete ${title} synthetic objective`],
+        projectTypes: ["synthetic_project"],
+        schedule: [],
+        stage: "Synthetic runtime stage",
+        subjectTags: ["synthetic_subject"],
+        summary: `${title} exists only inside the disposable runtime test database.`,
+        title,
+        totalInstructionMinutes: 720,
+        weeklyLoadMinutes: 120,
+      },
+    });
+    const timestamp = await client.pool.query(
+      "select updated_at from course_version where id = $1",
+      [created.courseVersionId],
+    );
+    await transitionCourseVersion(client.database, admin, created.courseVersionId, {
+      action: "approve",
+      expectedUpdatedAt: timestamp.rows[0].updated_at.toISOString(),
+    });
+    courses.push(created);
+  }
+  return courses;
+}
+
+function runtimePlanInput(profileVersionId, claimId, courses) {
+  const [foundation, project, exploration] = courses;
+  return {
+    content: {
+      classroomProfile: {
+        statement: "Synthetic approved classroom profile for runtime verification.",
+        supportingClaimIds: [claimId],
+      },
+      decisionTimeline: [
+        {
+          decisionQuestion: "Which synthetic route has stronger observable engagement?",
+          observableSignals: ["Completes the synthetic artifact independently"],
+          period: { endDate: "2026-11-30", startDate: "2026-11-01" },
+        },
+      ],
+      goal: "Verify the protected manual planning workflow without real student data.",
+      overlapAndGaps: {
+        overlap: ["Both routes observe persistence and independent completion"],
+        routeAGaps: ["Needs a later structured sequence"],
+        routeBGaps: ["Needs a later open project"],
+      },
+      period: { endDate: "2027-06-30", startDate: "2026-09-01" },
+      risks: ["Synthetic runtime outcomes are not business evidence"],
+      routeComparison: Array.from({ length: 6 }, (_, index) => ({
+        dimension: `Runtime dimension ${String(index + 1)}`,
+        routeA: `Route A runtime observation ${String(index + 1)}`,
+        routeB: `Route B runtime observation ${String(index + 1)}`,
+      })),
+      routes: [
+        {
+          key: "route_a",
+          name: "Synthetic project route",
+          phases: [
+            {
+              courseVersionIds: [project.courseVersionId],
+              label: "Project observation",
+              period: { endDate: "2027-02-28", startDate: "2026-12-01" },
+              sequence: 1,
+            },
+          ],
+          summary: "Observe engagement through a synthetic project.",
+          supportingClaimIds: [claimId],
+        },
+        {
+          key: "route_b",
+          name: "Synthetic exploration route",
+          phases: [
+            {
+              courseVersionIds: [exploration.courseVersionId],
+              label: "Exploration observation",
+              period: { endDate: "2027-02-28", startDate: "2026-12-01" },
+              sequence: 1,
+            },
+          ],
+          summary: "Observe engagement through synthetic exploration.",
+          supportingClaimIds: [claimId],
+        },
+      ],
+      shortTermItems: [
+        {
+          courseVersionId: foundation.courseVersionId,
+          expectedOutcome: "Complete one synthetic foundation artifact.",
+          order: 1,
+          period: { endDate: "2026-10-31", startDate: "2026-09-01" },
+          reason: "The approved synthetic claim supports a short foundation trial.",
+          risks: [],
+          supportingClaimIds: [claimId],
+        },
+      ],
+      title: "Synthetic protected runtime plan",
+    },
+    profileVersionId,
+    reviewDueDate: "2027-01-31",
+    studentInput: {
+      ageYears: 15,
+      classroomFeedback: [
+        {
+          statement: "Synthetic classroom feedback for runtime verification.",
+          supportingClaimIds: [claimId],
+        },
+      ],
+      completedCourseIds: [],
+      constraints: ["Synthetic weekly capacity"],
+      inProgressCourseVersionIds: [],
+      interests: ["Synthetic project work"],
+    },
+  };
 }
 
 async function dropTemporaryDatabase() {
@@ -250,6 +393,7 @@ function authenticatedFetch(path, jar, init = {}) {
 try {
   await prepareTemporaryDatabase();
   await prepareTemporaryAccount();
+  const syntheticCourses = await prepareSyntheticCourseCatalog();
   worker = startWorker();
   await waitForWorker();
   server = startServer();
@@ -518,6 +662,117 @@ try {
     throw new Error("Profile approval was not persisted with review history.");
   }
 
+  const approvedProfile = reviewedProfiles.profiles[0];
+  const supportingClaim = approvedProfile.claims.find(
+    (claim) => claim.informationNature !== "missing",
+  );
+  if (supportingClaim === undefined) {
+    throw new Error("Approved runtime profile did not expose an evidence-backed claim.");
+  }
+  const unauthorizedPlanning = await fetch(
+    `${baseUrl}/api/students/${REDACTED_FIXTURE_IDS.student}/plans`,
+  );
+  if (unauthorizedPlanning.status !== 401) {
+    throw new Error("Unauthenticated planning workspace access was not blocked.");
+  }
+  const planningPageResponse = await authenticatedFetch(
+    `/students/${REDACTED_FIXTURE_IDS.student}/planning`,
+    accepted.jar,
+  );
+  const planningPage = await planningPageResponse.text();
+  if (!planningPageResponse.ok || !planningPage.includes("人工课程规划工作台")) {
+    throw new Error("Protected advisor planning page did not render.");
+  }
+  const createPlanResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans`,
+    accepted.jar,
+    {
+      body: JSON.stringify(
+        runtimePlanInput(approvedProfile.id, supportingClaim.id, syntheticCourses),
+      ),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  const createPlanPayload = await createPlanResponse.json();
+  const planId = createPlanPayload.plan?.id;
+  if (createPlanResponse.status !== 201 || typeof planId !== "string") {
+    throw new Error(`Manual plan creation failed (status=${String(createPlanResponse.status)}).`);
+  }
+  let planningWorkspaceResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans`,
+    accepted.jar,
+  );
+  let planningWorkspace = await planningWorkspaceResponse.json();
+  let runtimePlan = planningWorkspace.plans?.[0];
+  if (
+    !planningWorkspaceResponse.ok ||
+    runtimePlan?.status !== "draft" ||
+    planningWorkspace.approvedProfile?.id !== approvedProfile.id ||
+    planningWorkspace.catalog?.courses?.length !== 3
+  ) {
+    throw new Error("Planning workspace did not return its protected profile, catalog, and draft.");
+  }
+  const submitPlanResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans/${planId}/transitions`,
+    accepted.jar,
+    {
+      body: JSON.stringify({ action: "submit", expectedUpdatedAt: runtimePlan.updatedAt }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!submitPlanResponse.ok) {
+    throw new Error(`Manual plan submit failed (status=${String(submitPlanResponse.status)}).`);
+  }
+  planningWorkspaceResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans`,
+    accepted.jar,
+  );
+  planningWorkspace = await planningWorkspaceResponse.json();
+  runtimePlan = planningWorkspace.plans?.[0];
+  const approvePlanResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans/${planId}/transitions`,
+    accepted.jar,
+    {
+      body: JSON.stringify({ action: "approve", expectedUpdatedAt: runtimePlan.updatedAt }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (!approvePlanResponse.ok) {
+    throw new Error(`Manual plan approval failed (status=${String(approvePlanResponse.status)}).`);
+  }
+  const planExportResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans/${planId}/export`,
+    accepted.jar,
+  );
+  const planExport = await planExportResponse.text();
+  if (
+    !planExportResponse.ok ||
+    !planExport.includes("Synthetic protected runtime plan") ||
+    !planExportResponse.headers.get("content-type")?.includes("text/markdown") ||
+    !planExportResponse.headers.get("content-disposition")?.includes("attachment")
+  ) {
+    throw new Error("Approved plan Markdown export failed.");
+  }
+  const crossStudentPlan = await authenticatedFetch(
+    `/api/students/${randomUUID()}/plans/${planId}/transitions`,
+    accepted.jar,
+    {
+      body: JSON.stringify({
+        action: "archive",
+        expectedUpdatedAt: runtimePlan.updatedAt,
+        reason: "must not apply",
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+  if (crossStudentPlan.status !== 404) {
+    throw new Error("Cross-student plan transition was not blocked uniformly.");
+  }
+
   const evidenceDownload = await authenticatedFetch(
     `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}`,
     accepted.jar,
@@ -593,6 +848,24 @@ try {
   if (invalidatedProfiles.profiles?.[0]?.status !== "needs_review") {
     throw new Error("Evidence invalidation did not mark the approved profile for review.");
   }
+  const invalidatedPlansResponse = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans`,
+    accepted.jar,
+  );
+  const invalidatedPlans = await invalidatedPlansResponse.json();
+  if (
+    invalidatedPlans.plans?.[0]?.status !== "needs_review" ||
+    typeof invalidatedPlans.plans?.[0]?.invalidationReason !== "string"
+  ) {
+    throw new Error("Evidence invalidation did not propagate to the approved plan view.");
+  }
+  const invalidatedPlanExport = await authenticatedFetch(
+    `/api/students/${REDACTED_FIXTURE_IDS.student}/plans/${planId}/export`,
+    accepted.jar,
+  );
+  if (invalidatedPlanExport.status !== 409) {
+    throw new Error("An invalidated plan remained exportable.");
+  }
   const invalidatedDownload = await authenticatedFetch(
     `/api/students/${REDACTED_FIXTURE_IDS.student}/evidence/${evidenceId}`,
     accepted.jar,
@@ -633,6 +906,9 @@ try {
       loginStatus: accepted.response.status,
       profileStatus: profilePayload.tasks[0].status,
       profileWorkflowStatus: invalidatedProfiles.profiles[0].status,
+      planWorkflowStatus: invalidatedPlans.plans[0].status,
+      planExportStatus: planExportResponse.status,
+      crossStudentPlanStatus: crossStudentPlan.status,
       unauthenticatedStudentStatus: unauthorizedStudent.status,
     }),
   );

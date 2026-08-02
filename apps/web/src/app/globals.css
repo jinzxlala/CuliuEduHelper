@@ -1134,6 +1134,205 @@ mark {
   font-weight: 800;
 }
 
+.primary-link,
+.planning-form > button,
+.planning-review button {
+  display: inline-flex;
+  min-height: 42px;
+  padding: 0.65rem 1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--green);
+  border-radius: 9px;
+  background: var(--green);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.planning-form,
+.planning-form fieldset,
+.planning-route,
+.planning-subcard,
+.planning-review,
+.planning-transition-box,
+.planning-override {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.planning-overview > p {
+  line-height: 1.7;
+}
+
+.planning-form fieldset {
+  margin: 0;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fbfcf9;
+}
+
+.planning-form legend {
+  padding: 0 0.5rem;
+  color: var(--green-dark);
+  font-weight: 900;
+}
+
+.planning-form label,
+.planning-review label {
+  display: grid;
+  gap: 0.4rem;
+  color: #405148;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.planning-form input,
+.planning-form select,
+.planning-form textarea,
+.planning-review textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #bcc8c1;
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+
+.planning-form textarea,
+.planning-review textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.form-grid-three {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.planning-check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.planning-check-grid label {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 0.55rem;
+  padding: 0.7rem;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+  font-weight: 550;
+}
+
+.planning-check-grid input {
+  width: 18px;
+  min-height: 18px;
+  margin-top: 0.2rem;
+}
+
+.planning-check-grid small {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--muted);
+}
+
+.planning-subcard,
+.planning-route,
+.planning-transition-box,
+.planning-override {
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: white;
+}
+
+.planning-route {
+  border-left: 4px solid var(--orange);
+}
+
+.planning-comparison-table {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.55fr) repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  align-items: start;
+}
+
+.planning-comparison-row {
+  display: contents;
+}
+
+.planning-comparison-row textarea {
+  min-height: 70px;
+}
+
+.secondary-button,
+.danger-button {
+  min-height: 40px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.secondary-button {
+  border: 1px solid var(--green) !important;
+  background: white !important;
+  color: var(--green-dark) !important;
+}
+
+.danger-button {
+  border-color: #9c4026 !important;
+  background: #9c4026 !important;
+}
+
+.plan-status {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: #eef2ef;
+  color: #405148;
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.plan-status.approved {
+  background: #e9f6ef;
+  color: var(--green-dark);
+}
+
+.plan-status.in_review {
+  background: #fff6d8;
+  color: #765c00;
+}
+
+.plan-status.needs_review,
+.plan-status.archived {
+  background: #fff1eb;
+  color: #8a351f;
+}
+
+.planning-audit-list {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+  color: #405148;
+  line-height: 1.55;
+}
+
+.planning-review .record-item button {
+  width: fit-content;
+}
+
 @media (max-width: 780px) {
   .home-shell,
   .app-shell,
@@ -1195,6 +1394,24 @@ mark {
 
   .form-grid-two {
     grid-template-columns: 1fr;
+  }
+
+  .form-grid-three,
+  .planning-check-grid,
+  .planning-comparison-table {
+    grid-template-columns: 1fr;
+  }
+
+  .planning-comparison-table > strong {
+    display: none;
+  }
+
+  .planning-comparison-row {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
   }
 }
 

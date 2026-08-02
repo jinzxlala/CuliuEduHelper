@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/plan-contracts.d.ts",
+      "import": "./dist/plan-contracts.js"
     }
   },
   "files": [

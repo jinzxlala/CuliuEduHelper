@@ -45,6 +45,9 @@ importers:
       '@culiu/authorization':
         specifier: workspace:*
         version: link:../../packages/authorization
+      '@culiu/course-planning':
+        specifier: workspace:*
+        version: link:../../packages/course-planning
       '@culiu/database':
         specifier: workspace:*
         version: link:../../packages/database

@@ -334,3 +334,66 @@ export const StoredManualPlanSchema = z
   })
   .strict();
 export type StoredManualPlan = z.infer<typeof StoredManualPlanSchema>;
+
+export const PlanningProfileClaimSchema = z
+  .object({
+    category: z.string().trim().min(1),
+    confidence: z.enum(["high", "medium", "low", "unknown"]),
+    id: z.uuid(),
+    informationNature: z.enum(["fact", "inference", "advisor_judgment", "missing"]),
+    statement: z.string().trim().min(1),
+  })
+  .strict();
+
+export const PlanningApprovedProfileSchema = z
+  .object({
+    claims: z.array(PlanningProfileClaimSchema),
+    id: z.uuid(),
+    updatedAt: z.date(),
+    version: z.number().int().positive(),
+  })
+  .strict();
+
+export const PlanReviewRecordViewSchema = z
+  .object({
+    action: z.enum(["created", "submitted", "returned", "approved", "invalidated", "archived"]),
+    actorDisplayName: z.string().trim().min(1).nullable(),
+    actorType: z.enum(["user", "service"]),
+    createdAt: z.date(),
+    fromStatus: PlanStatusSchema.nullable(),
+    id: z.uuid(),
+    reason: z.string().nullable(),
+    toStatus: PlanStatusSchema,
+  })
+  .strict();
+
+export const PlanRuleOverrideViewSchema = z
+  .object({
+    createdAt: z.date(),
+    decidedAt: z.date().nullable(),
+    decidedByDisplayName: z.string().trim().min(1).nullable(),
+    decisionReason: z.string().nullable(),
+    id: z.uuid(),
+    reason: z.string().trim().min(1),
+    requestedByDisplayName: z.string().trim().min(1),
+    scopeKey: z.string(),
+    status: PlanRuleOverrideStatusSchema,
+    updatedAt: z.date(),
+    violationKey: z.string().regex(/^[0-9a-f]{64}$/u),
+  })
+  .strict();
+
+export const ManualPlanWorkspaceItemSchema = StoredManualPlanSchema.extend({
+  overrides: z.array(PlanRuleOverrideViewSchema),
+  reviews: z.array(PlanReviewRecordViewSchema),
+}).strict();
+
+export const ManualPlanningWorkspaceSchema = z
+  .object({
+    approvedProfile: PlanningApprovedProfileSchema.nullable(),
+    catalog: ApprovedCourseCatalogSnapshotSchema,
+    plans: z.array(ManualPlanWorkspaceItemSchema),
+    studentId: z.uuid(),
+  })
+  .strict();
+export type ManualPlanningWorkspace = z.infer<typeof ManualPlanningWorkspaceSchema>;

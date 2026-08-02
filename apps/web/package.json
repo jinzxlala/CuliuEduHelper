@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@culiu/authorization": "workspace:*",
+    "@culiu/course-planning": "workspace:*",
     "@culiu/database": "workspace:*",
     "@culiu/search": "workspace:*",
     "@culiu/shared": "workspace:*",

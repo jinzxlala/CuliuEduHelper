@@ -82,6 +82,12 @@ export default async function StudentDetailPage({
           </p>
         </div>
 
+        <div className="detail-actions">
+          <Link className="primary-link" href={`/students/${student.id}/planning`}>
+            打开课程规划工作台
+          </Link>
+        </div>
+
         <StudentRecordEditor
           evidenceLocators={currentEvidence.flatMap((evidence) =>
             evidence.locators.map((locator) => ({
