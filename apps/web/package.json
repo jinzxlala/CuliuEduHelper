@@ -15,6 +15,7 @@
     "@culiu/authorization": "workspace:*",
     "@culiu/course-planning": "workspace:*",
     "@culiu/database": "workspace:*",
+    "@culiu/knowledge-ingest": "workspace:*",
     "@culiu/search": "workspace:*",
     "@culiu/shared": "workspace:*",
     "@culiu/storage": "workspace:*",

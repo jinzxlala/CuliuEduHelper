@@ -205,22 +205,24 @@ export async function loadKnowledgeImport(
     );
     const byRole = new Map(loaded.map((source) => [source.descriptor.role, source]));
     const analysis = requireRole(byRole, "analysis_markdown", bundle);
-    const transcriptJson = requireRole(byRole, "transcript_json", bundle);
-    const transcriptQa = requireRole(byRole, "transcript_qa", bundle);
-    const transcriptSrt = requireRole(byRole, "transcript_srt", bundle);
-    const transcriptText = requireRole(byRole, "transcript_text", bundle);
 
     try {
-      validateTranscriptRepresentations({
-        json: sourceText(transcriptJson),
-        jsonLabel: transcriptJson.descriptor.logical_path,
-        qa: sourceText(transcriptQa),
-        qaLabel: transcriptQa.descriptor.logical_path,
-        srt: sourceText(transcriptSrt),
-        srtLabel: transcriptSrt.descriptor.logical_path,
-        text: sourceText(transcriptText),
-        textLabel: transcriptText.descriptor.logical_path,
-      });
+      if (bundle.transcript_validation !== null) {
+        const transcriptJson = requireRole(byRole, "transcript_json", bundle);
+        const transcriptQa = requireRole(byRole, "transcript_qa", bundle);
+        const transcriptSrt = requireRole(byRole, "transcript_srt", bundle);
+        const transcriptText = requireRole(byRole, "transcript_text", bundle);
+        validateTranscriptRepresentations({
+          json: sourceText(transcriptJson),
+          jsonLabel: transcriptJson.descriptor.logical_path,
+          qa: sourceText(transcriptQa),
+          qaLabel: transcriptQa.descriptor.logical_path,
+          srt: sourceText(transcriptSrt),
+          srtLabel: transcriptSrt.descriptor.logical_path,
+          text: sourceText(transcriptText),
+          textLabel: transcriptText.descriptor.logical_path,
+        });
+      }
       parsedAnalyses.push(
         parseAnalysisDocuments(sourceText(analysis), bundle, analysis.descriptor.logical_path),
       );

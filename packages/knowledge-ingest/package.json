@@ -19,6 +19,7 @@
     "lint": "eslint .",
     "knowledge:validate": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/validate-import-input.ts",
     "test": "vitest run",
+    "test:integration": "node --env-file-if-exists=../../infra/.env node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

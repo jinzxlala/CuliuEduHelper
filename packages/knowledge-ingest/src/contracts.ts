@@ -3,7 +3,7 @@ import { z } from "zod";
 export const KNOWLEDGE_SOURCE_MANIFEST_VERSION = "1.0.0" as const;
 export const KNOWLEDGE_MAPPING_VERSION = "1.0.0" as const;
 export const KNOWLEDGE_CORPUS_ID = "eduknow_knowledge_sources_v1" as const;
-export const EXPECTED_LECTURE_COUNT = 48 as const;
+export const MAX_LECTURE_COUNT = 10_000 as const;
 
 export const SourceRoleSchema = z.enum([
   "analysis_markdown",
@@ -122,28 +122,48 @@ export const LectureSourceBundleSchema = z
     lecture_date: z.iso.date(),
     lecture_id: DocumentIdSchema,
     source_key: z.string().min(12).max(512),
-    sources: z.array(SourceFileSchema).length(SOURCE_ROLES.length),
+    sources: z.array(SourceFileSchema).min(1).max(SOURCE_ROLES.length),
     title: z.string().trim().min(1).max(1_024),
-    transcript_validation: TranscriptValidationSchema,
+    transcript_validation: TranscriptValidationSchema.nullable(),
   })
   .strict()
   .superRefine((bundle, context) => {
     const roles = bundle.sources.map((source) => source.role);
-    if (new Set(roles).size !== SOURCE_ROLES.length) {
+    const uniqueRoles = new Set(roles);
+    if (uniqueRoles.size !== roles.length) {
       context.addIssue({
         code: "custom",
-        message: "a lecture bundle must contain each source role exactly once",
+        message: "a lecture bundle must not repeat a source role",
         path: ["sources"],
       });
     }
-    for (const role of SOURCE_ROLES) {
-      if (!roles.includes(role)) {
+    if (!roles.includes("analysis_markdown")) {
+      context.addIssue({
+        code: "custom",
+        message: "a lecture bundle must contain analysis_markdown",
+        path: ["sources"],
+      });
+    }
+    const hasTranscriptRole = roles.some((role) => role !== "analysis_markdown");
+    if (hasTranscriptRole) {
+      for (const role of SOURCE_ROLES) {
+        if (roles.includes(role)) continue;
         context.addIssue({
           code: "custom",
           message: `missing source role: ${role}`,
           path: ["sources"],
         });
       }
+    }
+    if (
+      (hasTranscriptRole && bundle.transcript_validation === null) ||
+      (!hasTranscriptRole && bundle.transcript_validation !== null)
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "transcript_validation must match the presence of a complete transcript package",
+        path: ["transcript_validation"],
+      });
     }
     if (!bundle.source_key.startsWith(`${bundle.lecture_date}_`)) {
       context.addIssue({
@@ -185,16 +205,19 @@ export const KnowledgeSourceManifestSchema = z
       .strict(),
     builder_version: z.literal("0.1.0"),
     corpus_hash: Sha256Schema,
-    corpus_id: z.literal(KNOWLEDGE_CORPUS_ID),
+    corpus_id: z
+      .string()
+      .regex(/^[a-z][a-z0-9_]*$/u)
+      .max(128),
     excluded_files: z.array(ExcludedSourceFileSchema),
-    expected_lecture_count: z.literal(EXPECTED_LECTURE_COUNT),
+    expected_lecture_count: z.number().int().min(1).max(MAX_LECTURE_COUNT),
     index_mappings: z.array(IndexMappingSchema).length(3),
-    lecture_count: z.literal(EXPECTED_LECTURE_COUNT),
-    lectures: z.array(LectureSourceBundleSchema).length(EXPECTED_LECTURE_COUNT),
+    lecture_count: z.number().int().min(1).max(MAX_LECTURE_COUNT),
+    lectures: z.array(LectureSourceBundleSchema).min(1).max(MAX_LECTURE_COUNT),
     manifest_version: z.literal(KNOWLEDGE_SOURCE_MANIFEST_VERSION),
     mapping_version: z.literal(KNOWLEDGE_MAPPING_VERSION),
     source_policies: z.array(SourcePolicySchema).length(SOURCE_ROLES.length),
-    source_roots: z.array(SourceRootSchema).min(2),
+    source_roots: z.array(SourceRootSchema).min(1),
   })
   .strict()
   .superRefine((manifest, context) => {
@@ -205,6 +228,17 @@ export const KnowledgeSourceManifestSchema = z
     const logicalPaths = manifest.lectures.flatMap((lecture) =>
       lecture.sources.map((source) => source.logical_path),
     );
+
+    if (
+      manifest.lecture_count !== manifest.lectures.length ||
+      manifest.expected_lecture_count !== manifest.lectures.length
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "manifest lecture counts must match the lecture bundle count",
+        path: ["lecture_count"],
+      });
+    }
 
     const uniqueChecks: ReadonlyArray<readonly [string, string[], PropertyKey]> = [
       ["source root IDs", rootIds, "source_roots"],

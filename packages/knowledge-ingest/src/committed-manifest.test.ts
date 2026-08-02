@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
 
-import { EXPECTED_LECTURE_COUNT, SOURCE_ROLES } from "./contracts.js";
+import { SOURCE_ROLES } from "./contracts.js";
 import { verifyKnowledgeSourceManifest } from "./manifest.js";
 
 const COMMITTED_MANIFEST_URL = new URL(
@@ -15,10 +15,10 @@ describe("committed knowledge source manifest", () => {
     const serialized = await readFile(COMMITTED_MANIFEST_URL, "utf8");
     const manifest = verifyKnowledgeSourceManifest(JSON.parse(serialized) as unknown);
 
-    expect(manifest.lecture_count).toBe(EXPECTED_LECTURE_COUNT);
-    expect(manifest.lectures).toHaveLength(EXPECTED_LECTURE_COUNT);
+    expect(manifest.lecture_count).toBe(48);
+    expect(manifest.lectures).toHaveLength(48);
     expect(manifest.lectures.flatMap((lecture) => lecture.sources)).toHaveLength(
-      EXPECTED_LECTURE_COUNT * SOURCE_ROLES.length,
+      48 * SOURCE_ROLES.length,
     );
     expect(manifest.boundary_rules).toEqual({
       manifest_contains_body_content: false,

@@ -5,7 +5,6 @@ import { basename, dirname, extname, join } from "node:path";
 import { z } from "zod";
 
 import {
-  EXPECTED_LECTURE_COUNT,
   KNOWLEDGE_CORPUS_ID,
   KNOWLEDGE_MAPPING_VERSION,
   KNOWLEDGE_SOURCE_MANIFEST_VERSION,
@@ -125,7 +124,7 @@ function transcriptRole(fileName: string): {
   return { role: SourceRoleSchema.parse(role), sourceKey };
 }
 
-function logicalPath(sourceKey: string, role: SourceRole): string {
+export function knowledgeLogicalPath(sourceKey: string, role: SourceRole): string {
   const { year } = sourceKeyMetadata(sourceKey);
   const extension = {
     analysis_markdown: ".md",
@@ -140,18 +139,18 @@ function logicalPath(sourceKey: string, role: SourceRole): string {
   return `knowledge/transcripts/${String(year)}/${sourceKey}${extension}`;
 }
 
-function lectureId(sourceKey: string): string {
+export function knowledgeLectureId(sourceKey: string): string {
   const { date } = sourceKeyMetadata(sourceKey);
   return `lecture_${date.replaceAll("-", "")}_${sha256(sourceKey).slice(0, 12)}`;
 }
 
-function computeBundleHash(sources: readonly SourceFile[]): string {
+export function computeKnowledgeBundleHash(sources: readonly SourceFile[]): string {
   return canonicalHash(
     sources.map((source) => ({ role: source.role, sha256: source.content_sha256 })),
   );
 }
 
-function computeCorpusHash(lectures: readonly LectureSourceBundle[]): string {
+export function computeKnowledgeCorpusHash(lectures: readonly LectureSourceBundle[]): string {
   return canonicalHash(
     lectures.map((lecture) => ({
       bundle_hash: lecture.bundle_hash,
@@ -315,7 +314,7 @@ async function describeSource(
     descriptor: {
       bytes: bytes.byteLength,
       content_sha256: sha256(bytes),
-      logical_path: logicalPath(sourceKey, source.role),
+      logical_path: knowledgeLogicalPath(sourceKey, source.role),
       mime_type: MIME_TYPES[source.role],
       relative_path: source.relativePath.replaceAll("\\", "/"),
       role: source.role,
@@ -370,9 +369,9 @@ async function buildLectureBundle(
 
   return {
     analysis_sections: analysisMetadata.sections,
-    bundle_hash: computeBundleHash(sources),
+    bundle_hash: computeKnowledgeBundleHash(sources),
     lecture_date: date,
-    lecture_id: lectureId(sourceKey),
+    lecture_id: knowledgeLectureId(sourceKey),
     source_key: sourceKey,
     sources,
     title: analysisMetadata.title,
@@ -418,13 +417,13 @@ export function verifyKnowledgeSourceManifest(value: unknown): KnowledgeSourceMa
     throw new KnowledgeSourceError("invalid_source", "manifest lectures are not canonical-sorted");
   }
   for (const lecture of manifest.lectures) {
-    if (lecture.bundle_hash !== computeBundleHash(lecture.sources)) {
+    if (lecture.bundle_hash !== computeKnowledgeBundleHash(lecture.sources)) {
       throw new KnowledgeSourceError(
         "invalid_source",
         `${lecture.source_key}: bundle hash does not match source hashes`,
       );
     }
-    if (lecture.lecture_id !== lectureId(lecture.source_key)) {
+    if (lecture.lecture_id !== knowledgeLectureId(lecture.source_key)) {
       throw new KnowledgeSourceError(
         "invalid_source",
         `${lecture.source_key}: lecture ID is not deterministic`,
@@ -439,7 +438,7 @@ export function verifyKnowledgeSourceManifest(value: unknown): KnowledgeSourceMa
       );
     }
   }
-  if (manifest.corpus_hash !== computeCorpusHash(manifest.lectures)) {
+  if (manifest.corpus_hash !== computeKnowledgeCorpusHash(manifest.lectures)) {
     throw new KnowledgeSourceError("invalid_source", "corpus hash does not match lecture bundles");
   }
   return manifest;
@@ -453,10 +452,10 @@ export async function buildKnowledgeSourceManifest(
     options.transcriptRoots,
   );
   assertSameSourceKeys(analysisSources, transcriptSets);
-  if (analysisSources.size !== EXPECTED_LECTURE_COUNT) {
+  if (analysisSources.size === 0) {
     throw new KnowledgeSourceError(
       "source_set_mismatch",
-      `expected ${String(EXPECTED_LECTURE_COUNT)} lecture sources, found ${String(analysisSources.size)}`,
+      "at least one lecture source is required",
     );
   }
 
@@ -485,12 +484,12 @@ export async function buildKnowledgeSourceManifest(
       student_data_allowed: false,
     },
     builder_version: "0.1.0",
-    corpus_hash: computeCorpusHash(lectures),
+    corpus_hash: computeKnowledgeCorpusHash(lectures),
     corpus_id: KNOWLEDGE_CORPUS_ID,
     excluded_files: excludedFiles,
-    expected_lecture_count: EXPECTED_LECTURE_COUNT,
+    expected_lecture_count: lectures.length,
     index_mappings: INDEX_MAPPINGS,
-    lecture_count: EXPECTED_LECTURE_COUNT,
+    lecture_count: lectures.length,
     lectures,
     manifest_version: KNOWLEDGE_SOURCE_MANIFEST_VERSION,
     mapping_version: KNOWLEDGE_MAPPING_VERSION,

@@ -21,3 +21,5 @@ export function getStudentObjectStore(): LocalImmutableObjectStore {
   );
   return globalObjectStore.culiuStudentObjectStore;
 }
+
+export const getKnowledgeObjectStore = getStudentObjectStore;

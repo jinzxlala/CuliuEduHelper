@@ -500,3 +500,30 @@ git diff --check
 ```
 
 若 Windows 因符号链接权限无法完成最后两项，应在固定 Node.js 22 Linux 容器或 CI 中复跑，并明确记录环境差异。
+
+## 25. 开放式讲座导入与证据包发布
+
+截至 2026-08-02，知识库已取消“只能有 48 场讲座”的产品限制，并新增受保护的 Web 导入流程：
+
+- 已提交清单中的 48 场讲座只是初始语料快照，不是数量上限。知识清单、单次提交契约和发布批次均按实际讲座数校验，当前实现允许 1—10,000 场；首页与导入回执继续从 PostgreSQL 当前发布批次动态读取数量；
+- 管理员入口为 `/knowledge/import`，API 为 `POST /api/knowledge/imports`。未登录请求返回 401；非管理员不暴露入口内容并按 404 处理。浏览器端不持有 PostgreSQL、对象存储或 Meilisearch 管理凭据；
+- “仅导入分析 Markdown”接收一份 UTF-8 `.md`。文件名必须为 `YYYY-MM-DD_讲座标题.md`，正文必须包含基础信息、摘要、趋势、案例卡片、AI+与跨学科、失败与反例、关键原话、醋溜科技行动建议、证据边界九类章节；页面提供可复制的逐字稿转分析稿提示词，并明确禁止补写事实、编造时间戳或暴露学生身份；
+- “导入完整证据包”要求五个文件使用同一基名：`.md`、`.json`、`.qa.json`、`.srt`、`.txt`。服务端会校验安全文件名、日期、20 MB 总上限、非空字节、UTF-8、JSON／QA 结构，以及 JSON、SRT、带时间戳 TXT 的句子数、时间和正文一致性；缺少任一逐字稿表示或基名不一致都会拒绝整次提交；
+- 每次成功提交都会形成新的不可变知识发布批次。发布模式是按 `lecture_id` 增量替换：同一日期与标题基名再次导入视为该讲座修订，其他已发布讲座、案例和来源关系会复制到新批次中保留；Meilisearch 仍以完整当前文档集执行三索引原子重建，不允许只更新单个索引造成版本分裂；
+- PostgreSQL 仍是当前正式版本来源，Meilisearch 仍是可重建索引。完整证据包的五个原始文件会进入 knowledge 域不可变对象存储和来源关系；逐字稿来源使用 `restricted` 访问级别，但隐私门禁保持 `transcript_segments=0`，本功能不等于批准逐字稿正文进入搜索；
+- 原有 Worker 清单导入仍保留失败批次、重试尝试和安全摘要审计。Web 单讲座发布与 Worker 发布共用全局 PostgreSQL advisory lock、存储完整性校验、不可变版本表和搜索原子发布逻辑；
+- 新增 4 项提交解析单元测试和 1 项真实集成测试。集成测试使用临时 PostgreSQL 数据库、随机 Meilisearch 索引和临时对象目录，依次发布分析稿、完整证据包和同讲座的分析稿修订，验证旧讲座不被覆盖、修订后原有四种逐字稿证据关系仍保留、当前批次包含 2 场讲座／2 张案例／6 个来源，并在结束后清理全部临时资源；
+- 本轮知识导入包 22 项单元测试、Web 23 项单元测试、仓库 61 项集成测试全部通过；官方 Node.js 22.23.2 Linux Docker 构建中 14 个生产包全部成功。Windows 本机构建仍可能在 Next.js standalone 收集阶段因未启用符号链接权限报 `EPERM`，不得据此放宽安全检查。
+
+后续修改导入契约、增量发布或页面时，至少执行：
+
+```powershell
+pnpm --filter @culiu/knowledge-ingest test
+pnpm --filter @culiu/web test
+pnpm --filter @culiu/knowledge-ingest test:integration
+pnpm test:integration
+pnpm build
+git diff --check
+```
+
+不得把初始 48 场数量重新写成 Schema 上限，不得允许部分证据包绕过一致性验证，也不得因为已保存完整证据包就解除逐字稿索引隐私门禁。

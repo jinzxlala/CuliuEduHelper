@@ -1,13 +1,14 @@
 import type { DatabaseClient, DatabaseConnection } from "@culiu/database";
-import type {
-  CaseDocument,
-  KnowledgeDocumentSet,
-  KnowledgeIndexRebuildResult,
-  LectureDocument,
+import {
+  KnowledgeDocumentSetSchema,
+  type CaseDocument,
+  type KnowledgeDocumentSet,
+  type KnowledgeIndexRebuildResult,
+  type LectureDocument,
 } from "@culiu/search";
 import type { ImmutableObjectStore, StoredObjectReference } from "@culiu/storage";
 
-import { EXPECTED_LECTURE_COUNT, type SourceFile } from "./contracts.js";
+import type { SourceFile } from "./contracts.js";
 import {
   describeImportFailure,
   KnowledgeImportError,
@@ -32,6 +33,8 @@ export interface KnowledgeImportRequest {
   readonly corpusId: string;
   readonly manifestVersion: string;
   readonly mappingVersion: string;
+  readonly expectedLectureCount?: number;
+  readonly publicationMode?: "replace" | "upsert";
 }
 
 export interface KnowledgeImporterOptions {
@@ -243,7 +246,7 @@ async function beginAttempt(
         request.corpusHash,
         request.manifestVersion,
         request.mappingVersion,
-        EXPECTED_LECTURE_COUNT,
+        request.expectedLectureCount ?? 1,
       ],
     );
     const batchResult = await connection.query<BatchRow>(
@@ -562,11 +565,54 @@ async function persistStagedImport(
   actorUserId: string,
   loaded: LoadedKnowledgeImport,
   storedSources: readonly StoredSource[],
+  publishedDocuments: KnowledgeDocumentSet,
+  options: { currentBatchId?: string; publicationMode: "replace" | "upsert" },
 ): Promise<void> {
   await transaction(connection, async () => {
     await connection.query("delete from knowledge_case_version where batch_id = $1", [batchId]);
     await connection.query("delete from knowledge_lecture_version where batch_id = $1", [batchId]);
     await connection.query("delete from knowledge_import_source where batch_id = $1", [batchId]);
+
+    const incomingLectureIds = loaded.documents.lectures.map((lecture) => lecture.lecture_id);
+    const incomingLogicalPaths = loaded.sources.map((source) => source.descriptor.logical_path);
+    if (options.publicationMode === "upsert" && options.currentBatchId !== undefined) {
+      await connection.query(
+        `insert into knowledge_import_source
+          (batch_id, data_domain, lecture_id, source_role, source_document_id,
+           evidence_object_id, source_key, logical_path, root_id, byte_count)
+         select $1, data_domain, lecture_id, source_role, source_document_id,
+                evidence_object_id, source_key, logical_path, root_id, byte_count
+           from knowledge_import_source
+          where batch_id = $2 and not (logical_path = any($3::text[]))`,
+        [batchId, options.currentBatchId, incomingLogicalPaths],
+      );
+      await connection.query(
+        `insert into knowledge_lecture_version
+          (batch_id, data_domain, lecture_id, source_document_id, title, summary, trend_text,
+           ai_cross_disciplinary_text, failure_text, lecture_date, organization, speakers,
+           schools, majors, source_path)
+         select $1, data_domain, lecture_id, source_document_id, title, summary, trend_text,
+                ai_cross_disciplinary_text, failure_text, lecture_date, organization, speakers,
+                schools, majors, source_path
+           from knowledge_lecture_version
+          where batch_id = $2 and not (lecture_id = any($3::text[]))`,
+        [batchId, options.currentBatchId, incomingLectureIds],
+      );
+      await connection.query(
+        `insert into knowledge_case_version
+          (batch_id, data_domain, case_id, lecture_id, source_document_id, case_type,
+           curriculum_system, academic_label, background, admission_result, schools, major,
+           research_methods, activity_types, ai_domains, ai_depth, confidence,
+           evidence_boundary, timestamp_refs)
+         select $1, data_domain, case_id, lecture_id, source_document_id, case_type,
+                curriculum_system, academic_label, background, admission_result, schools, major,
+                research_methods, activity_types, ai_domains, ai_depth, confidence,
+                evidence_boundary, timestamp_refs
+           from knowledge_case_version
+          where batch_id = $2 and not (lecture_id = any($3::text[]))`,
+        [batchId, options.currentBatchId, incomingLectureIds],
+      );
+    }
 
     const analysisSourceByLecture = new Map<string, string>();
     for (const source of storedSources) {
@@ -625,12 +671,31 @@ async function persistStagedImport(
 
     await connection.query(
       `update knowledge_import_batch
-          set status = 'publishing', lecture_count = $2, case_count = $3,
+          set status = 'publishing', expected_lecture_count = $2,
+              lecture_count = $2, case_count = $3,
               transcript_segment_count = 0, transcript_publication_approved = false,
               updated_at = now()
         where id = $1`,
-      [batchId, loaded.documents.lectures.length, loaded.documents.cases.length],
+      [batchId, publishedDocuments.lectures.length, publishedDocuments.cases.length],
     );
+  });
+}
+
+function mergeKnowledgeDocuments(
+  current: KnowledgeDocumentSet,
+  incoming: KnowledgeDocumentSet,
+): KnowledgeDocumentSet {
+  const replacedLectureIds = new Set(incoming.lectures.map((lecture) => lecture.lecture_id));
+  return KnowledgeDocumentSetSchema.parse({
+    cases: [
+      ...current.cases.filter((item) => !replacedLectureIds.has(item.lecture_id)),
+      ...incoming.cases,
+    ],
+    lectures: [
+      ...current.lectures.filter((item) => !replacedLectureIds.has(item.lecture_id)),
+      ...incoming.lectures,
+    ],
+    transcriptSegments: [],
   });
 }
 
@@ -721,6 +786,29 @@ export class KnowledgeImporter {
   }
 
   public async import(request: KnowledgeImportRequest): Promise<KnowledgeImportResult> {
+    return this.#executeImport(request, () =>
+      this.#loadImport({
+        expectedCorpusHash: request.corpusHash,
+        expectedCorpusId: request.corpusId,
+        expectedManifestVersion: request.manifestVersion,
+        expectedMappingVersion: request.mappingVersion,
+        manifestPath: this.#manifestPath,
+        sourceRoots: this.#sourceRoots,
+      }),
+    );
+  }
+
+  public async importLoaded(
+    request: KnowledgeImportRequest,
+    loaded: LoadedKnowledgeImport,
+  ): Promise<KnowledgeImportResult> {
+    return this.#executeImport(request, () => Promise.resolve(loaded));
+  }
+
+  async #executeImport(
+    request: KnowledgeImportRequest,
+    load: () => Promise<LoadedKnowledgeImport>,
+  ): Promise<KnowledgeImportResult> {
     const connection = await this.#databaseClient.pool.connect();
     let searchPublished = false;
     let staged: StagedAttempt | undefined;
@@ -738,14 +826,19 @@ export class KnowledgeImporter {
 
       stage = "validation";
       await updateAttemptStage(connection, staged.attemptId, stage);
-      const loaded = await this.#loadImport({
-        expectedCorpusHash: request.corpusHash,
-        expectedCorpusId: request.corpusId,
-        expectedManifestVersion: request.manifestVersion,
-        expectedMappingVersion: request.mappingVersion,
-        manifestPath: this.#manifestPath,
-        sourceRoots: this.#sourceRoots,
-      });
+      const loaded = await load();
+      const publicationMode = request.publicationMode ?? "replace";
+      const currentBatch = await connection.query<{ id: string }>(
+        "select id from knowledge_import_batch where is_current = true and status = 'published' limit 1",
+      );
+      const currentBatchId = currentBatch.rows[0]?.id;
+      const publishedDocuments =
+        publicationMode === "upsert"
+          ? mergeKnowledgeDocuments(
+              await loadCurrentPublishedDocuments(connection),
+              loaded.documents,
+            )
+          : loaded.documents;
 
       stage = "storage";
       await updateAttemptStage(connection, staged.attemptId, stage);
@@ -759,12 +852,17 @@ export class KnowledgeImporter {
         request.actorUserId,
         loaded,
         storedSources,
+        publishedDocuments,
+        {
+          ...(currentBatchId === undefined ? {} : { currentBatchId }),
+          publicationMode,
+        },
       );
 
       stage = "search";
       await updateAttemptStage(connection, staged.attemptId, stage);
       try {
-        await this.#indexPublisher.rebuildKnowledgeIndexes(loaded.documents);
+        await this.#indexPublisher.rebuildKnowledgeIndexes(publishedDocuments);
         searchPublished = true;
       } catch (error) {
         throw new KnowledgeImportError(
@@ -778,7 +876,7 @@ export class KnowledgeImporter {
       stage = "finalize";
       await updateAttemptStage(connection, staged.attemptId, stage);
       await finalizeImport(connection, staged.batchId, staged.attemptId);
-      return publishedResult(staged.batchId, loaded.documents);
+      return publishedResult(staged.batchId, publishedDocuments);
     } catch (error) {
       if (staged !== undefined && !staged.noOp) {
         await recordFailure(connection, staged.batchId, staged.attemptId, error, stage).catch(

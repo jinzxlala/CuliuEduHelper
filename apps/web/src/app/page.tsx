@@ -24,6 +24,9 @@ export default async function HomePage(): Promise<JSX.Element> {
             <Link className="secondary-button button-link" href="/search">
               进入知识搜索
             </Link>
+            <Link className="secondary-button button-link" href="/knowledge/import">
+              导入新讲座
+            </Link>
           </div>
         </div>
         <div className="home-visual" aria-hidden="true">
