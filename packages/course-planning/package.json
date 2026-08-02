@@ -28,6 +28,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@culiu/student-profiles": "workspace:*",
     "vitest": "4.1.10"
   }
 }

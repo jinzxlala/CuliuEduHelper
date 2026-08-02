@@ -28,3 +28,24 @@ export class CourseRuleConfigurationError extends Error {
     this.issues = [...issues];
   }
 }
+
+export class PlanWorkflowConflictError extends Error {
+  public constructor(message = "The course plan conflicts with its current state.") {
+    super(message);
+    this.name = "PlanWorkflowConflictError";
+  }
+}
+
+export class PlanWorkflowNotFoundError extends Error {
+  public constructor() {
+    super("The requested course plan record was not found.");
+    this.name = "PlanWorkflowNotFoundError";
+  }
+}
+
+export class PlanRuleOverrideNotFoundError extends Error {
+  public constructor() {
+    super("The requested course plan rule override was not found.");
+    this.name = "PlanRuleOverrideNotFoundError";
+  }
+}

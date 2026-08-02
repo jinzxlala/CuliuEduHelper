@@ -142,6 +142,31 @@ export const courseRuleTypeEnum = pgEnum("course_rule_type", [
   "load_limit",
 ]);
 export const courseRuleSeverityEnum = pgEnum("course_rule_severity", ["hard", "warning"]);
+export const planStatusEnum = pgEnum("plan_status", [
+  "draft",
+  "in_review",
+  "approved",
+  "needs_review",
+  "archived",
+]);
+export const planReviewActionEnum = pgEnum("plan_review_action", [
+  "created",
+  "submitted",
+  "returned",
+  "approved",
+  "invalidated",
+  "archived",
+]);
+export const planCourseDependencyKindEnum = pgEnum("plan_course_dependency_kind", [
+  "selected",
+  "in_progress",
+  "rule_reference",
+]);
+export const planRuleOverrideStatusEnum = pgEnum("plan_rule_override_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);
 
 export const appUsers = pgTable(
   "app_user",
@@ -882,6 +907,177 @@ export const courseRuleVersions = pgTable(
     check(
       "course_rule_version_state_check",
       sql`(${table.status} = 'draft' and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} = 'archived' and ((${table.approvedByUserId} is null and ${table.approvedAt} is null) or (${table.approvedByUserId} is not null and ${table.approvedAt} is not null)) and char_length(trim(${table.invalidationReason})) > 0)`,
+    ),
+  ],
+);
+
+export const planVersions = pgTable(
+  "plan_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    sourcePlanVersionId: uuid("source_plan_version_id").references(
+      (): AnyPgColumn => planVersions.id,
+      { onDelete: "restrict" },
+    ),
+    status: planStatusEnum("status").notNull().default("draft"),
+    profileVersionId: uuid("profile_version_id")
+      .notNull()
+      .references(() => profileVersions.id, { onDelete: "restrict" }),
+    studentInput: jsonb("student_input").$type<Record<string, unknown>>().notNull(),
+    content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    catalogSnapshot: jsonb("catalog_snapshot").$type<Record<string, unknown>>().notNull(),
+    evaluation: jsonb("evaluation").$type<Record<string, unknown>>().notNull(),
+    catalogSnapshotHash: varchar("catalog_snapshot_hash", { length: 64 }).notNull(),
+    inputSnapshotHash: varchar("input_snapshot_hash", { length: 64 }).notNull(),
+    reviewDueDate: date("review_due_date").notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    invalidationReason: varchar("invalidation_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("plan_version_student_version_unique").on(table.studentId, table.version),
+    uniqueIndex("plan_version_source_unique")
+      .on(table.sourcePlanVersionId)
+      .where(sql`${table.sourcePlanVersionId} is not null`),
+    uniqueIndex("plan_version_current_approved_unique")
+      .on(table.studentId)
+      .where(sql`${table.status} = 'approved'`),
+    index("plan_version_student_created_idx").on(table.studentId, table.createdAt),
+    index("plan_version_profile_idx").on(table.profileVersionId),
+    check("plan_version_number_check", sql`${table.version} > 0`),
+    check(
+      "plan_version_hashes_check",
+      sql`${table.catalogSnapshotHash} ~ '^[0-9a-f]{64}$' and ${table.inputSnapshotHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "plan_version_json_check",
+      sql`jsonb_typeof(${table.studentInput}) = 'object' and jsonb_typeof(${table.content}) = 'object' and jsonb_typeof(${table.catalogSnapshot}) = 'object' and jsonb_typeof(${table.evaluation}) = 'object'`,
+    ),
+    check(
+      "plan_version_state_check",
+      sql`(${table.status} in ('draft', 'in_review') and ${table.approvedByUserId} is null and ${table.approvedAt} is null and ${table.invalidationReason} is null) or (${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and ${table.invalidationReason} is null) or (${table.status} = 'needs_review' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null and char_length(trim(${table.invalidationReason})) > 0) or (${table.status} = 'archived' and ((${table.approvedByUserId} is null and ${table.approvedAt} is null) or (${table.approvedByUserId} is not null and ${table.approvedAt} is not null)) and char_length(trim(${table.invalidationReason})) > 0)`,
+    ),
+  ],
+);
+
+export const planCourseDependencies = pgTable(
+  "plan_course_dependency",
+  {
+    planVersionId: uuid("plan_version_id")
+      .notNull()
+      .references(() => planVersions.id, { onDelete: "restrict" }),
+    courseVersionId: uuid("course_version_id")
+      .notNull()
+      .references(() => courseVersions.id, { onDelete: "restrict" }),
+    dependencyKind: planCourseDependencyKindEnum("dependency_kind").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.planVersionId, table.courseVersionId] }),
+    index("plan_course_dependency_course_idx").on(table.courseVersionId),
+  ],
+);
+
+export const planRuleDependencies = pgTable(
+  "plan_rule_dependency",
+  {
+    planVersionId: uuid("plan_version_id")
+      .notNull()
+      .references(() => planVersions.id, { onDelete: "restrict" }),
+    ruleVersionId: uuid("rule_version_id")
+      .notNull()
+      .references(() => courseRuleVersions.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.planVersionId, table.ruleVersionId] }),
+    index("plan_rule_dependency_rule_idx").on(table.ruleVersionId),
+  ],
+);
+
+export const planReviewRecords = pgTable(
+  "plan_review_record",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    planVersionId: uuid("plan_version_id")
+      .notNull()
+      .references(() => planVersions.id, { onDelete: "restrict" }),
+    action: planReviewActionEnum("action").notNull(),
+    fromStatus: planStatusEnum("from_status"),
+    toStatus: planStatusEnum("to_status").notNull(),
+    actorType: actorTypeEnum("actor_type").notNull(),
+    actorUserId: uuid("actor_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    reason: varchar("reason", { length: 512 }),
+    requestCorrelationId: uuid("request_correlation_id").notNull().defaultRandom(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("plan_review_record_version_created_idx").on(table.planVersionId, table.createdAt),
+    check(
+      "plan_review_record_actor_check",
+      sql`(${table.actorType} = 'user' and ${table.actorUserId} is not null) or (${table.actorType} = 'service' and ${table.actorUserId} is null)`,
+    ),
+    check(
+      "plan_review_record_reason_check",
+      sql`(${table.action} in ('returned', 'invalidated', 'archived') and char_length(trim(${table.reason})) > 0) or (${table.action} not in ('returned', 'invalidated', 'archived'))`,
+    ),
+  ],
+);
+
+export const planRuleOverrides = pgTable(
+  "plan_rule_override",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    planVersionId: uuid("plan_version_id")
+      .notNull()
+      .references(() => planVersions.id, { onDelete: "restrict" }),
+    ruleVersionId: uuid("rule_version_id")
+      .notNull()
+      .references(() => courseRuleVersions.id, { onDelete: "restrict" }),
+    scopeKey: varchar("scope_key", { length: 64 }).notNull(),
+    violationKey: varchar("violation_key", { length: 64 }).notNull(),
+    reason: text("reason").notNull(),
+    status: planRuleOverrideStatusEnum("status").notNull().default("pending"),
+    requestedByUserId: uuid("requested_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    decidedByUserId: uuid("decided_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decisionReason: varchar("decision_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("plan_rule_override_active_unique")
+      .on(table.planVersionId, table.violationKey)
+      .where(sql`${table.status} in ('pending', 'approved')`),
+    index("plan_rule_override_plan_created_idx").on(table.planVersionId, table.createdAt),
+    check(
+      "plan_rule_override_key_check",
+      sql`${table.violationKey} ~ '^[0-9a-f]{64}$' and ${table.scopeKey} ~ '^(short_term|route_[ab]_phase_[1-9][0-9]*)$'`,
+    ),
+    check(
+      "plan_rule_override_reason_check",
+      sql`char_length(trim(${table.reason})) between 1 and 1000`,
+    ),
+    check(
+      "plan_rule_override_state_check",
+      sql`(${table.status} = 'pending' and ${table.decidedByUserId} is null and ${table.decidedAt} is null and ${table.decisionReason} is null) or (${table.status} = 'approved' and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null and ${table.decisionReason} is null) or (${table.status} = 'rejected' and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null and char_length(trim(${table.decisionReason})) > 0)`,
     ),
   ],
 );

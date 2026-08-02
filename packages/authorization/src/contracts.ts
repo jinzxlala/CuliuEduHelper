@@ -15,6 +15,10 @@ export const StudentActionSchema = z.enum([
   "student:profile:generate",
   "student:profile:review",
   "student:profile:approve",
+  "student:plan:write",
+  "student:plan:review",
+  "student:plan:approve",
+  "student:plan:export",
   "student:authorize",
   "student:audit",
 ]);

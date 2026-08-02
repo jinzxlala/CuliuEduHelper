@@ -179,6 +179,9 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
     devDependencies:
+      '@culiu/student-profiles':
+        specifier: workspace:*
+        version: link:../student-profiles
       vitest:
         specifier: 4.1.10
         version: 4.1.10(@types/node@22.20.1)(vite@8.2.0(@types/node@22.20.1)(esbuild@0.28.1)(tsx@4.23.1))

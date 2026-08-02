@@ -447,7 +447,7 @@ async function readApprovedRules(
 }
 
 export async function loadApprovedCourseCatalog(
-  database: Database,
+  database: QueryExecutor,
   rawPrincipal: SessionPrincipal,
 ): Promise<ApprovedCourseCatalogSnapshot> {
   await requireCatalogActor(database, rawPrincipal, "read");
