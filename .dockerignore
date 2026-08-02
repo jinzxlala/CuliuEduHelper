@@ -1,0 +1,16 @@
+.git
+.github
+.local-data
+**/.next
+.turbo
+coverage
+data_origin
+docs
+infra/.env
+infra/deploy/.env.production
+infra/deploy/certs
+**/node_modules
+**/dist
+output
+*.pdf
+*.log

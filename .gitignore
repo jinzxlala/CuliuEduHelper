@@ -1,5 +1,7 @@
 # Local secrets
 /infra/.env
+/infra/deploy/.env.production
+/infra/deploy/certs/
 
 # Node.js and workspace artifacts
 node_modules/

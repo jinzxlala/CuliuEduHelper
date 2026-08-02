@@ -8,12 +8,17 @@ const globalTasks = globalThis as typeof globalThis & {
 };
 
 export function getTaskQueue(): ReturnType<typeof createTaskQueue> {
-  globalTasks.culiuTaskRedis ??= createRedisConnection(parseRedisUrl());
+  const redis = getTaskRedisConnection();
   globalTasks.culiuTaskQueue ??= createTaskQueue({
-    connection: globalTasks.culiuTaskRedis,
+    connection: redis,
     ...(process.env.CULIU_TASK_QUEUE_NAME === undefined
       ? {}
       : { queueName: process.env.CULIU_TASK_QUEUE_NAME }),
   });
   return globalTasks.culiuTaskQueue;
+}
+
+export function getTaskRedisConnection(): ReturnType<typeof createRedisConnection> {
+  globalTasks.culiuTaskRedis ??= createRedisConnection(parseRedisUrl());
+  return globalTasks.culiuTaskRedis;
 }

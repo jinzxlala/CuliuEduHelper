@@ -254,6 +254,17 @@ pnpm backup:verify -- --backup "D:\path\to\completed-backup"
 
 备份目录本身不会自动过期或删除。迁移、复制或删除备份属于敏感运维操作；在确定保留策略和异地存储位置前，不要把备份放入Git、普通共享盘或未加密介质。丢失`BACKUP_ENCRYPTION_KEY`将无法恢复备份，泄露该密钥则会失去备份机密性。
 
+## 腾讯云单机部署包
+
+生产部署包位于 `infra/deploy/`，包含固定镜像版本的 PostgreSQL、Redis、Meilisearch、Web、Worker、一次性迁移和管理员初始化服务，以及只公开 HTTP/HTTPS 的 Nginx 配置。真实配置写入被 Git 忽略的 `infra/deploy/.env.production`；复制示例后必须先执行：
+
+```powershell
+pnpm deploy:check
+docker compose --env-file .\infra\deploy\.env.production -f .\infra\deploy\docker-compose.production.yml config --quiet
+```
+
+完整的服务器输入、密钥生成、构建启动、首次管理员、健康检查、备份、更新回滚和破坏性操作边界见 [腾讯云单机部署说明](docs/deployment.md)。在没有真实服务器、域名、证书和网络策略时，该目录只是可配置且可测试的部署包，不代表已经上线。
+
 ### 清空本地搜索数据
 
 > **危险：以下命令会永久删除PostgreSQL正式数据、Redis队列数据以及全部Meilisearch索引。**

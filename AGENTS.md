@@ -445,3 +445,32 @@ docker compose --env-file .\infra\.env -f .\infra\docker-compose.yml down
 8. 只有确认后的评测证明关键词检索不足时，再讨论同义词、向量或混合检索。
 
 不要在这一阶段提前引入 Skill Registry、Multi-Agent 运行时、AnythingLLM、向量数据库或真实学生数据。
+
+## 23. 阶段 4 腾讯云单机部署包
+
+截至 2026-08-02，阶段 4 的第二个独立技术模块已经完成并验证：
+
+- 根 `Dockerfile` 使用固定的 Node.js `22.23.2-bookworm-slim`，分别产出 Next.js standalone Web、生产 Worker 和一次性管理员初始化镜像；构建工作区、生产编译与依赖裁剪分层，质量检查镜像不会因 `pnpm deploy --prod` 丢失开发依赖；`.dockerignore` 排除全部层级的 `node_modules`、构建产物、知识源、文档、PDF、本地数据、环境文件和证书；
+- `infra/deploy/docker-compose.production.yml` 固定 PostgreSQL 16.14、Redis 7.4.10、Meilisearch 1.50.0 与 Nginx 1.28.0。只有 Nginx 发布 HTTP／HTTPS；PostgreSQL 和 Meilisearch 只在 `127.0.0.1` 发布可配置维护端口，Redis 不发布宿主机端口。数据库、队列、索引使用项目作用域数据卷，不设置会跨项目漂移的全局卷名；
+- Compose 提供一次性 `migrate` 服务，只有迁移成功且 Redis／Meilisearch 健康后才启动 Web／Worker；Nginx 等待 Web readiness。应用容器以非 root 用户、只读根文件系统、`no-new-privileges`、全部能力移除、受控 `tmpfs`、CPU／内存限制和日志轮转运行；Redis 只补回初始化持久卷和降权所需的最小能力；
+- Nginx 强制 HTTP 跳转 HTTPS，启用 TLS 1.2／1.3、HSTS、点击劫持／MIME／引用来源／设备权限响应头、登录与 API 限流、20 MB 请求门槛和反向代理超时。配置模板只替换 `APP_DOMAIN`，不会误替换 Nginx 自身变量；只读根文件系统通过受控的 `/etc/nginx/conf.d` 临时卷生成运行配置；
+- Web 新增不泄露连接串、路径或异常信息的 `/api/ready`，并行探测 PostgreSQL、Redis、Meilisearch 官方 `/health` 和证据目录读写权限；全部可用返回 200／`ready`，任一失败返回 503／`not_ready`。Compose 和外部运维都使用该深层 readiness，原 `/api/health` 继续作为进程存活探针；
+- `@culiu/operations` 新增 `pnpm deploy:check`。预检要求真实域名、固定 40 位提交 SHA 与相同镜像标签、生产 DeepSeek provider、独立强密钥、内部 Compose 主机名、互不冲突的公网／维护端口、匹配的数据库和 Redis URL、存在且互不嵌套的五个宿主机目录，以及分离且具有有效 PEM 头的证书和私钥；成功回执不返回密钥；
+- 生产配置示例只保留占位值；真实 `infra/deploy/.env.production` 与 `infra/deploy/certs/` 被 Git 忽略。Web 和 Worker 只在服务端持有 Meilisearch／DeepSeek 配置，浏览器仍不能获得数据库、Redis、搜索管理或模型密钥；生产禁止 mock 画像 provider 和脱敏 fixture 授权；
+- `docs/deployment.md` 记录腾讯云服务器、域名、证书、安全组、目录和提交 SHA 输入门禁，以及密钥生成、URL 编码、UID/GID 权限、预检、构建启动、一次性管理员、健康检查、日志、证书续期、加密备份、更新、回滚和生产数据卷销毁边界。缺少服务器、域名、证书和网络策略时只交付可配置部署包，不宣称真实上线；
+- 隔离生产冒烟使用虚构域名、虚构密钥、独立端口、独立宿主机目录、独立 Compose 项目和独立数据卷完成。实际验证迁移成功、Worker 可用、Web readiness 200、HTTP 301、HTTPS 200、安全响应头、首次管理员创建、三个空索引、容器重建后的 1 个管理员与三个索引持久化、PostgreSQL／Meilisearch 仅回环绑定和 Redis 零宿主机端口；测试完成后精确删除全部冒烟容器、网络、卷、证书、目录和虚构镜像；
+- 代码审查实际发现并修复 Redis 持久卷能力、Nginx 只读配置目录及 Docker Desktop `internal` 网络阻断回环维护端口三处问题。最终 Compose 示例解析、Git 忽略规则、密钥扫描和补丁检查均通过；
+- 官方 Node.js 22 容器通过格式、Lint、严格类型、迁移一致性、148 项单元测试、全部生产构建和真实 Web／Worker 冒烟；`pnpm test:integration` 共 59 项全部通过。部署预检新增 4 项单测，覆盖安全回执、占位值／回环依赖／镜像身份拒绝、目录重叠和无效 PEM；readiness 新增 2 项单测，覆盖全依赖可用与错误信息脱敏；
+- `infra/.env` 继续被 Git 忽略；`DEEPSEEK_API_KEY` 只以布尔方式确认已配置、非占位且长度满足门禁，未输出密钥值。生产栈冒烟使用虚构 Key，没有调用 DeepSeek 或发送任何学生／知识数据；
+- 本模块完成的是腾讯云单机 Compose／Nginx／HTTPS 可配置部署包及本机等价技术验收，不等于腾讯云真实上线、真实业务 MVP 验收、COS 适配、异地备份、VPN 或统一登录。真实服务器规格、域名、证书、网络策略、备份保留和真实输入门禁仍由项目负责人决定。
+
+常用生产命令：
+
+```powershell
+pnpm deploy:check
+docker compose --env-file .\infra\deploy\.env.production -f .\infra\deploy\docker-compose.production.yml config --quiet
+docker compose --env-file .\infra\deploy\.env.production -f .\infra\deploy\docker-compose.production.yml build --pull
+docker compose --env-file .\infra\deploy\.env.production -f .\infra\deploy\docker-compose.production.yml up -d
+```
+
+`down -v` 会永久删除该 Compose 项目的 PostgreSQL、Redis 和 Meilisearch 数据卷，仍属于必须先获得明确批准并确认可恢复备份的破坏性操作。
