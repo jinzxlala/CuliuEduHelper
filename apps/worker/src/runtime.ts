@@ -4,7 +4,11 @@ import {
   parseDatabaseConfig,
 } from "@culiu/database";
 import { DeepSeekJsonModelProvider, parseDeepSeekGatewayConfig } from "@culiu/ai";
-import { KnowledgeImporter } from "@culiu/knowledge-ingest";
+import {
+  createDeterministicMockKnowledgeExtractionProvider,
+  executeKnowledgeTranscriptExtraction,
+  KnowledgeImporter,
+} from "@culiu/knowledge-ingest";
 import {
   createMeilisearchClient,
   KnowledgeIndexManager,
@@ -44,6 +48,10 @@ export async function runWorker(): Promise<void> {
     runtime.profileModelProvider === "mock"
       ? createDeterministicMockProfileProvider()
       : new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig());
+  const knowledgeExtractionProvider =
+    runtime.knowledgeExtractionModelProvider === "mock"
+      ? createDeterministicMockKnowledgeExtractionProvider()
+      : new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig());
 
   try {
     await checkDatabaseConnection(databaseClient);
@@ -56,6 +64,14 @@ export async function runWorker(): Promise<void> {
       connection: redis,
       ...(runtime.queueName === undefined ? {} : { queueName: runtime.queueName }),
       handlers: {
+        "knowledge.extract": async (task) => {
+          if (task.taskName !== "knowledge.extract") throw new Error("Unexpected task type.");
+          return executeKnowledgeTranscriptExtraction(
+            databaseClient,
+            task,
+            knowledgeExtractionProvider,
+          );
+        },
         "knowledge.import": createKnowledgeImportTaskHandler({ databaseClient, importer }),
         "profile.draft": async (task) => {
           if (task.taskName !== "profile.draft") throw new Error("Unexpected task type.");

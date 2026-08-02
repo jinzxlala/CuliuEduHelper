@@ -54,6 +54,37 @@ describe("TaskEnvelopeSchema", () => {
     ).toThrow();
   });
 
+  it("accepts a transcript extraction task containing references and hashes but no transcript", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: "knowledge_extract_001",
+      payload: {
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "c".repeat(40),
+        model: "deepseek-v4-flash",
+        modelInputHash: "d".repeat(64),
+        promptHash: "e".repeat(64),
+        promptVersion: "knowledge-transcript-extraction.v3",
+        redactionVersion: "knowledge-transcript-outbound.v1",
+        schemaHash: "f".repeat(64),
+        schemaVersion: "knowledge-analysis-markdown.v3",
+        submissionId: "00000000-0000-4000-8000-000000000021",
+        transcriptTextHash: "1".repeat(64),
+      },
+      taskName: "knowledge.extract",
+    } as const;
+
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain('"transcriptText":');
+    expect(JSON.stringify(task)).not.toContain("originalFileName");
+    expect(() =>
+      TaskEnvelopeSchema.parse({
+        ...task,
+        payload: { ...task.payload, promptVersion: "knowledge-transcript-extraction.v2" },
+      }),
+    ).toThrow();
+  });
+
   it("accepts a profile task containing references and version hashes but no student payload", () => {
     const task = {
       ...validTask,

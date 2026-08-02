@@ -84,6 +84,10 @@ export const knowledgeImportStageEnum = pgEnum("knowledge_import_stage", [
   "finalize",
   "complete",
 ]);
+export const knowledgeTranscriptSubmissionStatusEnum = pgEnum(
+  "knowledge_transcript_submission_status",
+  ["queued", "processing", "draft_ready", "published", "failed"],
+);
 export const knowledgeSourceRoleEnum = pgEnum("knowledge_source_role", [
   "analysis_markdown",
   "transcript_json",
@@ -1207,6 +1211,106 @@ export const knowledgeImportSources = pgTable(
     check(
       "knowledge_import_source_logical_path_check",
       sql`${table.logicalPath} like 'knowledge/%' and ${table.logicalPath} not like '%..%'`,
+    ),
+  ],
+);
+
+export const knowledgeTranscriptSubmissions = pgTable(
+  "knowledge_transcript_submission",
+  {
+    id: uuid("id").primaryKey(),
+    actorUserId: uuid("actor_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    authorizationContextId: uuid("authorization_context_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    backgroundJobId: uuid("background_job_id")
+      .notNull()
+      .references(() => backgroundJobs.id, { onDelete: "restrict" }),
+    sourceKey: text("source_key").notNull(),
+    lectureId: varchar("lecture_id", { length: 511 }).notNull(),
+    originalFileName: varchar("original_file_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 255 }).notNull(),
+    byteCount: integer("byte_count").notNull(),
+    storageKey: text("storage_key").notNull(),
+    originalContentHash: varchar("original_content_hash", { length: 64 }).notNull(),
+    transcriptText: text("transcript_text").notNull(),
+    transcriptTextHash: varchar("transcript_text_hash", { length: 64 }).notNull(),
+    modelInputHash: varchar("model_input_hash", { length: 64 }).notNull(),
+    outboundConfirmedAt: timestamp("outbound_confirmed_at", { withTimezone: true }).notNull(),
+    status: knowledgeTranscriptSubmissionStatusEnum("status").notNull().default("queued"),
+    generatedAnalysisMarkdown: text("generated_analysis_markdown"),
+    generatedAnalysisHash: varchar("generated_analysis_hash", { length: 64 }),
+    reviewedAnalysisMarkdown: text("reviewed_analysis_markdown"),
+    reviewedAnalysisHash: varchar("reviewed_analysis_hash", { length: 64 }),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    model: varchar("model", { length: 128 }).notNull(),
+    providerRequestId: varchar("provider_request_id", { length: 256 }),
+    promptVersion: varchar("prompt_version", { length: 64 }).notNull(),
+    promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 64 }).notNull(),
+    schemaHash: varchar("schema_hash", { length: 64 }).notNull(),
+    redactionVersion: varchar("redaction_version", { length: 64 }).notNull(),
+    gitCommitSha: varchar("git_commit_sha", { length: 40 }).notNull(),
+    promptTokens: integer("prompt_tokens"),
+    completionTokens: integer("completion_tokens"),
+    totalTokens: integer("total_tokens"),
+    publishedBatchId: uuid("published_batch_id").references(() => knowledgeImportBatches.id, {
+      onDelete: "restrict",
+    }),
+    failureCode: varchar("failure_code", { length: 128 }),
+    failureSummary: varchar("failure_summary", { length: 1024 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("knowledge_transcript_submission_job_unique").on(table.backgroundJobId),
+    index("knowledge_transcript_submission_actor_created_idx").on(
+      table.actorUserId,
+      table.createdAt,
+    ),
+    index("knowledge_transcript_submission_status_created_idx").on(table.status, table.createdAt),
+    check(
+      "knowledge_transcript_submission_mime_check",
+      sql`${table.mimeType} in ('text/markdown', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')`,
+    ),
+    check(
+      "knowledge_transcript_submission_size_check",
+      sql`${table.byteCount} between 1 and 20971520`,
+    ),
+    check(
+      "knowledge_transcript_submission_text_check",
+      sql`char_length(trim(${table.transcriptText})) between 1 and 500000`,
+    ),
+    check(
+      "knowledge_transcript_submission_hashes_check",
+      sql`${table.originalContentHash} ~ '^[0-9a-f]{64}$' and ${table.transcriptTextHash} ~ '^[0-9a-f]{64}$' and ${table.modelInputHash} ~ '^[0-9a-f]{64}$' and ${table.promptHash} ~ '^[0-9a-f]{64}$' and ${table.schemaHash} ~ '^[0-9a-f]{64}$' and ${table.gitCommitSha} ~ '^[0-9a-f]{40}$'`,
+    ),
+    check(
+      "knowledge_transcript_submission_generated_pair_check",
+      sql`(${table.generatedAnalysisMarkdown} is null) = (${table.generatedAnalysisHash} is null)`,
+    ),
+    check(
+      "knowledge_transcript_submission_reviewed_pair_check",
+      sql`(${table.reviewedAnalysisMarkdown} is null) = (${table.reviewedAnalysisHash} is null)`,
+    ),
+    check(
+      "knowledge_transcript_submission_published_check",
+      sql`(${table.status} = 'published' and ${table.publishedBatchId} is not null and ${table.reviewedAnalysisMarkdown} is not null and ${table.completedAt} is not null) or (${table.status} <> 'published' and ${table.publishedBatchId} is null)`,
+    ),
+    check(
+      "knowledge_transcript_submission_failure_check",
+      sql`(${table.status} = 'failed' and ${table.failureCode} is not null and ${table.failureSummary} is not null and ${table.completedAt} is not null) or (${table.status} <> 'failed' and ${table.failureCode} is null and ${table.failureSummary} is null)`,
+    ),
+    check(
+      "knowledge_transcript_submission_usage_check",
+      sql`(${table.promptTokens} is null and ${table.completionTokens} is null and ${table.totalTokens} is null) or (${table.promptTokens} >= 0 and ${table.completionTokens} >= 0 and ${table.totalTokens} >= 0 and ${table.promptTokens} + ${table.completionTokens} <= ${table.totalTokens})`,
+    ),
+    check(
+      "knowledge_transcript_submission_storage_check",
+      sql`${table.storageKey} like 'knowledge/%' and ${table.storageKey} not like '%..%'`,
     ),
   ],
 );

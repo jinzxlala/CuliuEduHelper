@@ -11,6 +11,7 @@ function probes(overrides: Partial<ReadinessProbes> = {}): ReadinessProbes {
     meilisearch: available,
     objectStorage: available,
     redis: available,
+    taskVersion: available,
     ...overrides,
   };
 }
@@ -26,6 +27,7 @@ describe("web readiness", () => {
         meilisearch: "available",
         objectStorage: "available",
         redis: "available",
+        taskVersion: "available",
       },
       service: "web",
       status: "ready",
@@ -41,5 +43,16 @@ describe("web readiness", () => {
     expect(result.status).toBe("not_ready");
     expect(result.checks.database).toBe("unavailable");
     expect(JSON.stringify(result)).not.toContain("secret connection detail");
+  });
+
+  it("reports missing task version configuration without exposing its error", async () => {
+    const result = await buildWebReadiness(
+      probes({ taskVersion: () => Promise.reject(new Error("uncommitted secret detail")) }),
+      new Date("2026-08-02T00:00:00.000Z"),
+    );
+
+    expect(result.status).toBe("not_ready");
+    expect(result.checks.taskVersion).toBe("unavailable");
+    expect(JSON.stringify(result)).not.toContain("uncommitted secret detail");
   });
 });

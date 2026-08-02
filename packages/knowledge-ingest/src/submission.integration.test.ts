@@ -9,6 +9,7 @@ import {
   runMigrations,
   type DatabaseClient,
 } from "@culiu/database";
+import { createKnowledgeImportAuthorizationContext } from "@culiu/authorization";
 import {
   createMeilisearchClient,
   KnowledgeIndexManager,
@@ -34,6 +35,7 @@ let maintenanceClient: DatabaseClient | undefined;
 let databaseClient: DatabaseClient | undefined;
 let client: ReturnType<typeof createMeilisearchClient> | undefined;
 let importer: KnowledgeImporter | undefined;
+let objectStore: LocalImmutableObjectStore | undefined;
 let temporaryDatabaseName = "";
 let temporaryRoot = "";
 let actorUserId = "";
@@ -190,11 +192,12 @@ beforeAll(async () => {
 
   temporaryRoot = await mkdtemp(join(tmpdir(), "culiu-knowledge-submission-"));
   client = createMeilisearchClient(parseMeilisearchAdminConfig());
+  objectStore = new LocalImmutableObjectStore(temporaryRoot);
   importer = new KnowledgeImporter({
     databaseClient,
     indexPublisher: new KnowledgeIndexManager({ client, indexNames }),
     manifestPath: "unused.json",
-    objectStore: new LocalImmutableObjectStore(temporaryRoot),
+    objectStore,
     sourceRoots: {},
   });
 });
@@ -318,5 +321,262 @@ describe("knowledge submission publication", () => {
         first.documents.lectures.concat(revision.documents.lectures).map((item) => item.lecture_id),
       ),
     );
+  }, 60_000);
+
+  it("stores a transcript and generated draft before an explicit reviewed publication", async () => {
+    if (
+      databaseClient === undefined ||
+      client === undefined ||
+      importer === undefined ||
+      objectStore === undefined
+    ) {
+      throw new Error("Integration test runtime is unavailable.");
+    }
+    const { createDeterministicMockKnowledgeExtractionProvider } = await import(
+      "./knowledge-extraction.js"
+    );
+    const { parseTranscriptDocument } = await import("./transcript-documents.js");
+    const {
+      executeKnowledgeTranscriptExtraction,
+      listKnowledgeTranscriptSubmissions,
+      prepareKnowledgeTranscriptTask,
+      publishKnowledgeTranscriptDraft,
+      readLatestKnowledgeTranscriptSubmission,
+      readKnowledgeTranscriptSubmission,
+    } = await import("./transcript-workflow.js");
+    const context = await createKnowledgeImportAuthorizationContext(databaseClient.database, {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin",
+    });
+    const document = await parseTranscriptDocument({
+      bytes: encoder.encode(
+        "这是一份虚构的集成测试逐字稿。联系邮箱 test@example.com，手机 13800138000。",
+      ),
+      fileName: "2026-08-03_逐字稿工作流测试.md",
+    });
+    const prepared = await prepareKnowledgeTranscriptTask(
+      databaseClient,
+      objectStore,
+      context,
+      document,
+      {
+        gitCommitSha: "a".repeat(40),
+        outboundConfirmed: true,
+      },
+    );
+
+    await executeKnowledgeTranscriptExtraction(
+      databaseClient,
+      prepared.task,
+      createDeterministicMockKnowledgeExtractionProvider(),
+    );
+    const view = await readKnowledgeTranscriptSubmission(
+      databaseClient,
+      {
+        displayName: "Synthetic Import Admin",
+        email: `${actorUserId}@example.invalid`,
+        id: actorUserId,
+        role: "admin",
+      },
+      prepared.submissionId,
+    );
+    expect(view.status).toBe("draft_ready");
+    expect(view.generatedAnalysisMarkdown).toContain("## 证据边界");
+    expect(view.logs.map((entry) => entry.code)).toEqual([
+      "transcript_saved",
+      "task_queued",
+      "worker_started",
+      "draft_ready",
+    ]);
+    expect(view.logs.at(-1)?.message).toContain("Token：输入");
+    expect(JSON.stringify(view.logs)).not.toContain("test@example.com");
+    expect(JSON.stringify(view.logs)).not.toContain("13800138000");
+    const latestView = await readLatestKnowledgeTranscriptSubmission(databaseClient, {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin",
+    });
+    expect(latestView?.submissionId).toBe(prepared.submissionId);
+    expect(latestView?.generatedAnalysisMarkdown).toBe(view.generatedAnalysisMarkdown);
+    const submissionList = await listKnowledgeTranscriptSubmissions(databaseClient, {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin",
+    });
+    expect(submissionList[0]).toMatchObject({
+      originalFileName: "2026-08-03_逐字稿工作流测试.md",
+      status: "draft_ready",
+      submissionId: prepared.submissionId,
+    });
+
+    const stored = await databaseClient.pool.query<{
+      generated_analysis_markdown: string;
+      original_content_hash: string;
+      transcript_text: string;
+    }>(
+      `select generated_analysis_markdown, original_content_hash, transcript_text
+         from knowledge_transcript_submission where id = $1`,
+      [prepared.submissionId],
+    );
+    expect(stored.rows[0]?.transcript_text).toContain("虚构的集成测试逐字稿");
+    expect(stored.rows[0]?.original_content_hash).toBe(document.contentHash);
+    expect(stored.rows[0]?.generated_analysis_markdown).toBe(view.generatedAnalysisMarkdown);
+
+    const published = await publishKnowledgeTranscriptDraft(
+      databaseClient,
+      objectStore,
+      importer,
+      {
+        displayName: "Synthetic Import Admin",
+        email: `${actorUserId}@example.invalid`,
+        id: actorUserId,
+        role: "admin",
+      },
+      {
+        analysisMarkdown: view.generatedAnalysisMarkdown ?? "",
+        submissionId: prepared.submissionId,
+      },
+    );
+    expect(published.status).toBe("published");
+    expect(published.documentCounts).toEqual({ cases: 3, lectures: 3, transcriptSegments: 0 });
+
+    const publishedRow = await databaseClient.pool.query<{
+      published_batch_id: string | null;
+      reviewed_analysis_markdown: string | null;
+      status: string;
+    }>(
+      `select published_batch_id, reviewed_analysis_markdown, status
+         from knowledge_transcript_submission where id = $1`,
+      [prepared.submissionId],
+    );
+    expect(publishedRow.rows[0]?.status).toBe("published");
+    expect(publishedRow.rows[0]?.published_batch_id).not.toBeNull();
+    expect(publishedRow.rows[0]?.reviewed_analysis_markdown).toContain("## 证据边界");
+  }, 60_000);
+
+  it("keeps a retryable failed attempt visible as processing", async () => {
+    if (databaseClient === undefined || objectStore === undefined) {
+      throw new Error("Integration test runtime is unavailable.");
+    }
+    const { ModelGatewayError } = await import("@culiu/ai");
+    const { parseTranscriptDocument } = await import("./transcript-documents.js");
+    const {
+      executeKnowledgeTranscriptExtraction,
+      listKnowledgeTranscriptSubmissions,
+      prepareKnowledgeTranscriptTask,
+      readKnowledgeTranscriptSubmission,
+    } = await import("./transcript-workflow.js");
+    const principal = {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin" as const,
+    };
+    const context = await createKnowledgeImportAuthorizationContext(
+      databaseClient.database,
+      principal,
+    );
+    const document = await parseTranscriptDocument({
+      bytes: encoder.encode("虚构的自动重试状态测试逐字稿。"),
+      fileName: "2026-08-04_自动重试状态测试.md",
+    });
+    const prepared = await prepareKnowledgeTranscriptTask(
+      databaseClient,
+      objectStore,
+      context,
+      document,
+      { gitCommitSha: "c".repeat(40), outboundConfirmed: true },
+    );
+
+    await expect(
+      executeKnowledgeTranscriptExtraction(databaseClient, prepared.task, {
+        generateJson: () =>
+          Promise.reject(
+            new ModelGatewayError("invalid_output", "Synthetic truncated output.", {
+              detailCode: "output_truncated",
+              retryable: true,
+            }),
+          ),
+      }),
+    ).rejects.toMatchObject({ detailCode: "output_truncated" });
+
+    const view = await readKnowledgeTranscriptSubmission(
+      databaseClient,
+      principal,
+      prepared.submissionId,
+    );
+    expect(view.status).toBe("processing");
+    expect(view.completedAt).toBeNull();
+    expect(view.logs.map((entry) => entry.code)).toEqual([
+      "transcript_saved",
+      "task_queued",
+      "worker_started",
+      "model_output_truncated",
+      "retry_scheduled",
+    ]);
+    const submissionList = await listKnowledgeTranscriptSubmissions(databaseClient, principal);
+    expect(submissionList[0]).toMatchObject({
+      originalFileName: "2026-08-04_自动重试状态测试.md",
+      status: "processing",
+      submissionId: prepared.submissionId,
+    });
+  }, 60_000);
+
+  it("records a safe terminal state when queueing fails after the transcript is stored", async () => {
+    if (databaseClient === undefined || objectStore === undefined) {
+      throw new Error("Integration test runtime is unavailable.");
+    }
+    const { parseTranscriptDocument } = await import("./transcript-documents.js");
+    const {
+      markKnowledgeTranscriptEnqueueFailure,
+      prepareKnowledgeTranscriptTask,
+      readKnowledgeTranscriptSubmission,
+    } = await import("./transcript-workflow.js");
+    const principal = {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin" as const,
+    };
+    const context = await createKnowledgeImportAuthorizationContext(
+      databaseClient.database,
+      principal,
+    );
+    const document = await parseTranscriptDocument({
+      bytes: encoder.encode("虚构的队列失败测试逐字稿。"),
+      fileName: "2026-08-04_队列失败测试.md",
+    });
+    const prepared = await prepareKnowledgeTranscriptTask(
+      databaseClient,
+      objectStore,
+      context,
+      document,
+      { gitCommitSha: "b".repeat(40), outboundConfirmed: true },
+    );
+
+    await markKnowledgeTranscriptEnqueueFailure(databaseClient, prepared);
+
+    const view = await readKnowledgeTranscriptSubmission(
+      databaseClient,
+      principal,
+      prepared.submissionId,
+    );
+    expect(view.status).toBe("failed");
+    expect(view.failureMessage).toBe("Transcript extraction could not enter the task queue.");
+    expect(view.failureCode).toBe("queue_enqueue_failed");
+    expect(view.logs.at(-1)).toMatchObject({
+      code: "queue_enqueue_failed",
+      level: "error",
+      message: "Transcript extraction could not enter the task queue.",
+    });
+    const job = await databaseClient.pool.query<{ error_code: string; status: string }>(
+      "select error_code, status from background_job where id = $1",
+      [prepared.task.taskId],
+    );
+    expect(job.rows[0]).toEqual({ error_code: "queue_enqueue_failed", status: "failed" });
   }, 60_000);
 });

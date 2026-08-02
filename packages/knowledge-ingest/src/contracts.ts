@@ -89,7 +89,13 @@ export const SourceFileSchema = z
     bytes: z.number().int().positive(),
     content_sha256: Sha256Schema,
     logical_path: RelativePathSchema,
-    mime_type: z.enum(["application/json", "application/x-subrip", "text/markdown", "text/plain"]),
+    mime_type: z.enum([
+      "application/json",
+      "application/x-subrip",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/markdown",
+      "text/plain",
+    ]),
     relative_path: RelativePathSchema,
     role: SourceRoleSchema,
     root_id: RootIdSchema,
@@ -144,8 +150,17 @@ export const LectureSourceBundleSchema = z
         path: ["sources"],
       });
     }
-    const hasTranscriptRole = roles.some((role) => role !== "analysis_markdown");
-    if (hasTranscriptRole) {
+    const nonAnalysisSources = bundle.sources.filter(
+      (source) => source.role !== "analysis_markdown",
+    );
+    const singleTranscriptDocument =
+      nonAnalysisSources.length === 1 &&
+      nonAnalysisSources[0]?.role === "transcript_text" &&
+      (nonAnalysisSources[0].mime_type === "text/markdown" ||
+        nonAnalysisSources[0].mime_type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    const hasVerifiedTranscriptPackage = nonAnalysisSources.length > 0 && !singleTranscriptDocument;
+    if (hasVerifiedTranscriptPackage) {
       for (const role of SOURCE_ROLES) {
         if (roles.includes(role)) continue;
         context.addIssue({
@@ -156,12 +171,13 @@ export const LectureSourceBundleSchema = z
       }
     }
     if (
-      (hasTranscriptRole && bundle.transcript_validation === null) ||
-      (!hasTranscriptRole && bundle.transcript_validation !== null)
+      (hasVerifiedTranscriptPackage && bundle.transcript_validation === null) ||
+      (!hasVerifiedTranscriptPackage && bundle.transcript_validation !== null)
     ) {
       context.addIssue({
         code: "custom",
-        message: "transcript_validation must match the presence of a complete transcript package",
+        message:
+          "transcript_validation must match the presence of a complete verified transcript package",
         path: ["transcript_validation"],
       });
     }

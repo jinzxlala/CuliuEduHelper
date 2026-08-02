@@ -42,6 +42,7 @@ export const DeploymentEnvironmentSchema = z
       .min(20)
       .refine((value) => !PlaceholderPattern.test(value), "DeepSeek key must not be a placeholder"),
     KNOWLEDGE_ANALYSIS_HOST_PATH: z.string().min(1).refine(isAbsolute),
+    KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: z.literal("deepseek"),
     KNOWLEDGE_TRANSCRIPT_2025_HOST_PATH: z.string().min(1).refine(isAbsolute),
     KNOWLEDGE_TRANSCRIPT_2026_HOST_PATH: z.string().min(1).refine(isAbsolute),
     LOCAL_STORAGE_HOST_PATH: z.string().min(1).refine(isAbsolute),

@@ -78,6 +78,7 @@ async function runFailureScenario(initialAttempts: 0 | 1 | 3): Promise<void> {
   const worker = createTaskWorker({
     connection: workerConnection,
     handlers: {
+      "knowledge.extract": () => Promise.resolve({ skipped: true }),
       "knowledge.import": createKnowledgeImportTaskHandler({
         auditWriter: (event) => {
           auditEvents.push(event);

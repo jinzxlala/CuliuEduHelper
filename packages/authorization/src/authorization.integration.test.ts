@@ -17,6 +17,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { authenticateCredentials } from "./authentication.js";
 import {
+  createKnowledgeImportAuthorizationContext,
   createStudentAuthorizationContext,
   createStudentDirectoryContext,
   listAuthorizedStudents,
@@ -373,6 +374,37 @@ describe("student authorization boundary", () => {
       await expect(readStudentOverview(database, context)).rejects.toBeInstanceOf(
         AuthorizationDeniedError,
       );
+    });
+  });
+});
+
+describe("knowledge transcript authorization boundary", () => {
+  it.each(["admin", "advisor"] as const)(
+    "allows an active %s to create a two-hour import context",
+    async (role) => {
+      await withRollback(async (database) => {
+        const now = new Date("2026-08-02T12:00:00.000Z");
+        const fixture = await createFixture(database, { role });
+        const context = await createKnowledgeImportAuthorizationContext(
+          database,
+          fixture.principal,
+          { now },
+        );
+
+        expect(context.allowedActions).toEqual(["knowledge:import"]);
+        expect(context.maxAccessLevel).toBe("restricted");
+        expect(context.studentId).toBeNull();
+        expect(context.expiresAt.toISOString()).toBe("2026-08-02T14:00:00.000Z");
+      });
+    },
+  );
+
+  it("denies an auditor", async () => {
+    await withRollback(async (database) => {
+      const fixture = await createFixture(database, { role: "auditor" });
+      await expect(
+        createKnowledgeImportAuthorizationContext(database, fixture.principal),
+      ).rejects.toBeInstanceOf(AuthorizationDeniedError);
     });
   });
 });

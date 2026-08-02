@@ -23,12 +23,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@culiu/ai": "workspace:*",
+    "@culiu/authorization": "workspace:*",
     "@culiu/database": "workspace:*",
     "@culiu/search": "workspace:*",
     "@culiu/storage": "workspace:*",
+    "@culiu/tasks": "workspace:*",
+    "mammoth": "1.12.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "jszip": "3.10.1",
     "tsx": "4.23.1",
     "vitest": "4.1.10"
   }

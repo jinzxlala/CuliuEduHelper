@@ -53,6 +53,20 @@ function New-SecureToken {
     return [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
 }
 
+function Resolve-RepositoryCommitSha {
+    $git = Get-Command git.exe -ErrorAction SilentlyContinue
+    if (-not $git) {
+        $git = Get-Command git -ErrorAction Stop
+    }
+
+    $commitSha = & $git.Source -C $RepositoryRoot rev-parse --verify HEAD 2>$null
+    if ($LASTEXITCODE -ne 0 -or $commitSha -notmatch '^[0-9a-f]{40}$') {
+        throw "The current Git commit SHA could not be resolved for the local runtime."
+    }
+
+    return [string]$commitSha
+}
+
 function Test-MissingOrPlaceholder {
     param(
         [Parameter(Mandatory = $true)][hashtable]$Values,
@@ -99,6 +113,10 @@ function Write-EnvValues {
         "BACKUP_ROOT",
         "BACKUP_ENCRYPTION_KEY",
         "POSTGRES_CONTAINER_NAME",
+        "PROFILE_MODEL_PROVIDER",
+        "KNOWLEDGE_EXTRACTION_MODEL_PROVIDER",
+        "CULIU_GIT_COMMIT_SHA",
+        "DEEPSEEK_PROFILE_MAX_TOKENS",
         "DEEPSEEK_API_KEY"
     )
     $lines = foreach ($key in $orderedKeys) {
@@ -167,6 +185,19 @@ function Ensure-LocalEnv {
     if (Test-MissingOrPlaceholder -Values $values -Key "POSTGRES_CONTAINER_NAME") {
         $values["POSTGRES_CONTAINER_NAME"] = "culiu-edu-helper-postgres"
     }
+    if (Test-MissingOrPlaceholder -Values $values -Key "PROFILE_MODEL_PROVIDER") {
+        $values["PROFILE_MODEL_PROVIDER"] = "deepseek"
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "KNOWLEDGE_EXTRACTION_MODEL_PROVIDER") {
+        $values["KNOWLEDGE_EXTRACTION_MODEL_PROVIDER"] = "deepseek"
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "DEEPSEEK_PROFILE_MAX_TOKENS") {
+        $values["DEEPSEEK_PROFILE_MAX_TOKENS"] = "8192"
+    }
+
+    # Local development records the repository revision that launched the task.
+    # Production uses its separately managed, image-matched deployment environment.
+    $values["CULIU_GIT_COMMIT_SHA"] = Resolve-RepositoryCommitSha
 
     Write-EnvValues -Values $values
     return $values

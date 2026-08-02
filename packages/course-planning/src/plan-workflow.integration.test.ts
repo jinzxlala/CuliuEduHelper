@@ -31,7 +31,7 @@ import {
   transitionProfileVersion,
 } from "@culiu/student-profiles";
 import { eq } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { CourseRuleDefinition, CourseVersionContent } from "./contracts.js";
 import { PlanWorkflowConflictError } from "./errors.js";
@@ -386,6 +386,8 @@ function planInput(
 }
 
 beforeAll(async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(CONTEXT_NOW);
   const base = parseDatabaseConfig();
   temporaryDatabaseName = `culiu_plans_${randomUUID().replaceAll("-", "")}`;
   const maintenanceUrl = new URL(base.connectionString);
@@ -432,6 +434,7 @@ afterAll(async () => {
     await maintenanceClient.pool.query(`drop database if exists "${temporaryDatabaseName}"`);
     await maintenanceClient.close();
   }
+  vi.useRealTimers();
 });
 
 describe("manual plan workflow", () => {

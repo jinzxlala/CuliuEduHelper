@@ -49,6 +49,28 @@ export const KnowledgeImportTaskSchema = z.object({
   taskName: z.literal("knowledge.import"),
 });
 
+export const KnowledgeExtractTaskSchema = z.object({
+  authorization: AuthorizationSnapshotReferenceSchema,
+  idempotencyKey: TaskIdempotencyKeySchema,
+  payload: z
+    .object({
+      correlationId: z.uuid(),
+      gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
+      model: z.literal("deepseek-v4-flash"),
+      modelInputHash: z.string().regex(/^[0-9a-f]{64}$/u),
+      promptHash: z.string().regex(/^[0-9a-f]{64}$/u),
+      promptVersion: z.literal("knowledge-transcript-extraction.v3"),
+      redactionVersion: z.literal("knowledge-transcript-outbound.v1"),
+      schemaHash: z.string().regex(/^[0-9a-f]{64}$/u),
+      schemaVersion: z.literal("knowledge-analysis-markdown.v3"),
+      submissionId: z.uuid(),
+      transcriptTextHash: z.string().regex(/^[0-9a-f]{64}$/u),
+    })
+    .strict(),
+  taskId: z.uuid(),
+  taskName: z.literal("knowledge.extract"),
+});
+
 export const ProfileDraftTaskSchema = z.object({
   authorization: AuthorizationSnapshotReferenceSchema,
   idempotencyKey: TaskIdempotencyKeySchema,
@@ -74,9 +96,11 @@ export const ProfileDraftTaskSchema = z.object({
 export const TaskEnvelopeSchema = z.discriminatedUnion("taskName", [
   SystemProbeTaskSchema,
   KnowledgeImportTaskSchema,
+  KnowledgeExtractTaskSchema,
   ProfileDraftTaskSchema,
 ]);
 export type TaskEnvelope = z.infer<typeof TaskEnvelopeSchema>;
 export type TaskName = TaskEnvelope["taskName"];
 export type KnowledgeImportTask = z.infer<typeof KnowledgeImportTaskSchema>;
+export type KnowledgeExtractTask = z.infer<typeof KnowledgeExtractTaskSchema>;
 export type ProfileDraftTask = z.infer<typeof ProfileDraftTaskSchema>;

@@ -1,5 +1,7 @@
 import type { JSX, ReactNode } from "react";
 
+import { AppNavigation } from "../components/app-navigation";
+
 import "./globals.css";
 
 export const metadata = {
@@ -13,7 +15,14 @@ export const metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>): JSX.Element {
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>
+        <AppNavigation />
+        {children}
+        <footer className="site-footer">
+          <span>醋溜科技 · 内部教育知识与规划系统</span>
+          <span>Evidence first · Human reviewed</span>
+        </footer>
+      </body>
     </html>
   );
 }

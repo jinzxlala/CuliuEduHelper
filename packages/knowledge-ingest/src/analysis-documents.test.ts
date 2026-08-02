@@ -174,6 +174,16 @@ describe("analysis document parser", () => {
     ).toThrow(/case section has no cards/u);
   });
 
+  it("accepts an explicitly undisclosed case section without inventing a case card", () => {
+    const withoutCases = markdown.replace(
+      /## 4\. 学校与案例卡片[\s\S]*?## 5\. AI\+与跨学科/u,
+      "## 4. 学校与案例卡片\n\n未披露\n\n## 5. AI+与跨学科",
+    );
+    const parsed = parseAnalysisDocuments(withoutCases, bundle, "fixture-without-cases.md");
+
+    expect(parsed.cases).toHaveLength(0);
+  });
+
   it("computes a deterministic byte digest", () => {
     expect(contentSha256(Buffer.from("abc", "utf8"))).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",

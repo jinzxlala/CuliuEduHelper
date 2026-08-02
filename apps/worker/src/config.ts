@@ -13,6 +13,7 @@ const WorkerEnvironmentSchema = z.object({
   KNOWLEDGE_TRANSCRIPT_2025_ROOT: AbsolutePathSchema,
   KNOWLEDGE_TRANSCRIPT_2026_ROOT: AbsolutePathSchema,
   LOCAL_STORAGE_ROOT: AbsolutePathSchema,
+  KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: z.enum(["deepseek", "mock"]).default("deepseek"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PROFILE_MODEL_PROVIDER: z.enum(["deepseek", "mock"]).default("deepseek"),
   WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(4).default(1),
@@ -21,6 +22,7 @@ const WorkerEnvironmentSchema = z.object({
 export interface WorkerRuntimeConfig {
   readonly concurrency: number;
   readonly localStorageRoot: string;
+  readonly knowledgeExtractionModelProvider: "deepseek" | "mock";
   readonly manifestPath: string;
   readonly profileModelProvider: "deepseek" | "mock";
   readonly queueName: string | undefined;
@@ -31,11 +33,16 @@ export function parseWorkerRuntimeConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): WorkerRuntimeConfig {
   const parsed = WorkerEnvironmentSchema.parse(environment);
-  if (parsed.NODE_ENV === "production" && parsed.PROFILE_MODEL_PROVIDER === "mock") {
-    throw new Error("The mock profile provider is forbidden in production.");
+  if (
+    parsed.NODE_ENV === "production" &&
+    (parsed.PROFILE_MODEL_PROVIDER === "mock" ||
+      parsed.KNOWLEDGE_EXTRACTION_MODEL_PROVIDER === "mock")
+  ) {
+    throw new Error("Mock model providers are forbidden in production.");
   }
   return {
     concurrency: parsed.WORKER_CONCURRENCY,
+    knowledgeExtractionModelProvider: parsed.KNOWLEDGE_EXTRACTION_MODEL_PROVIDER,
     localStorageRoot: parsed.LOCAL_STORAGE_ROOT,
     manifestPath: parsed.KNOWLEDGE_MANIFEST_PATH,
     profileModelProvider: parsed.PROFILE_MODEL_PROVIDER,

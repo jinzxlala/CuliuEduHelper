@@ -40,6 +40,7 @@ async function validEnvironment(): Promise<NodeJS.ProcessEnv> {
     DATABASE_URL: `postgresql://culiu:${secret}@postgres:5432/culiu_edu_helper`,
     DEEPSEEK_API_KEY: "synthetic-deepseek-key-for-tests",
     KNOWLEDGE_ANALYSIS_HOST_PATH: paths.analysis,
+    KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: "deepseek",
     KNOWLEDGE_TRANSCRIPT_2025_HOST_PATH: paths["transcript-2025"],
     KNOWLEDGE_TRANSCRIPT_2026_HOST_PATH: paths["transcript-2026"],
     LOCAL_STORAGE_HOST_PATH: paths.evidence,

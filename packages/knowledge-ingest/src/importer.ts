@@ -226,14 +226,14 @@ async function beginAttempt(
   return transaction(connection, async () => {
     const actor = await connection.query<{ id: string }>(
       `select id from app_user
-        where id = $1 and active = true and role in ('admin', 'service')`,
+        where id = $1 and active = true and role in ('admin', 'advisor', 'service')`,
       [request.actorUserId],
     );
     if (actor.rowCount !== 1) {
       throw new KnowledgeImportError(
         "authorization_denied",
         "authorization",
-        "Knowledge import actor must be an active admin or service identity.",
+        "Knowledge import actor must be an active admin, advisor or service identity.",
       );
     }
     await connection.query(

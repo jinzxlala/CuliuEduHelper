@@ -380,10 +380,8 @@ export default async function SearchPage({
 
   return (
     <main className="app-shell">
-      <header className="app-header">
-        <Link className="brand" href="/">
-          醋溜教育智能助手
-        </Link>
+      <header className="account-toolbar">
+        <span>内部知识工作台</span>
         <div className="account-actions">
           <Link href="/students">已授权学生</Link>
           <span>{principal.displayName}</span>

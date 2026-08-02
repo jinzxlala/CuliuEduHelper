@@ -172,6 +172,13 @@ function parseCards(sectionLines: readonly string[], label: string): MarkdownCar
   flush();
 
   if (cards.length === 0) {
+    const meaningfulLines = sectionLines
+      .map((line) => stripInlineMarkdown(line))
+      .filter((line) => line !== "");
+    const explicitMissing =
+      meaningfulLines.length > 0 &&
+      meaningfulLines.every((line) => UNKNOWN_VALUE_PATTERN.test(line));
+    if (explicitMissing) return [];
     throw new KnowledgeSourceError("invalid_analysis", `${label}: case section has no cards`);
   }
   return cards;

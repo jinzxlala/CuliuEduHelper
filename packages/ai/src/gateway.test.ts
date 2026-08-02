@@ -66,33 +66,42 @@ describe("DeepSeekJsonModelProvider", () => {
       });
   });
 
-  it("rejects empty content, incomplete output and inconsistent usage", async () => {
-    for (const body of [
-      {
-        choices: [{ finish_reason: "stop", message: { content: "" } }],
-        id: "empty",
-        model: DEEPSEEK_PROFILE_MODEL,
-        usage: { completion_tokens: 0, prompt_tokens: 1, total_tokens: 1 },
-      },
-      {
-        choices: [{ finish_reason: "length", message: { content: "{}" } }],
-        id: "cut-off",
-        model: DEEPSEEK_PROFILE_MODEL,
-        usage: { completion_tokens: 1, prompt_tokens: 1, total_tokens: 2 },
-      },
-      {
-        choices: [{ finish_reason: "stop", message: { content: "{}" } }],
-        id: "bad-usage",
-        model: DEEPSEEK_PROFILE_MODEL,
-        usage: {
-          completion_tokens: 1,
-          prompt_cache_hit_tokens: 1,
-          prompt_cache_miss_tokens: 1,
-          prompt_tokens: 3,
-          total_tokens: 4,
+  it("records a safe machine-readable reason for invalid model output", async () => {
+    for (const [body, detailCode] of [
+      [
+        {
+          choices: [{ finish_reason: "stop", message: { content: "" } }],
+          id: "empty",
+          model: DEEPSEEK_PROFILE_MODEL,
+          usage: { completion_tokens: 0, prompt_tokens: 1, total_tokens: 1 },
         },
-      },
-    ]) {
+        "content_missing",
+      ],
+      [
+        {
+          choices: [{ finish_reason: "length", message: { content: "{}" } }],
+          id: "cut-off",
+          model: DEEPSEEK_PROFILE_MODEL,
+          usage: { completion_tokens: 1, prompt_tokens: 1, total_tokens: 2 },
+        },
+        "output_truncated",
+      ],
+      [
+        {
+          choices: [{ finish_reason: "stop", message: { content: "{}" } }],
+          id: "bad-usage",
+          model: DEEPSEEK_PROFILE_MODEL,
+          usage: {
+            completion_tokens: 1,
+            prompt_cache_hit_tokens: 1,
+            prompt_cache_miss_tokens: 1,
+            prompt_tokens: 3,
+            total_tokens: 4,
+          },
+        },
+        "usage_inconsistent",
+      ],
+    ] as const) {
       const provider = new DeepSeekJsonModelProvider(
         config,
         vi.fn<typeof fetch>().mockResolvedValue(
@@ -104,8 +113,44 @@ describe("DeepSeekJsonModelProvider", () => {
       );
       await expect(
         provider.generateJson({ systemPrompt: "Return json.", userPrompt: "Synthetic input." }),
-      ).rejects.toBeInstanceOf(ModelGatewayError);
+      ).rejects.toMatchObject({ detailCode });
     }
+  });
+
+  it("distinguishes malformed JSON from a malformed provider envelope", async () => {
+    const invalidJson = new DeepSeekJsonModelProvider(
+      config,
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            choices: [{ finish_reason: "stop", message: { content: "{" } }],
+            id: "invalid-json",
+            model: DEEPSEEK_PROFILE_MODEL,
+            usage: { completion_tokens: 1, prompt_tokens: 1, total_tokens: 2 },
+          }),
+          { headers: { "Content-Type": "application/json" }, status: 200 },
+        ),
+      ),
+    );
+    await expect(
+      invalidJson.generateJson({ systemPrompt: "Return json.", userPrompt: "Synthetic input." }),
+    ).rejects.toMatchObject({ detailCode: "content_invalid_json" });
+
+    const invalidEnvelope = new DeepSeekJsonModelProvider(
+      config,
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({ unexpected: true }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        }),
+      ),
+    );
+    await expect(
+      invalidEnvelope.generateJson({
+        systemPrompt: "Return json.",
+        userPrompt: "Synthetic input.",
+      }),
+    ).rejects.toMatchObject({ detailCode: "response_envelope_invalid" });
   });
 });
 
@@ -113,7 +158,7 @@ describe("parseDeepSeekGatewayConfig", () => {
   it("requires a non-placeholder-length server-side key", () => {
     expect(
       parseDeepSeekGatewayConfig({ DEEPSEEK_API_KEY: "synthetic_test_key_not_real" }),
-    ).toMatchObject({ maxTokens: 4_096, timeoutMs: 45_000 });
+    ).toMatchObject({ maxTokens: 8_192, timeoutMs: 45_000 });
     expect(() => parseDeepSeekGatewayConfig({ DEEPSEEK_API_KEY: "short" })).toThrow();
   });
 });

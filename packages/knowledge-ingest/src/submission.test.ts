@@ -111,6 +111,33 @@ describe("knowledge submissions", () => {
     expect(loaded.documents.transcriptSegments).toEqual([]);
   });
 
+  it("publishes an analysis with its single uploaded transcript document", () => {
+    const transcriptDocument = file(".docx", "synthetic-docx-bytes");
+    const loaded = buildKnowledgeSubmission({ analysis: analysis(), transcriptDocument });
+
+    expect(loaded.sources.map((item) => item.descriptor.role)).toEqual([
+      "analysis_markdown",
+      "transcript_text",
+    ]);
+    expect(loaded.sources[1]?.descriptor.mime_type).toBe(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+    expect(loaded.documents.transcriptSegments).toEqual([]);
+  });
+
+  it("rejects mixing a single transcript document with the legacy evidence package", () => {
+    expect(() =>
+      buildKnowledgeSubmission({
+        analysis: analysis(),
+        transcriptDocument: file(".md", "虚构逐字稿"),
+        transcriptJson: transcriptJson(),
+        transcriptQa: qa(),
+        transcriptSrt: file(".srt", "synthetic"),
+        transcriptText: file(".txt", "synthetic"),
+      }),
+    ).toThrow(/cannot be combined/u);
+  });
+
   it("rejects incomplete evidence packages", () => {
     expect(() =>
       buildKnowledgeSubmission({ analysis: analysis(), transcriptJson: transcriptJson() }),

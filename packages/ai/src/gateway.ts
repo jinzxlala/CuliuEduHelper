@@ -6,7 +6,7 @@ export const DEEPSEEK_PROFILE_MODEL = "deepseek-v4-flash";
 const DeepSeekEnvironmentSchema = z
   .object({
     DEEPSEEK_API_KEY: z.string().trim().min(20),
-    DEEPSEEK_PROFILE_MAX_TOKENS: z.coerce.number().int().min(512).max(16_384).default(4_096),
+    DEEPSEEK_PROFILE_MAX_TOKENS: z.coerce.number().int().min(512).max(16_384).default(8_192),
     DEEPSEEK_PROFILE_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(120_000).default(45_000),
   })
   .loose();
@@ -65,16 +65,41 @@ export interface DeepSeekGatewayConfig {
 
 export class ModelGatewayError extends Error {
   readonly code: "empty_output" | "invalid_output" | "provider_error" | "timeout";
+  readonly detailCode:
+    | "content_filtered"
+    | "content_invalid_json"
+    | "content_missing"
+    | "network_error"
+    | "output_truncated"
+    | "provider_http_error"
+    | "provider_resource_interrupted"
+    | "request_timeout"
+    | "response_envelope_invalid"
+    | "unexpected_finish_reason"
+    | "usage_inconsistent";
   readonly retryable: boolean;
 
   constructor(
     code: ModelGatewayError["code"],
     message: string,
-    options: { cause?: unknown; retryable?: boolean } = {},
+    options: {
+      cause?: unknown;
+      detailCode?: ModelGatewayError["detailCode"];
+      retryable?: boolean;
+    } = {},
   ) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause });
     this.name = "ModelGatewayError";
     this.code = code;
+    this.detailCode =
+      options.detailCode ??
+      (code === "timeout"
+        ? "request_timeout"
+        : code === "provider_error"
+          ? "network_error"
+          : code === "empty_output"
+            ? "content_missing"
+            : "response_envelope_invalid");
     this.retryable = options.retryable ?? false;
   }
 }
@@ -130,11 +155,13 @@ export class DeepSeekJsonModelProvider implements JsonModelProvider {
       if (controller.signal.aborted) {
         throw new ModelGatewayError("timeout", "Model request timed out.", {
           cause: error,
+          detailCode: "request_timeout",
           retryable: true,
         });
       }
       throw new ModelGatewayError("provider_error", "Model provider could not be reached.", {
         cause: error,
+        detailCode: "network_error",
         retryable: true,
       });
     } finally {
@@ -145,7 +172,10 @@ export class DeepSeekJsonModelProvider implements JsonModelProvider {
       throw new ModelGatewayError(
         "provider_error",
         `Model provider returned HTTP ${String(response.status)}.`,
-        { retryable: response.status === 408 || response.status === 429 || response.status >= 500 },
+        {
+          detailCode: "provider_http_error",
+          retryable: response.status === 408 || response.status === 429 || response.status >= 500,
+        },
       );
     }
 
@@ -155,15 +185,50 @@ export class DeepSeekJsonModelProvider implements JsonModelProvider {
     } catch (error) {
       throw new ModelGatewayError("invalid_output", "Model response envelope was invalid.", {
         cause: error,
+        detailCode: "response_envelope_invalid",
       });
     }
     const choice = envelope.choices[0];
-    if (choice === undefined || choice.finish_reason !== "stop") {
-      throw new ModelGatewayError("invalid_output", "Model response was incomplete.");
+    if (choice === undefined) {
+      throw new ModelGatewayError("invalid_output", "Model response did not contain a choice.", {
+        detailCode: "response_envelope_invalid",
+      });
+    }
+    if (choice.finish_reason !== "stop") {
+      const finishReason = choice.finish_reason;
+      if (finishReason === "length") {
+        throw new ModelGatewayError(
+          "invalid_output",
+          "Model output reached max_tokens and was truncated.",
+          { detailCode: "output_truncated" },
+        );
+      }
+      if (finishReason === "content_filter") {
+        throw new ModelGatewayError(
+          "invalid_output",
+          "Model output was omitted by content filter.",
+          {
+            detailCode: "content_filtered",
+          },
+        );
+      }
+      if (finishReason === "insufficient_system_resource") {
+        throw new ModelGatewayError(
+          "provider_error",
+          "Model generation was interrupted by insufficient provider resources.",
+          { detailCode: "provider_resource_interrupted", retryable: true },
+        );
+      }
+      throw new ModelGatewayError(
+        "invalid_output",
+        `Model stopped with unsupported finish reason ${finishReason}.`,
+        { detailCode: "unexpected_finish_reason" },
+      );
     }
     const content = choice.message.content?.trim();
     if (content === undefined || content === "") {
       throw new ModelGatewayError("empty_output", "Model returned empty JSON content.", {
+        detailCode: "content_missing",
         retryable: true,
       });
     }
@@ -173,12 +238,15 @@ export class DeepSeekJsonModelProvider implements JsonModelProvider {
     } catch (error) {
       throw new ModelGatewayError("invalid_output", "Model content was not valid JSON.", {
         cause: error,
+        detailCode: "content_invalid_json",
       });
     }
     const cacheHit = envelope.usage.prompt_cache_hit_tokens ?? 0;
     const cacheMiss = envelope.usage.prompt_cache_miss_tokens ?? envelope.usage.prompt_tokens;
     if (cacheHit + cacheMiss !== envelope.usage.prompt_tokens) {
-      throw new ModelGatewayError("invalid_output", "Model usage totals were inconsistent.");
+      throw new ModelGatewayError("invalid_output", "Model usage totals were inconsistent.", {
+        detailCode: "usage_inconsistent",
+      });
     }
     return {
       json,

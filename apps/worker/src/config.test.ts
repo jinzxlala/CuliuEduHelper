@@ -15,7 +15,11 @@ describe("worker profile model configuration", () => {
   it("defaults to DeepSeek and accepts an isolated queue name", () => {
     expect(
       parseWorkerRuntimeConfig({ ...baseEnvironment, CULIU_TASK_QUEUE_NAME: "synthetic-queue" }),
-    ).toMatchObject({ profileModelProvider: "deepseek", queueName: "synthetic-queue" });
+    ).toMatchObject({
+      knowledgeExtractionModelProvider: "deepseek",
+      profileModelProvider: "deepseek",
+      queueName: "synthetic-queue",
+    });
   });
 
   it("allows the deterministic provider only outside production", () => {
@@ -31,6 +35,20 @@ describe("worker profile model configuration", () => {
         ...baseEnvironment,
         NODE_ENV: "production",
         PROFILE_MODEL_PROVIDER: "mock",
+      }),
+    ).toThrow(/forbidden/u);
+    expect(
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: "mock",
+        NODE_ENV: "test",
+      }).knowledgeExtractionModelProvider,
+    ).toBe("mock");
+    expect(() =>
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: "mock",
+        NODE_ENV: "production",
       }),
     ).toThrow(/forbidden/u);
   });

@@ -22,6 +22,7 @@ export const WebReadinessSchema = z
         meilisearch: ReadinessCheckSchema,
         objectStorage: ReadinessCheckSchema,
         redis: ReadinessCheckSchema,
+        taskVersion: ReadinessCheckSchema,
       })
       .strict(),
     service: z.literal("web"),
@@ -36,6 +37,7 @@ export interface ReadinessProbes {
   readonly meilisearch: () => Promise<void>;
   readonly objectStorage: () => Promise<void>;
   readonly redis: () => Promise<void>;
+  readonly taskVersion: () => Promise<void>;
 }
 
 function storageRoot(environment: NodeJS.ProcessEnv): string {
@@ -80,6 +82,12 @@ export function createReadinessProbes(
     },
     objectStorage: () => access(storageRoot(environment), constants.R_OK | constants.W_OK),
     redis: () => checkRedisConnection(getTaskRedisConnection()),
+    taskVersion: () => {
+      if (!/^[0-9a-f]{40}$/u.test(environment.CULIU_GIT_COMMIT_SHA?.trim() ?? "")) {
+        return Promise.reject(new Error("CULIU_GIT_COMMIT_SHA is invalid."));
+      }
+      return Promise.resolve();
+    },
   };
 }
 
@@ -87,17 +95,19 @@ export async function buildWebReadiness(
   probes: ReadinessProbes = createReadinessProbes(),
   now: Date = new Date(),
 ): Promise<WebReadiness> {
-  const [database, meilisearch, objectStorage, redis] = await Promise.allSettled([
+  const [database, meilisearch, objectStorage, redis, taskVersion] = await Promise.allSettled([
     probes.database(),
     probes.meilisearch(),
     probes.objectStorage(),
     probes.redis(),
+    probes.taskVersion(),
   ]);
   const checks = {
     database: database.status === "fulfilled" ? "available" : "unavailable",
     meilisearch: meilisearch.status === "fulfilled" ? "available" : "unavailable",
     objectStorage: objectStorage.status === "fulfilled" ? "available" : "unavailable",
     redis: redis.status === "fulfilled" ? "available" : "unavailable",
+    taskVersion: taskVersion.status === "fulfilled" ? "available" : "unavailable",
   } as const;
   return WebReadinessSchema.parse({
     checkedAt: now.toISOString(),

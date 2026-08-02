@@ -110,7 +110,7 @@ POST /api/students/<id>/profiles/<profile-id>/revisions   保存完整人工修�
 POST /api/students/<id>/profiles/<profile-id>/transitions 提交、退回、批准或归档
 ```
 
-本地运行需在 `infra/.env` 配置 `DEEPSEEK_API_KEY`、`CULIU_GIT_COMMIT_SHA` 和 `PROFILE_MODEL_PROVIDER=deepseek`。可选的真实连通探针如下；它只发送虚构请求，但会产生极小的 API 用量，因此不包含在普通 `pnpm check` 中：
+本地运行需在 `infra/.env` 配置 `DEEPSEEK_API_KEY`。`infra/setup-foundation.ps1` 会幂等补齐 `PROFILE_MODEL_PROVIDER=deepseek`、`KNOWLEDGE_EXTRACTION_MODEL_PROVIDER=deepseek`，并在每次运行时把 `CULIU_GIT_COMMIT_SHA` 刷新为当前仓库提交。可选的画像模型真实连通探针如下；它只发送虚构请求，但会产生极小的 API 用量，因此不包含在普通 `pnpm check` 中：
 
 ```powershell
 pnpm profile:model:smoke
@@ -208,7 +208,7 @@ pnpm knowledge:import:smoke
 
 所有正式知识发布由PostgreSQL全局advisory lock串行化。PostgreSQL是当前正式版本来源；Worker每次启动都会先用数据库当前版本重建三个Meilisearch索引，搜索交换后若数据库最终提交失败也会执行同样的恢复，避免搜索索引长期偏离正式数据。
 
-当前隐私门禁固定禁止发布逐字稿正文；已提交的初始语料包含48条讲座和169张案例卡，但讲座总数不再设为48条上限。管理员可从`/knowledge/import`单独导入分析Markdown，或导入同一基名的完整五文件证据包。每次提交会生成新的不可变当前批次，并保留其他已发布讲座；首页和导入结果按当前批次动态显示数量。只有后续完成逐字稿隐私复核与匿名化机制后，才能通过新的迁移和映射版本解除`transcript_segments=0`的数据库约束。
+当前隐私门禁固定禁止发布逐字稿正文到Meilisearch；已提交的初始语料包含48条讲座和169张案例卡，但讲座总数不再设为48条上限。管理员或顾问可从`/knowledge/import`上传一份同名规则的UTF-8 Markdown或`.docx`逐字稿。系统把原文件写入不可变对象存储、把提取出的正文写入PostgreSQL，再由Worker调用DeepSeek生成九部分分析草稿；草稿和人工修订稿均保存在PostgreSQL，只有提交人或管理员明确确认后才发布讲座与匿名案例。管理员仍可单独导入已经人工完成的分析Markdown。每次发布会生成新的不可变当前批次并保留其他讲座；首页和导入结果按当前批次动态显示数量。只有后续完成逐字稿隐私复核与匿名化机制后，才能通过新的迁移和映射版本解除`transcript_segments=0`的数据库约束。
 
 ## 中文搜索金标评测
 

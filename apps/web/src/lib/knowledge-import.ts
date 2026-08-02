@@ -20,7 +20,7 @@ const globalImport = globalThis as typeof globalThis & {
   culiuKnowledgeImporter?: KnowledgeImporter;
 };
 
-function importer(): KnowledgeImporter {
+export function getKnowledgeImporter(): KnowledgeImporter {
   globalImport.culiuKnowledgeImporter ??= new KnowledgeImporter({
     databaseClient: getDatabaseClient(),
     indexPublisher: new KnowledgeIndexManager({
@@ -46,7 +46,7 @@ export async function publishKnowledgeSubmission(
       "utf8",
     )
     .digest("hex");
-  return importer().importLoaded(
+  return getKnowledgeImporter().importLoaded(
     {
       actorUserId,
       corpusHash: publicationHash,

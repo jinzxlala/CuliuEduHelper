@@ -36,6 +36,7 @@ export interface SubmittedKnowledgeFile {
 
 export interface KnowledgeSubmissionInput {
   readonly analysis: SubmittedKnowledgeFile;
+  readonly transcriptDocument?: SubmittedKnowledgeFile;
   readonly transcriptJson?: SubmittedKnowledgeFile;
   readonly transcriptQa?: SubmittedKnowledgeFile;
   readonly transcriptSrt?: SubmittedKnowledgeFile;
@@ -111,6 +112,32 @@ function descriptor(sourceKey: string, role: SourceRole, file: SubmittedKnowledg
   };
 }
 
+function transcriptDocumentDescriptor(sourceKey: string, file: SubmittedKnowledgeFile): SourceFile {
+  const safe = safeFileName(file.fileName);
+  const extension = safe.endsWith(".docx") ? ".docx" : safe.endsWith(".md") ? ".md" : null;
+  if (extension === null || safe !== `${sourceKey}${extension}`) {
+    throw new KnowledgeSourceError(
+      "unexpected_source",
+      `transcript document must be named ${sourceKey}.md or ${sourceKey}.docx`,
+    );
+  }
+  if (file.bytes.byteLength === 0) {
+    throw new KnowledgeSourceError("invalid_source", `${file.fileName}: file is empty`);
+  }
+  return {
+    bytes: file.bytes.byteLength,
+    content_sha256: contentSha256(file.bytes),
+    logical_path: `knowledge/transcripts/${sourceKey.slice(0, 4)}/${sourceKey}${extension}`,
+    mime_type:
+      extension === ".md"
+        ? "text/markdown"
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    relative_path: file.fileName,
+    role: "transcript_text",
+    root_id: "submission_transcript_document",
+  };
+}
+
 export function buildKnowledgeSubmission(input: KnowledgeSubmissionInput): LoadedKnowledgeImport {
   const sourceKey = sourceKeyFromAnalysis(input.analysis.fileName);
   const transcriptFiles = [
@@ -120,13 +147,19 @@ export function buildKnowledgeSubmission(input: KnowledgeSubmissionInput): Loade
     input.transcriptText,
   ];
   const suppliedTranscriptCount = transcriptFiles.filter((file) => file !== undefined).length;
+  if (input.transcriptDocument !== undefined && suppliedTranscriptCount !== 0) {
+    throw new KnowledgeSourceError(
+      "unexpected_source",
+      "a transcript document cannot be combined with the legacy four-file evidence package",
+    );
+  }
   if (suppliedTranscriptCount !== 0 && suppliedTranscriptCount !== 4) {
     throw new KnowledgeSourceError(
       "missing_source",
       "a complete evidence package requires JSON, QA JSON, SRT and timestamped TXT",
     );
   }
-  const files = [input.analysis, ...transcriptFiles].filter(
+  const files = [input.analysis, input.transcriptDocument, ...transcriptFiles].filter(
     (file): file is SubmittedKnowledgeFile => file !== undefined,
   );
   if (
@@ -143,6 +176,12 @@ export function buildKnowledgeSubmission(input: KnowledgeSubmissionInput): Loade
       file: input.analysis,
     },
   ];
+  if (input.transcriptDocument !== undefined) {
+    sources.push({
+      descriptor: transcriptDocumentDescriptor(sourceKey, input.transcriptDocument),
+      file: input.transcriptDocument,
+    });
+  }
   let transcriptValidation = null;
   if (
     input.transcriptJson !== undefined &&
@@ -210,20 +249,28 @@ export function buildKnowledgeSubmission(input: KnowledgeSubmissionInput): Loade
     source_policies: SOURCE_POLICIES,
     source_roots: [
       { lecture_year: null, root_id: "submission_analysis", source_roles: ["analysis_markdown"] },
-      ...(transcriptValidation === null
-        ? []
-        : [
+      ...(input.transcriptDocument !== undefined
+        ? [
             {
               lecture_year: Number(sourceKey.slice(0, 4)),
-              root_id: "submission_transcript",
-              source_roles: [
-                "transcript_json",
-                "transcript_qa",
-                "transcript_srt",
-                "transcript_text",
-              ],
+              root_id: "submission_transcript_document",
+              source_roles: ["transcript_text" as const],
             },
-          ]),
+          ]
+        : transcriptValidation === null
+          ? []
+          : [
+              {
+                lecture_year: Number(sourceKey.slice(0, 4)),
+                root_id: "submission_transcript",
+                source_roles: [
+                  "transcript_json",
+                  "transcript_qa",
+                  "transcript_srt",
+                  "transcript_text",
+                ],
+              },
+            ]),
     ],
   });
   const loadedSources: LoadedKnowledgeSource[] = sources.map((source) => ({
