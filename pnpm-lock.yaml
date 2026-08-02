@@ -63,6 +63,9 @@ importers:
       '@culiu/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@culiu/student-ingest':
+        specifier: workspace:*
+        version: link:../../packages/student-ingest
       '@culiu/student-profiles':
         specifier: workspace:*
         version: link:../../packages/student-profiles
@@ -72,6 +75,9 @@ importers:
       '@culiu/tasks':
         specifier: workspace:*
         version: link:../../packages/tasks
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.20.3)(pg@8.22.0)
       next:
         specifier: 15.5.22
         version: 15.5.22(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -106,6 +112,9 @@ importers:
       '@culiu/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@culiu/course-planning':
+        specifier: workspace:*
+        version: link:../../packages/course-planning
       '@culiu/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -121,6 +130,9 @@ importers:
       '@culiu/storage':
         specifier: workspace:*
         version: link:../../packages/storage
+      '@culiu/student-ingest':
+        specifier: workspace:*
+        version: link:../../packages/student-ingest
       '@culiu/student-profiles':
         specifier: workspace:*
         version: link:../../packages/student-profiles
@@ -172,15 +184,24 @@ importers:
 
   packages/course-planning:
     dependencies:
+      '@culiu/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@culiu/authorization':
         specifier: workspace:*
         version: link:../authorization
       '@culiu/database':
         specifier: workspace:*
         version: link:../database
+      '@culiu/tasks':
+        specifier: workspace:*
+        version: link:../tasks
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@types/pg@8.20.3)(pg@8.22.0)
+      highs:
+        specifier: 1.15.2
+        version: 1.15.2
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -310,6 +331,40 @@ importers:
 
   packages/storage:
     dependencies:
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@22.20.1)(vite@8.2.0(@types/node@22.20.1)(esbuild@0.28.1)(tsx@4.23.1))
+
+  packages/student-ingest:
+    dependencies:
+      '@culiu/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@culiu/authorization':
+        specifier: workspace:*
+        version: link:../authorization
+      '@culiu/database':
+        specifier: workspace:*
+        version: link:../database
+      '@culiu/storage':
+        specifier: workspace:*
+        version: link:../storage
+      '@culiu/student-records':
+        specifier: workspace:*
+        version: link:../student-records
+      '@culiu/tasks':
+        specifier: workspace:*
+        version: link:../tasks
+      drizzle-orm:
+        specifier: 0.45.2
+        version: 0.45.2(@types/pg@8.20.3)(pg@8.22.0)
+      mammoth:
+        specifier: 1.12.0
+        version: 1.12.0
       zod:
         specifier: 4.4.3
         version: 4.4.3
@@ -1932,6 +1987,9 @@ packages:
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
+
+  highs@1.15.2:
+    resolution: {integrity: sha512-IugrQ7Z8nSMHgVneTFwzV8fIfaR85l/kGhN+jvEDbm5k5MlGXtq1Zp2hy1fkmHA71nCmIg9F7ayWfEPxLpfUyA==}
 
   ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
@@ -3823,6 +3881,8 @@ snapshots:
   globals@16.4.0: {}
 
   has-flag@4.0.0: {}
+
+  highs@1.15.2: {}
 
   ignore@5.3.2: {}
 

@@ -30,6 +30,10 @@ describe("BullMQ foundation", () => {
         "knowledge.extract": () => Promise.resolve({ status: "not-used" }),
         "knowledge.import": () => Promise.resolve({ status: "not-used" }),
         "profile.draft": () => Promise.resolve({ status: "not-used" }),
+        "student.basic.extract": () => Promise.resolve({ status: "not-used" }),
+        "student.evidence.extract": () => Promise.resolve({ status: "not-used" }),
+        "course.recommendation.generate": () => Promise.resolve({ status: "not-used" }),
+        "timetable.solve": () => Promise.resolve({ status: "not-used" }),
         "system.probe": () => {
           processed += 1;
           resolveCompletion?.();

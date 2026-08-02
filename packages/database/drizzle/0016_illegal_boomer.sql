@@ -1,0 +1,2 @@
+ALTER TABLE "student_fact_suggestion" ADD COLUMN "information_nature" "information_nature" DEFAULT 'fact' NOT NULL;--> statement-breakpoint
+ALTER TABLE "student_import_batch" ADD COLUMN "extraction_scope" jsonb DEFAULT '{}'::jsonb NOT NULL;

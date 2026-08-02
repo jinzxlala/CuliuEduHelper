@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const StorageDomainSchema = z.enum(["knowledge", "student"]);
+export const StorageDomainSchema = z.enum(["knowledge", "student", "student_import"]);
 export type StorageDomain = z.infer<typeof StorageDomainSchema>;
 
 export const StoredObjectReferenceSchema = z
@@ -27,6 +27,14 @@ export const StoredObjectReferenceSchema = z
         path: ["studentId"],
       });
     }
+
+    if (value.domain === "student_import" && value.studentId !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "student import storage cannot carry a studentId",
+        path: ["studentId"],
+      });
+    }
   });
 
 export type StoredObjectReference = z.infer<typeof StoredObjectReferenceSchema>;
@@ -46,6 +54,13 @@ export const StoreObjectInputSchema = z
       context.addIssue({
         code: "custom",
         message: "studentId is forbidden for knowledge objects",
+        path: ["studentId"],
+      });
+    }
+    if (value.domain === "student_import" && value.studentId !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "studentId is forbidden for student import objects",
         path: ["studentId"],
       });
     }

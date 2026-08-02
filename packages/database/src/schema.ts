@@ -171,6 +171,51 @@ export const planRuleOverrideStatusEnum = pgEnum("plan_rule_override_status", [
   "approved",
   "rejected",
 ]);
+export const studentImportKindEnum = pgEnum("student_import_kind", ["basic", "incremental"]);
+export const studentImportStatusEnum = pgEnum("student_import_status", [
+  "uploaded",
+  "processing",
+  "review_ready",
+  "partially_applied",
+  "applied",
+  "failed",
+]);
+export const studentImportCandidateDecisionEnum = pgEnum("student_import_candidate_decision", [
+  "pending",
+  "create",
+  "link",
+  "rejected",
+]);
+export const studentFactSuggestionDecisionEnum = pgEnum("student_fact_suggestion_decision", [
+  "pending",
+  "accepted",
+  "rejected",
+]);
+export const schedulingResourceStatusEnum = pgEnum("scheduling_resource_status", [
+  "draft",
+  "approved",
+  "archived",
+]);
+export const candidateScheduleKindEnum = pgEnum("candidate_schedule_kind", [
+  "weekly",
+  "short_term",
+]);
+export const courseRecommendationStatusEnum = pgEnum("course_recommendation_status", [
+  "draft",
+  "accepted",
+  "rejected",
+  "needs_review",
+]);
+export const timetableRunStatusEnum = pgEnum("timetable_run_status", [
+  "draft",
+  "solving",
+  "solved",
+  "partially_solved",
+  "infeasible",
+  "failed",
+  "approved",
+  "archived",
+]);
 
 export const appUsers = pgTable(
   "app_user",
@@ -596,6 +641,146 @@ export const modelTaskRuns = pgTable(
   ],
 );
 
+export const studentImportBatches = pgTable(
+  "student_import_batch",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: studentImportKindEnum("kind").notNull(),
+    status: studentImportStatusEnum("status").notNull().default("uploaded"),
+    selectedStudentId: uuid("selected_student_id").references(() => students.id, {
+      onDelete: "restrict",
+    }),
+    authorizationContextId: uuid("authorization_context_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    originalFileName: varchar("original_file_name", { length: 255 }).notNull(),
+    mimeType: varchar("mime_type", { length: 255 }).notNull(),
+    byteCount: integer("byte_count").notNull(),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    storageKey: text("storage_key").notNull(),
+    model: varchar("model", { length: 128 }),
+    promptVersion: varchar("prompt_version", { length: 64 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 64 }).notNull(),
+    redactionVersion: varchar("redaction_version", { length: 64 }).notNull(),
+    extractionScope: jsonb("extraction_scope")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    modelUsage: jsonb("model_usage").$type<Record<string, unknown>>(),
+    errorCode: varchar("error_code", { length: 128 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("student_import_batch_content_actor_unique").on(
+      table.kind,
+      table.contentHash,
+      table.createdByUserId,
+      table.selectedStudentId,
+    ),
+    index("student_import_batch_status_created_idx").on(table.status, table.createdAt),
+    index("student_import_batch_student_created_idx").on(table.selectedStudentId, table.createdAt),
+    check("student_import_batch_hash_check", sql`${table.contentHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "student_import_batch_file_check",
+      sql`${table.byteCount} between 1 and 20971520 and char_length(trim(${table.originalFileName})) between 1 and 255 and char_length(trim(${table.mimeType})) between 1 and 255 and ${table.storageKey} like 'student-import/%'`,
+    ),
+    check(
+      "student_import_batch_scope_check",
+      sql`(${table.kind} = 'basic' and ${table.selectedStudentId} is null) or (${table.kind} = 'incremental' and ${table.selectedStudentId} is not null)`,
+    ),
+    check(
+      "student_import_batch_status_error_check",
+      sql`(${table.status} = 'failed' and char_length(trim(${table.errorCode})) > 0) or (${table.status} <> 'failed' and ${table.errorCode} is null)`,
+    ),
+  ],
+);
+
+export const studentImportCandidates = pgTable(
+  "student_import_candidate",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    batchId: uuid("batch_id")
+      .notNull()
+      .references(() => studentImportBatches.id, { onDelete: "restrict" }),
+    sourceOrdinal: integer("source_ordinal").notNull(),
+    sourceLocator: jsonb("source_locator").$type<Record<string, unknown>>().notNull(),
+    displayLabel: varchar("display_label", { length: 200 }).notNull(),
+    possibleStudentId: uuid("possible_student_id").references(() => students.id, {
+      onDelete: "restrict",
+    }),
+    decision: studentImportCandidateDecisionEnum("decision").notNull().default("pending"),
+    createdStudentId: uuid("created_student_id").references(() => students.id, {
+      onDelete: "restrict",
+    }),
+    decidedByUserId: uuid("decided_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("student_import_candidate_batch_ordinal_unique").on(
+      table.batchId,
+      table.sourceOrdinal,
+    ),
+    index("student_import_candidate_batch_decision_idx").on(table.batchId, table.decision),
+    check("student_import_candidate_ordinal_check", sql`${table.sourceOrdinal} > 0`),
+    check(
+      "student_import_candidate_decision_check",
+      sql`(${table.decision} = 'pending' and ${table.createdStudentId} is null and ${table.decidedByUserId} is null and ${table.decidedAt} is null) or (${table.decision} = 'create' and ${table.createdStudentId} is not null and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null) or (${table.decision} = 'link' and ${table.possibleStudentId} is not null and ${table.createdStudentId} is null and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null) or (${table.decision} = 'rejected' and ${table.createdStudentId} is null and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null)`,
+    ),
+  ],
+);
+
+export const studentFactSuggestions = pgTable(
+  "student_fact_suggestion",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    batchId: uuid("batch_id")
+      .notNull()
+      .references(() => studentImportBatches.id, { onDelete: "restrict" }),
+    candidateId: uuid("candidate_id").references(() => studentImportCandidates.id, {
+      onDelete: "restrict",
+    }),
+    studentId: uuid("student_id").references(() => students.id, { onDelete: "restrict" }),
+    fieldKey: varchar("field_key", { length: 128 }).notNull(),
+    proposedValue: jsonb("proposed_value").$type<Record<string, unknown>>().notNull(),
+    editedValue: jsonb("edited_value").$type<Record<string, unknown>>(),
+    sourceLocator: jsonb("source_locator").$type<Record<string, unknown>>().notNull(),
+    informationNature: informationNatureEnum("information_nature").notNull().default("fact"),
+    confidence: confidenceLevelEnum("confidence").notNull(),
+    decision: studentFactSuggestionDecisionEnum("decision").notNull().default("pending"),
+    resultingFactId: uuid("resulting_fact_id").references(() => studentFacts.id, {
+      onDelete: "restrict",
+    }),
+    decidedByUserId: uuid("decided_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("student_fact_suggestion_batch_decision_idx").on(table.batchId, table.decision),
+    index("student_fact_suggestion_student_created_idx").on(table.studentId, table.createdAt),
+    check(
+      "student_fact_suggestion_scope_check",
+      sql`(${table.candidateId} is not null and ${table.studentId} is null) or (${table.candidateId} is null and ${table.studentId} is not null)`,
+    ),
+    check(
+      "student_fact_suggestion_field_key_check",
+      sql`${table.fieldKey} ~ '^[a-z][a-z0-9_.-]{0,127}$'`,
+    ),
+    check(
+      "student_fact_suggestion_decision_check",
+      sql`(${table.decision} = 'pending' and ${table.resultingFactId} is null and ${table.decidedByUserId} is null and ${table.decidedAt} is null) or (${table.decision} = 'accepted' and ${table.resultingFactId} is not null and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null) or (${table.decision} = 'rejected' and ${table.resultingFactId} is null and ${table.decidedByUserId} is not null and ${table.decidedAt} is not null)`,
+    ),
+  ],
+);
+
 export const profileVersions = pgTable(
   "profile_version",
   {
@@ -833,6 +1018,391 @@ export const courseScheduleSessions = pgTable(
     check(
       "course_schedule_minute_check",
       sql`${table.startMinute} between 0 and 1439 and ${table.endMinute} between 1 and 1440 and ${table.endMinute} > ${table.startMinute}`,
+    ),
+  ],
+);
+
+export const teachers = pgTable(
+  "teacher",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: varchar("code", { length: 64 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("teacher_code_unique").on(sql`lower(${table.code})`),
+    check("teacher_code_check", sql`${table.code} ~ '^[A-Z][A-Z0-9_-]{1,63}$'`),
+  ],
+);
+
+export const teacherVersions = pgTable(
+  "teacher_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teacherId: uuid("teacher_id")
+      .notNull()
+      .references(() => teachers.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    sourceVersionId: uuid("source_version_id").references((): AnyPgColumn => teacherVersions.id, {
+      onDelete: "restrict",
+    }),
+    status: schedulingResourceStatusEnum("status").notNull().default("draft"),
+    name: varchar("name", { length: 160 }).notNull(),
+    qualificationTags: jsonb("qualification_tags").$type<string[]>().notNull(),
+    weeklyAvailability: jsonb("weekly_availability")
+      .$type<Array<{ weekday: number; startMinute: number; endMinute: number }>>()
+      .notNull(),
+    unavailableDates: jsonb("unavailable_dates").$type<string[]>().notNull(),
+    preferredTags: jsonb("preferred_tags").$type<string[]>().notNull(),
+    maxDailyMinutes: integer("max_daily_minutes").notNull(),
+    maxWeeklyMinutes: integer("max_weekly_minutes").notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    archivedReason: varchar("archived_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("teacher_version_identity_unique").on(table.teacherId, table.version),
+    uniqueIndex("teacher_version_source_unique")
+      .on(table.sourceVersionId)
+      .where(sql`${table.sourceVersionId} is not null`),
+    uniqueIndex("teacher_version_approved_unique")
+      .on(table.teacherId)
+      .where(sql`${table.status} = 'approved'`),
+    check("teacher_version_number_check", sql`${table.version} > 0`),
+    check(
+      "teacher_version_limits_check",
+      sql`${table.maxDailyMinutes} between 1 and 1440 and ${table.maxWeeklyMinutes} between 1 and 10080`,
+    ),
+    check(
+      "teacher_version_json_check",
+      sql`jsonb_typeof(${table.qualificationTags}) = 'array' and jsonb_array_length(${table.qualificationTags}) between 1 and 100 and jsonb_typeof(${table.weeklyAvailability}) = 'array' and jsonb_array_length(${table.weeklyAvailability}) between 1 and 50 and jsonb_typeof(${table.unavailableDates}) = 'array' and jsonb_typeof(${table.preferredTags}) = 'array'`,
+    ),
+  ],
+);
+
+export const teachingLocations = pgTable(
+  "teaching_location",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: varchar("code", { length: 64 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("teaching_location_code_unique").on(sql`lower(${table.code})`),
+    check("teaching_location_code_check", sql`${table.code} ~ '^[A-Z][A-Z0-9_-]{1,63}$'`),
+  ],
+);
+
+export const teachingLocationVersions = pgTable(
+  "teaching_location_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    locationId: uuid("location_id")
+      .notNull()
+      .references(() => teachingLocations.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    sourceVersionId: uuid("source_version_id").references(
+      (): AnyPgColumn => teachingLocationVersions.id,
+      { onDelete: "restrict" },
+    ),
+    status: schedulingResourceStatusEnum("status").notNull().default("draft"),
+    name: varchar("name", { length: 160 }).notNull(),
+    weeklyAvailability: jsonb("weekly_availability")
+      .$type<Array<{ weekday: number; startMinute: number; endMinute: number }>>()
+      .notNull(),
+    unavailableDates: jsonb("unavailable_dates").$type<string[]>().notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    archivedReason: varchar("archived_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("teaching_location_version_identity_unique").on(table.locationId, table.version),
+    uniqueIndex("teaching_location_version_source_unique")
+      .on(table.sourceVersionId)
+      .where(sql`${table.sourceVersionId} is not null`),
+    uniqueIndex("teaching_location_version_approved_unique")
+      .on(table.locationId)
+      .where(sql`${table.status} = 'approved'`),
+    check("teaching_location_version_number_check", sql`${table.version} > 0`),
+    check(
+      "teaching_location_version_json_check",
+      sql`jsonb_typeof(${table.weeklyAvailability}) = 'array' and jsonb_array_length(${table.weeklyAvailability}) between 1 and 50 and jsonb_typeof(${table.unavailableDates}) = 'array'`,
+    ),
+  ],
+);
+
+export const courseOfferings = pgTable(
+  "course_offering",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: varchar("code", { length: 64 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_offering_code_unique").on(sql`lower(${table.code})`),
+    check("course_offering_code_check", sql`${table.code} ~ '^[A-Z][A-Z0-9_-]{1,63}$'`),
+  ],
+);
+
+export const courseOfferingVersions = pgTable(
+  "course_offering_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    offeringId: uuid("offering_id")
+      .notNull()
+      .references(() => courseOfferings.id, { onDelete: "restrict" }),
+    version: integer("version").notNull(),
+    sourceVersionId: uuid("source_version_id").references(
+      (): AnyPgColumn => courseOfferingVersions.id,
+      { onDelete: "restrict" },
+    ),
+    status: schedulingResourceStatusEnum("status").notNull().default("draft"),
+    courseVersionId: uuid("course_version_id")
+      .notNull()
+      .references(() => courseVersions.id, { onDelete: "restrict" }),
+    locationVersionId: uuid("location_version_id")
+      .notNull()
+      .references(() => teachingLocationVersions.id, { onDelete: "restrict" }),
+    className: varchar("class_name", { length: 200 }).notNull(),
+    startDate: date("start_date").notNull(),
+    endDate: date("end_date").notNull(),
+    requiredQualificationTags: jsonb("required_qualification_tags").$type<string[]>().notNull(),
+    allowedTeacherIds: jsonb("allowed_teacher_ids").$type<string[]>().notNull(),
+    studentRosterText: jsonb("student_roster_text").$type<string[]>().notNull(),
+    priority: integer("priority").notNull().default(100),
+    lockedTeacherVersionId: uuid("locked_teacher_version_id").references(() => teacherVersions.id, {
+      onDelete: "restrict",
+    }),
+    lockedCandidateScheduleId: uuid("locked_candidate_schedule_id").references(
+      (): AnyPgColumn => candidateSchedules.id,
+      { onDelete: "restrict" },
+    ),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    archivedReason: varchar("archived_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_offering_version_identity_unique").on(table.offeringId, table.version),
+    uniqueIndex("course_offering_version_source_unique")
+      .on(table.sourceVersionId)
+      .where(sql`${table.sourceVersionId} is not null`),
+    uniqueIndex("course_offering_version_approved_unique")
+      .on(table.offeringId)
+      .where(sql`${table.status} = 'approved'`),
+    check("course_offering_version_number_check", sql`${table.version} > 0`),
+    check("course_offering_version_date_check", sql`${table.endDate} >= ${table.startDate}`),
+    check("course_offering_version_priority_check", sql`${table.priority} between 1 and 1000`),
+    check(
+      "course_offering_version_json_check",
+      sql`jsonb_typeof(${table.requiredQualificationTags}) = 'array' and jsonb_array_length(${table.requiredQualificationTags}) between 1 and 50 and jsonb_typeof(${table.allowedTeacherIds}) = 'array' and jsonb_typeof(${table.studentRosterText}) = 'array'`,
+    ),
+  ],
+);
+
+export const candidateSchedules = pgTable(
+  "candidate_schedule",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    offeringVersionId: uuid("offering_version_id")
+      .notNull()
+      .references(() => courseOfferingVersions.id, { onDelete: "restrict" }),
+    label: varchar("label", { length: 160 }).notNull(),
+    kind: candidateScheduleKindEnum("kind").notNull(),
+    preferenceRank: integer("preference_rank").notNull().default(100),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("candidate_schedule_label_unique").on(table.offeringVersionId, table.label),
+    check("candidate_schedule_rank_check", sql`${table.preferenceRank} between 1 and 1000`),
+  ],
+);
+
+export const candidateScheduleOccurrences = pgTable(
+  "candidate_schedule_occurrence",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateScheduleId: uuid("candidate_schedule_id")
+      .notNull()
+      .references(() => candidateSchedules.id, { onDelete: "restrict" }),
+    sessionDate: date("session_date").notNull(),
+    startMinute: integer("start_minute").notNull(),
+    endMinute: integer("end_minute").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("candidate_schedule_occurrence_unique").on(
+      table.candidateScheduleId,
+      table.sessionDate,
+      table.startMinute,
+      table.endMinute,
+    ),
+    check(
+      "candidate_schedule_occurrence_minute_check",
+      sql`${table.startMinute} between 0 and 1439 and ${table.endMinute} between 1 and 1440 and ${table.endMinute} > ${table.startMinute}`,
+    ),
+  ],
+);
+
+export const courseRecommendationSnapshots = pgTable(
+  "course_recommendation_snapshot",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "restrict" }),
+    profileVersionId: uuid("profile_version_id")
+      .notNull()
+      .references(() => profileVersions.id, { onDelete: "restrict" }),
+    authorizationContextSnapshotId: uuid("authorization_context_snapshot_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    snapshotHash: varchar("snapshot_hash", { length: 64 }).notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    eligibleCourseVersionIds: jsonb("eligible_course_version_ids").$type<string[]>().notNull(),
+    eligibleOfferingVersionIds: jsonb("eligible_offering_version_ids").$type<string[]>().notNull(),
+    profileClaimIds: jsonb("profile_claim_ids").$type<string[]>().notNull(),
+    modelProvider: varchar("model_provider", { length: 64 }).notNull(),
+    model: varchar("model", { length: 128 }).notNull(),
+    promptVersion: varchar("prompt_version", { length: 128 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 128 }).notNull(),
+    redactionVersion: varchar("redaction_version", { length: 128 }).notNull(),
+    pricingVersion: varchar("pricing_version", { length: 128 }).notNull(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_recommendation_snapshot_hash_unique").on(
+      table.studentId,
+      table.snapshotHash,
+    ),
+    check(
+      "course_recommendation_snapshot_hash_check",
+      sql`${table.snapshotHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "course_recommendation_snapshot_json_check",
+      sql`jsonb_typeof(${table.payload}) = 'object' and jsonb_typeof(${table.eligibleCourseVersionIds}) = 'array' and jsonb_array_length(${table.eligibleCourseVersionIds}) between 1 and 5000 and jsonb_typeof(${table.eligibleOfferingVersionIds}) = 'array' and jsonb_typeof(${table.profileClaimIds}) = 'array' and jsonb_array_length(${table.profileClaimIds}) between 1 and 100`,
+    ),
+  ],
+);
+
+export const courseRecommendations = pgTable(
+  "course_recommendation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentId: uuid("student_id")
+      .notNull()
+      .references(() => students.id, { onDelete: "restrict" }),
+    snapshotId: uuid("snapshot_id")
+      .notNull()
+      .references(() => courseRecommendationSnapshots.id, { onDelete: "restrict" }),
+    backgroundJobId: uuid("background_job_id").references(() => backgroundJobs.id, {
+      onDelete: "restrict",
+    }),
+    status: courseRecommendationStatusEnum("status").notNull().default("draft"),
+    output: jsonb("output").$type<Record<string, unknown>>().notNull(),
+    providerRequestId: varchar("provider_request_id", { length: 256 }).notNull(),
+    promptTokens: integer("prompt_tokens").notNull(),
+    completionTokens: integer("completion_tokens").notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    decidedByUserId: uuid("decided_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("course_recommendation_snapshot_unique").on(table.snapshotId),
+    index("course_recommendation_student_created_idx").on(table.studentId, table.createdAt),
+    check(
+      "course_recommendation_usage_check",
+      sql`${table.promptTokens} >= 0 and ${table.completionTokens} >= 0`,
+    ),
+    check(
+      "course_recommendation_status_check",
+      sql`(${table.status} = 'accepted' and ${table.acceptedAt} is not null and ${table.decidedByUserId} is not null) or (${table.status} <> 'accepted')`,
+    ),
+  ],
+);
+
+export const timetableRuns = pgTable(
+  "timetable_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authorizationContextSnapshotId: uuid("authorization_context_snapshot_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    backgroundJobId: uuid("background_job_id").references(() => backgroundJobs.id, {
+      onDelete: "restrict",
+    }),
+    status: timetableRunStatusEnum("status").notNull().default("draft"),
+    inputSnapshot: jsonb("input_snapshot").$type<Record<string, unknown>>().notNull(),
+    inputHash: varchar("input_hash", { length: 64 }).notNull(),
+    output: jsonb("output").$type<Record<string, unknown>>(),
+    outputHash: varchar("output_hash", { length: 64 }),
+    solverVersion: varchar("solver_version", { length: 64 }).notNull(),
+    constraintVersion: varchar("constraint_version", { length: 128 }).notNull(),
+    objectiveVersion: varchar("objective_version", { length: 128 }).notNull(),
+    runtimeMs: integer("runtime_ms"),
+    failureCode: varchar("failure_code", { length: 128 }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    approvedByUserId: uuid("approved_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    archivedReason: varchar("archived_reason", { length: 512 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("timetable_run_input_hash_unique").on(table.inputHash),
+    index("timetable_run_status_created_idx").on(table.status, table.createdAt),
+    check("timetable_run_input_hash_check", sql`${table.inputHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "timetable_run_output_hash_check",
+      sql`${table.outputHash} is null or ${table.outputHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "timetable_run_result_check",
+      sql`(${table.status} in ('draft', 'solving') and ${table.output} is null and ${table.outputHash} is null) or (${table.status} in ('solved', 'partially_solved', 'infeasible', 'approved', 'archived') and ${table.output} is not null and ${table.outputHash} is not null) or (${table.status} = 'failed' and ${table.failureCode} is not null)`,
+    ),
+    check(
+      "timetable_run_approval_check",
+      sql`(${table.status} = 'approved' and ${table.approvedByUserId} is not null and ${table.approvedAt} is not null) or (${table.status} <> 'approved')`,
     ),
   ],
 );

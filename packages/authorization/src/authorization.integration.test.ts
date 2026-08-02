@@ -20,6 +20,7 @@ import {
   createKnowledgeImportAuthorizationContext,
   createStudentAuthorizationContext,
   createStudentDirectoryContext,
+  createStudentImportAuthorizationContext,
   listAuthorizedStudents,
   loadAuthorizationContext,
   readStudentOverview,
@@ -404,6 +405,29 @@ describe("knowledge transcript authorization boundary", () => {
       const fixture = await createFixture(database, { role: "auditor" });
       await expect(
         createKnowledgeImportAuthorizationContext(database, fixture.principal),
+      ).rejects.toBeInstanceOf(AuthorizationDeniedError);
+    });
+  });
+});
+
+describe("student import authorization boundary", () => {
+  it("allows only an active administrator to create a restricted import context", async () => {
+    await withRollback(async (database) => {
+      const now = new Date("2026-08-03T12:00:00.000Z");
+      const administrator = await createFixture(database, { role: "admin" });
+      const context = await createStudentImportAuthorizationContext(
+        database,
+        administrator.principal,
+        { now },
+      );
+      expect(context.allowedActions).toEqual(["student:import"]);
+      expect(context.maxAccessLevel).toBe("restricted");
+      expect(context.studentId).toBeNull();
+      expect(context.expiresAt.toISOString()).toBe("2026-08-03T14:00:00.000Z");
+
+      const advisor = await createFixture(database, { role: "advisor" });
+      await expect(
+        createStudentImportAuthorizationContext(database, advisor.principal, { now }),
       ).rejects.toBeInstanceOf(AuthorizationDeniedError);
     });
   });

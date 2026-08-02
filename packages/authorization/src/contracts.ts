@@ -15,6 +15,8 @@ export const StudentActionSchema = z.enum([
   "student:profile:generate",
   "student:profile:review",
   "student:profile:approve",
+  "student:recommendation:generate",
+  "student:recommendation:review",
   "student:plan:write",
   "student:plan:review",
   "student:plan:approve",

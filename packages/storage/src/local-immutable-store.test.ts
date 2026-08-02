@@ -23,6 +23,22 @@ afterEach(async () => {
 });
 
 describe("LocalImmutableObjectStore", () => {
+  it("stores restricted import sources outside every student namespace", async () => {
+    const { store } = await createStore();
+
+    const stored = await store.store({
+      content: Buffer.from("two students in one restricted source", "utf8"),
+      domain: "student_import",
+    });
+
+    expect(stored.domain).toBe("student_import");
+    expect(stored.studentId).toBeUndefined();
+    expect(stored.key).toMatch(/^student-import\/[0-9a-f]{2}\/[0-9a-f]{64}$/u);
+    await expect(store.read(stored)).resolves.toEqual(
+      Buffer.from("two students in one restricted source", "utf8"),
+    );
+  });
+
   it("stores identical knowledge content idempotently", async () => {
     const { store } = await createStore();
     const input = { content: Buffer.from("synthetic lecture"), domain: "knowledge" as const };

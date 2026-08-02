@@ -8,6 +8,8 @@ import { z } from "zod";
 
 import { EvidenceInvalidateButton } from "../../../components/evidence-invalidate-button";
 import { StudentRecordEditor } from "../../../components/student-record-editor";
+import { IncrementalStudentImport } from "../../../components/incremental-student-import";
+import { CourseRecommendations } from "../../../components/course-recommendations";
 import { ProfileDraftPanel } from "../../../components/profile-draft-panel";
 import { requireActiveSessionPrincipal } from "../../../lib/auth-session";
 import { getDatabaseClient } from "../../../lib/database";
@@ -107,6 +109,9 @@ export default async function StudentDetailPage({
           }))}
           studentId={student.id}
         />
+
+        <IncrementalStudentImport studentId={student.id} />
+        <CourseRecommendations studentId={student.id} />
 
         <ProfileDraftPanel initialData={profiles} studentId={student.id} />
 

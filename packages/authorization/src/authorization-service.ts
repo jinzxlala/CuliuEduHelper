@@ -26,6 +26,8 @@ import { AuthorizationDeniedError } from "./errors.js";
 
 const DEFAULT_CONTEXT_LIFETIME_MS = 15 * 60 * 1000;
 const KNOWLEDGE_IMPORT_CONTEXT_LIFETIME_MS = 2 * 60 * 60 * 1000;
+const STUDENT_IMPORT_CONTEXT_LIFETIME_MS = 2 * 60 * 60 * 1000;
+const SCHEDULING_CONTEXT_LIFETIME_MS = 2 * 60 * 60 * 1000;
 const StudentIdSchema = z.uuid();
 
 const accessLevelRankSql = (column: unknown): SQL<number> => sql<number>`case ${column}
@@ -127,6 +129,83 @@ export async function createKnowledgeImportAuthorizationContext(
     details: { authorizationContextId: context.id },
     objectId: "knowledge-transcript-submission",
     objectType: "knowledge_import",
+    requestCorrelationId,
+    result: "allowed",
+    studentId: null,
+  });
+  return context;
+}
+
+export async function createStudentImportAuthorizationContext(
+  database: Database,
+  principal: SessionPrincipal,
+  options: { now?: Date; requestCorrelationId?: string } = {},
+): Promise<AuthorizationContext> {
+  const now = options.now ?? new Date();
+  const requestCorrelationId = options.requestCorrelationId ?? randomUUID();
+  await requireActivePrincipal(database, principal);
+  if (principal.role !== "admin") {
+    await database.insert(auditEvents).values({
+      action: "student.import.authorize",
+      actorType: "user",
+      actorUserId: principal.id,
+      details: {},
+      objectId: "student-import",
+      objectType: "student_import",
+      requestCorrelationId,
+      result: "denied",
+      studentId: null,
+    });
+    throw new AuthorizationDeniedError();
+  }
+  const context = await persistContext(database, {
+    actorUserId: principal.id,
+    allowedActions: ["student:import"],
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + STUDENT_IMPORT_CONTEXT_LIFETIME_MS),
+    maxAccessLevel: "restricted",
+    studentId: null,
+  });
+  await database.insert(auditEvents).values({
+    action: "student.import.authorize",
+    actorType: "user",
+    actorUserId: principal.id,
+    details: { authorizationContextId: context.id },
+    objectId: "student-import",
+    objectType: "student_import",
+    requestCorrelationId,
+    result: "allowed",
+    studentId: null,
+  });
+  return context;
+}
+
+export async function createSchedulingAuthorizationContext(
+  database: Database,
+  principal: SessionPrincipal,
+  options: { now?: Date; requestCorrelationId?: string } = {},
+): Promise<AuthorizationContext> {
+  const now = options.now ?? new Date();
+  const requestCorrelationId = options.requestCorrelationId ?? randomUUID();
+  await requireActivePrincipal(database, principal);
+  if (principal.role !== "admin") {
+    throw new AuthorizationDeniedError();
+  }
+  const context = await persistContext(database, {
+    actorUserId: principal.id,
+    allowedActions: ["scheduling:solve", "scheduling:approve"],
+    createdAt: now,
+    expiresAt: new Date(now.getTime() + SCHEDULING_CONTEXT_LIFETIME_MS),
+    maxAccessLevel: "internal",
+    studentId: null,
+  });
+  await database.insert(auditEvents).values({
+    action: "scheduling.authorize",
+    actorType: "user",
+    actorUserId: principal.id,
+    details: { authorizationContextId: context.id },
+    objectId: "class-timetable",
+    objectType: "scheduling",
     requestCorrelationId,
     result: "allowed",
     studentId: null,

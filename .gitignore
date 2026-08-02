@@ -13,6 +13,9 @@ coverage/
 *.tsbuildinfo
 .local-data/
 
+# Local source corpus is imported through the versioned knowledge manifest.
+/data_origin/
+
 # Local environment files remain private; examples stay versioned.
 .env
 .env.local

@@ -136,12 +136,28 @@ function PlanHistory({
 
 export function CoursePlanningPanel({
   initialData,
+  recommendedCourseVersionIds = [],
   studentId,
-}: Readonly<{ initialData: PlanningWorkspaceData; studentId: string }>): JSX.Element {
+}: Readonly<{
+  initialData: PlanningWorkspaceData;
+  recommendedCourseVersionIds?: string[];
+  studentId: string;
+}>): JSX.Element {
   const [workspace, setWorkspace] = useState(initialData);
-  const [form, setForm] = useState<ManualPlanFormState>(() =>
-    createManualPlanFormState(initialData),
-  );
+  const [form, setForm] = useState<ManualPlanFormState>(() => {
+    const initial = createManualPlanFormState(initialData);
+    if (recommendedCourseVersionIds.length === 0) return initial;
+    const template = initial.shortTermItems[0];
+    if (template === undefined) return initial;
+    return {
+      ...initial,
+      shortTermItems: recommendedCourseVersionIds.slice(0, 3).map((courseVersionId) => ({
+        ...template,
+        courseVersionId,
+        reason: "来自已接受的画像驱动课程推荐，待顾问补充和复核。",
+      })),
+    };
+  });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

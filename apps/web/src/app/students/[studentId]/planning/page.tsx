@@ -1,5 +1,9 @@
 import { AuthorizationDeniedError, createStudentAuthorizationContext } from "@culiu/authorization";
-import { PlanWorkflowNotFoundError, readManualPlanningWorkspace } from "@culiu/course-planning";
+import {
+  PlanWorkflowNotFoundError,
+  readCourseRecommendations,
+  readManualPlanningWorkspace,
+} from "@culiu/course-planning";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { JSX } from "react";
@@ -13,7 +17,11 @@ export const dynamic = "force-dynamic";
 
 export default async function StudentPlanningPage({
   params,
-}: Readonly<{ params: Promise<{ studentId: string }> }>): Promise<JSX.Element> {
+  searchParams,
+}: Readonly<{
+  params: Promise<{ studentId: string }>;
+  searchParams: Promise<{ recommendation?: string }>;
+}>): Promise<JSX.Element> {
   const principal = await requireActiveSessionPrincipal();
   const studentId = z.uuid().safeParse((await params).studentId);
   if (!studentId.success) notFound();
@@ -25,6 +33,20 @@ export default async function StudentPlanningPage({
       studentId: studentId.data,
     });
     const workspace = await readManualPlanningWorkspace(database, context);
+    const recommendationId = z.uuid().safeParse((await searchParams).recommendation);
+    let recommendedCourseVersionIds: string[] = [];
+    if (recommendationId.success) {
+      const recommendationContext = await createStudentAuthorizationContext(database, principal, {
+        accessLevel: "sensitive",
+        action: "student:recommendation:review",
+        studentId: studentId.data,
+      });
+      const recommendation = (
+        await readCourseRecommendations(database, recommendationContext)
+      ).find((item) => item.id === recommendationId.data && item.status === "accepted");
+      recommendedCourseVersionIds =
+        recommendation?.output.recommendations.map((item) => item.courseVersionId) ?? [];
+    }
     return (
       <main className="detail-shell student-record-shell">
         <header className="detail-nav">
@@ -34,7 +56,11 @@ export default async function StudentPlanningPage({
         <article className="detail-card">
           <p className="eyebrow">Student course plan</p>
           <h1>课程规划</h1>
-          <CoursePlanningPanel initialData={workspace} studentId={studentId.data} />
+          <CoursePlanningPanel
+            initialData={workspace}
+            recommendedCourseVersionIds={recommendedCourseVersionIds}
+            studentId={studentId.data}
+          />
         </article>
       </main>
     );

@@ -24,7 +24,19 @@ const navigationItems = [
   {
     href: "/students",
     label: "学生档案",
-    matches: (pathname: string) => pathname === "/students" || pathname.startsWith("/students/"),
+    matches: (pathname: string) =>
+      pathname === "/students" ||
+      (pathname.startsWith("/students/") && pathname !== "/students/import"),
+  },
+  {
+    href: "/students/import",
+    label: "批量建档",
+    matches: (pathname: string) => pathname === "/students/import",
+  },
+  {
+    href: "/scheduling",
+    label: "课程排课",
+    matches: (pathname: string) => pathname === "/scheduling",
   },
 ] as const;
 

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { describe, expect, it } from "vitest";
 
 import { TaskEnvelopeSchema } from "./schema.js";
@@ -16,6 +18,29 @@ const validTask = {
 } as const;
 
 describe("TaskEnvelopeSchema", () => {
+  it("accepts a minimal student basic extraction task without source content", () => {
+    const task = TaskEnvelopeSchema.parse({
+      authorization: { contextHash: "a".repeat(64), contextId: randomUUID() },
+      idempotencyKey: "student-basic-extract-1",
+      payload: {
+        batchId: randomUUID(),
+        contentHash: "b".repeat(64),
+        correlationId: randomUUID(),
+        gitCommitSha: "c".repeat(40),
+        model: "deepseek-v4-flash",
+        promptHash: "d".repeat(64),
+        promptVersion: "student-basic-import.v1",
+        redactionVersion: "student-basic-minimal-outbound.v1",
+        schemaHash: "e".repeat(64),
+        schemaVersion: "student-basic-candidates.v1",
+      },
+      taskId: randomUUID(),
+      taskName: "student.basic.extract",
+    });
+    expect(task.taskName).toBe("student.basic.extract");
+    expect(JSON.stringify(task)).not.toContain("学生");
+  });
+
   it("accepts a system probe with a frozen authorization reference", () => {
     expect(TaskEnvelopeSchema.parse(validTask)).toEqual(validTask);
   });
@@ -108,5 +133,49 @@ describe("TaskEnvelopeSchema", () => {
     expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
     expect(JSON.stringify(task)).not.toContain("studentId");
     expect(JSON.stringify(task)).not.toContain("facts");
+  });
+
+  it("accepts a course recommendation task with frozen references and no student content", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: `course_rec_${"a".repeat(64)}`,
+      payload: {
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "b".repeat(40),
+        model: "deepseek-v4-flash",
+        pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
+        promptHash: "c".repeat(64),
+        promptVersion: "course-recommendation.v1",
+        redactionVersion: "course-recommendation-outbound.v1",
+        schemaHash: "d".repeat(64),
+        schemaVersion: "course-recommendation-output.v1",
+        snapshotHash: "a".repeat(64),
+        snapshotId: "00000000-0000-4000-8000-000000000031",
+      },
+      taskName: "course.recommendation.generate",
+    } as const;
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain("studentId");
+    expect(JSON.stringify(task)).not.toContain("claims");
+  });
+
+  it("accepts a timetable task with only a run reference and version hashes", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: `timetable_${"a".repeat(64)}`,
+      payload: {
+        constraintVersion: "class-teacher-candidate.v1",
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "b".repeat(40),
+        inputHash: "a".repeat(64),
+        objectiveVersion: "priority-schedule-teacher-gap-stable.v1",
+        runId: "00000000-0000-4000-8000-000000000041",
+        solverVersion: "highs-wasm-1.15.2",
+      },
+      taskName: "timetable.solve",
+    } as const;
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain("studentRosterText");
+    expect(JSON.stringify(task)).not.toContain("occurrences");
   });
 });

@@ -26,9 +26,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@culiu/ai": "workspace:*",
     "@culiu/authorization": "workspace:*",
     "@culiu/database": "workspace:*",
+    "@culiu/tasks": "workspace:*",
     "drizzle-orm": "0.45.2",
+    "highs": "1.15.2",
     "zod": "4.4.3"
   },
   "devDependencies": {

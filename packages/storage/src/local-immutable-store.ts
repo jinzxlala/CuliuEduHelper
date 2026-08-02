@@ -84,6 +84,10 @@ export class LocalImmutableObjectStore implements ImmutableObjectStore {
       return `knowledge/${digest.slice(0, 2)}/${digest}`;
     }
 
+    if (domain === "student_import") {
+      return `student-import/${digest.slice(0, 2)}/${digest}`;
+    }
+
     if (studentId === undefined) {
       throw new ObjectIntegrityError("studentId is required for student objects.");
     }

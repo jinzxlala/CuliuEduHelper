@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import type { JsonModelProvider } from "@culiu/ai";
 import {
   createStudentAuthorizationContext,
   type AuthorizationContext,
@@ -53,6 +54,17 @@ import {
   requestPlanRuleOverride,
   transitionManualPlanVersion,
 } from "./plan-workflow.js";
+import {
+  decideCourseRecommendation,
+  executeCourseRecommendationTask,
+  prepareCourseRecommendationTask,
+  readCourseRecommendations,
+} from "./recommendation-service.js";
+import {
+  createCourseOffering,
+  createTeachingLocation,
+  transitionSchedulingVersion,
+} from "./scheduling-service.js";
 
 let maintenanceClient: DatabaseClient | undefined;
 let databaseClient: DatabaseClient | undefined;
@@ -160,6 +172,8 @@ async function createApprovedProfile(): Promise<{
       "student:profile:generate",
       "student:profile:review",
       "student:profile:approve",
+      "student:recommendation:generate",
+      "student:recommendation:review",
       "student:plan:write",
       "student:plan:review",
       "student:plan:approve",
@@ -463,6 +477,138 @@ describe("manual plan workflow", () => {
       ruleType: "load_limit",
       severity: "hard",
     });
+
+    const recommendationLocation = await createTeachingLocation(activeClient().database, admin, {
+      code: "SYN_RECOMMEND_ROOM",
+      content: {
+        name: "Synthetic recommendation room",
+        unavailableDates: [],
+        weeklyAvailability: [{ endMinute: 1200, startMinute: 480, weekday: 6 }],
+      },
+    });
+    await transitionSchedulingVersion(
+      activeClient().database,
+      admin,
+      "location",
+      recommendationLocation.versionId,
+      {
+        action: "approve",
+        expectedUpdatedAt: recommendationLocation.updatedAt.toISOString(),
+      },
+    );
+    const recommendationOffering = await createCourseOffering(activeClient().database, admin, {
+      code: "SYN_RECOMMEND_CLASS",
+      content: {
+        allowedTeacherIds: [],
+        candidateSchedules: [
+          {
+            kind: "short_term",
+            label: "Synthetic complete candidate",
+            occurrences: [{ endMinute: 660, sessionDate: "2026-09-05", startMinute: 540 }],
+            preferenceRank: 1,
+          },
+        ],
+        className: "Synthetic recommendation class",
+        courseVersionId: foundation.courseVersionId,
+        endDate: "2026-09-05",
+        locationVersionId: recommendationLocation.versionId,
+        requiredQualificationTags: ["synthetic_subject"],
+        startDate: "2026-09-05",
+        studentRosterText: ["Synthetic roster text is not linked to a student profile"],
+      },
+    });
+    await transitionSchedulingVersion(
+      activeClient().database,
+      admin,
+      "offering",
+      recommendationOffering.versionId,
+      {
+        action: "approve",
+        expectedUpdatedAt: recommendationOffering.updatedAt.toISOString(),
+      },
+    );
+    const recommendationGenerateContext = await createStudentAuthorizationContext(
+      activeClient().database,
+      advisor,
+      {
+        accessLevel: "sensitive",
+        action: "student:recommendation:generate",
+        now: CONTEXT_NOW,
+        studentId: actor.studentId,
+      },
+    );
+    const recommendationReviewContext = await createStudentAuthorizationContext(
+      activeClient().database,
+      advisor,
+      {
+        accessLevel: "sensitive",
+        action: "student:recommendation:review",
+        now: CONTEXT_NOW,
+        studentId: actor.studentId,
+      },
+    );
+    const recommendationTask = await prepareCourseRecommendationTask(
+      activeClient().database,
+      recommendationGenerateContext,
+      "a".repeat(40),
+    );
+    expect(JSON.stringify(recommendationTask)).not.toContain("studentId");
+    const provider: JsonModelProvider = {
+      generateJson: () =>
+        Promise.resolve({
+          json: {
+            alternative: {
+              claimIds: [actor.claimId],
+              courseVersionId: alternative.courseVersionId,
+              expectedOutcome: "Synthetic alternative output",
+              knowledgeLink: "Synthetic alternative linkage",
+              offeringVersionIds: [],
+              rationale: "Synthetic alternative based on the frozen claim",
+              risk: "Synthetic alternative risk",
+            },
+            recommendations: [
+              {
+                claimIds: [actor.claimId],
+                courseVersionId: foundation.courseVersionId,
+                expectedOutcome: "Synthetic foundation output",
+                knowledgeLink: "Synthetic foundation linkage",
+                offeringVersionIds: [recommendationOffering.versionId],
+                rationale: "Synthetic recommendation based on the frozen claim",
+                risk: "Synthetic recommendation risk",
+              },
+            ],
+          },
+          model: "deepseek-v4-flash",
+          providerRequestId: "synthetic-recommendation-request",
+          usage: {
+            completionTokens: 100,
+            promptCacheHitTokens: 0,
+            promptCacheMissTokens: 10,
+            promptTokens: 50,
+            totalTokens: 150,
+          },
+        }),
+    };
+    const recommendationResult = await executeCourseRecommendationTask(
+      activeClient().database,
+      recommendationTask,
+      provider,
+    );
+    const recommendationDrafts = await readCourseRecommendations(
+      activeClient().database,
+      recommendationReviewContext,
+    );
+    expect(recommendationDrafts[0]?.output.recommendations[0]?.offeringVersionIds).toEqual([
+      recommendationOffering.versionId,
+    ]);
+    await expect(
+      decideCourseRecommendation(
+        activeClient().database,
+        recommendationReviewContext,
+        recommendationResult.recommendationId,
+        "accepted",
+      ),
+    ).resolves.toEqual({ status: "accepted" });
 
     const plan = await createManualPlanVersion(
       activeClient().database,
