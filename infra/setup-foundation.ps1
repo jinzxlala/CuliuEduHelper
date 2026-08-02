@@ -96,6 +96,9 @@ function Write-EnvValues {
         "REDIS_PASSWORD",
         "REDIS_URL",
         "LOCAL_STORAGE_ROOT",
+        "BACKUP_ROOT",
+        "BACKUP_ENCRYPTION_KEY",
+        "POSTGRES_CONTAINER_NAME",
         "DEEPSEEK_API_KEY"
     )
     $lines = foreach ($key in $orderedKeys) {
@@ -153,6 +156,16 @@ function Ensure-LocalEnv {
     if (Test-MissingOrPlaceholder -Values $values -Key "LOCAL_STORAGE_ROOT") {
         $storagePath = Join-Path $RepositoryRoot ".local-data\evidence"
         $values["LOCAL_STORAGE_ROOT"] = $storagePath.Replace('\', '/')
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "BACKUP_ROOT") {
+        $backupPath = Join-Path $RepositoryRoot ".local-data\backups"
+        $values["BACKUP_ROOT"] = $backupPath.Replace('\', '/')
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "BACKUP_ENCRYPTION_KEY") {
+        $values["BACKUP_ENCRYPTION_KEY"] = New-SecureToken
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "POSTGRES_CONTAINER_NAME") {
+        $values["POSTGRES_CONTAINER_NAME"] = "culiu-edu-helper-postgres"
     }
 
     Write-EnvValues -Values $values

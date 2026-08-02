@@ -17,6 +17,7 @@ packages/search Meilisearch文档契约、查询、金标评测与原子重建
 packages/storage 本地不可变证据存储
 packages/student-records 学生事实、证据定位、版本、失效和授权领域服务
 packages/tasks BullMQ任务契约与执行器
+packages/operations 加密备份、隔离恢复与Meilisearch重建验收
 ```
 
 标准运行版本为Node.js 22和pnpm 11.9.0。安装依赖后可执行：
@@ -229,6 +230,29 @@ pnpm search:gold:evaluate -- --require-approved
 ```
 
 该命令在技术指标不达标或评测集仍未获批准时均返回非零退出码。当前逐字稿隐私门禁使正式`transcript_segments`数量为0，因此本版不伪造逐字稿正向金标；解除门禁后必须升级fixture版本并加入时间戳证据查询，再重新验收阶段1。不得为了让本评测变绿而先验加入同义词、向量或混合检索。
+
+## 加密备份与实际恢复验收
+
+`@culiu/operations`把PostgreSQL一致性快照和`LOCAL_STORAGE_ROOT`下的不可变对象写入一个独立备份目录。数据库转储、对象文件及包含对象逻辑路径的清单均使用AES-256-GCM加密；公开回执只包含归档ID、时间和加密清单哈希。备份密钥由`infra/setup-foundation.ps1`随机生成到被Git忽略的`infra/.env`，不得复制到仓库、日志或备份目录。
+
+创建备份前应暂停Web和Worker写入，在Docker服务健康后执行：
+
+```powershell
+pnpm backup:create
+```
+
+实际恢复验收默认选择`BACKUP_ROOT`下最新的完整备份，也可指定某个备份目录：
+
+```powershell
+pnpm backup:verify
+pnpm backup:verify -- --backup "D:\path\to\completed-backup"
+```
+
+恢复验收不会覆盖当前数据库或三个正式搜索索引。它会解密到权限受限的临时目录、逐个复核对象大小和SHA-256、把PostgreSQL转储恢复到随机临时数据库、逐表核对快照行数，并从临时数据库重建三组随机命名的Meilisearch索引。无论成功或失败，临时数据库、临时索引、容器转储和明文文件都会清理；成功与失败结果写入追加式审计日志。
+
+早期脱敏开发夹具有一条固定ID、固定全`c`占位哈希且从未生成实体文件的学生证据记录。`development`／`test`备份会明确记录并复核这一条夹具缺口；任何其他缺失或哈希不符仍立即失败，`production`环境连这条夹具例外也不允许。该例外只用于保留既有开发数据库的可复现性，不能用于真实学生资料或业务验收。
+
+备份目录本身不会自动过期或删除。迁移、复制或删除备份属于敏感运维操作；在确定保留策略和异地存储位置前，不要把备份放入Git、普通共享盘或未加密介质。丢失`BACKUP_ENCRYPTION_KEY`将无法恢复备份，泄露该密钥则会失去备份机密性。
 
 ### 清空本地搜索数据
 

@@ -1,0 +1,37 @@
+{
+  "name": "@culiu/operations",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "backup:create": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/create-backup.ts",
+    "backup:verify": "node --env-file-if-exists=../../infra/.env --import tsx src/cli/verify-backup.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@culiu/database": "workspace:*",
+    "@culiu/knowledge-ingest": "workspace:*",
+    "@culiu/search": "workspace:*",
+    "@culiu/storage": "workspace:*",
+    "meilisearch": "0.60.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "4.23.1",
+    "vitest": "4.1.10"
+  }
+}

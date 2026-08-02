@@ -13,6 +13,8 @@
   "scripts": {
     "build": "turbo run build",
     "auth:admin:create": "pnpm --filter @culiu/authorization create-initial-admin",
+    "backup:create": "pnpm --filter @culiu/operations backup:create",
+    "backup:verify": "pnpm --filter @culiu/operations backup:verify",
     "check": "pnpm format:check && pnpm secrets:check && pnpm lint && pnpm typecheck && pnpm migration:check && pnpm test && pnpm build && pnpm smoke:web",
     "dev": "turbo run dev --parallel",
     "format": "prettier --write .",
