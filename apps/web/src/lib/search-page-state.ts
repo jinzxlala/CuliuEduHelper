@@ -3,6 +3,7 @@ import { SEARCH_HIGHLIGHT_END, SEARCH_HIGHLIGHT_START } from "@culiu/search";
 export const SEARCH_PAGE_SIZE = 10;
 
 export type SearchTarget = "lectures" | "cases" | "transcripts";
+export type SearchMatchMode = "relaxed" | "all";
 export type RawSearchParams = Record<string, string | string[] | undefined>;
 
 export interface SearchPageState {
@@ -14,6 +15,7 @@ export interface SearchPageState {
   dateTo?: string;
   lectureIds: string[];
   majors: string[];
+  matchMode: SearchMatchMode;
   organizations: string[];
   page: number;
   query: string;
@@ -80,6 +82,7 @@ export function parseSearchPageState(params: RawSearchParams): SearchPageState {
     ...(dateTo === undefined ? {} : { dateTo }),
     lectureIds: listValues(params.lecture),
     majors: listValues(params.major),
+    matchMode: firstValue(params.match) === "all" ? "all" : "relaxed",
     organizations: listValues(params.organization),
     page,
     query: (firstValue(params.q) ?? "").trim().slice(0, 500),
@@ -94,6 +97,7 @@ export function searchStateToParams(state: SearchPageState): URLSearchParams {
   const params = new URLSearchParams();
   if (state.target !== "lectures") params.set("type", state.target);
   if (state.query !== "") params.set("q", state.query);
+  if (state.matchMode === "all") params.set("match", "all");
   if (state.page > 1) params.set("page", String(state.page));
   if (state.sort !== undefined) params.set("sort", state.sort);
   if (state.dateFrom !== undefined) params.set("from", state.dateFrom);
@@ -120,7 +124,13 @@ export function buildSearchHref(
 ): string {
   const target = changes.target ?? state.target;
   const changedTarget = target !== state.target;
-  const base = changedTarget ? parseSearchPageState({ q: state.query, type: target }) : state;
+  const base = changedTarget
+    ? parseSearchPageState({
+        match: state.matchMode === "all" ? "all" : undefined,
+        q: state.query,
+        type: target,
+      })
+    : state;
   const next: SearchPageState = {
     ...base,
     page: changes.page ?? (changedTarget ? 1 : state.page),

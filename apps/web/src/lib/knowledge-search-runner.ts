@@ -22,6 +22,7 @@ export async function runKnowledgeSearch(
   state: SearchPageState,
 ): Promise<KnowledgeSearchResult> {
   const offset = (state.page - 1) * SEARCH_PAGE_SIZE;
+  const matchingStrategy = state.matchMode === "all" ? "all" : "last";
   switch (state.target) {
     case "lectures":
       return {
@@ -35,6 +36,7 @@ export async function runKnowledgeSearch(
             schools: state.schools,
           },
           limit: SEARCH_PAGE_SIZE,
+          matchingStrategy,
           offset,
           query: state.query,
           ...(state.sort === undefined ? {} : { sort: state.sort }),
@@ -62,6 +64,7 @@ export async function runKnowledgeSearch(
             schools: state.schools,
           },
           limit: SEARCH_PAGE_SIZE,
+          matchingStrategy,
           offset,
           query: state.query,
         }),
@@ -75,6 +78,7 @@ export async function runKnowledgeSearch(
             sections: state.sections,
           },
           limit: SEARCH_PAGE_SIZE,
+          matchingStrategy,
           offset,
           query: state.query,
           sort: "start_seconds:asc",

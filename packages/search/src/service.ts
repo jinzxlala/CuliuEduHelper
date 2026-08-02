@@ -63,6 +63,7 @@ function addFacetFilter(
 function createBaseSearchParams(input: {
   facets: readonly string[];
   limit: number;
+  matchingStrategy: "all" | "last";
   offset: number;
   sort?: string | undefined;
 }): SearchParams {
@@ -71,6 +72,7 @@ function createBaseSearchParams(input: {
     highlightPostTag: SEARCH_HIGHLIGHT_END,
     highlightPreTag: SEARCH_HIGHLIGHT_START,
     limit: input.limit,
+    matchingStrategy: input.matchingStrategy,
     offset: input.offset,
     ...(input.facets.length === 0 ? {} : { facets: [...input.facets] }),
     ...(input.sort === undefined ? {} : { sort: [input.sort] }),

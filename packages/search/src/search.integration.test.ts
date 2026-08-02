@@ -150,6 +150,17 @@ describe("knowledge search service", () => {
     expect(result.facetDistribution.schools?.["布朗大学"]).toBe(1);
   });
 
+  it("can require every unquoted query term without changing the default relaxed strategy", async () => {
+    const relaxed = await service.searchLectures({ query: "跨学科 不存在" });
+    const strict = await service.searchLectures({
+      matchingStrategy: "all",
+      query: "跨学科 不存在",
+    });
+
+    expect(relaxed.estimatedTotalHits).toBe(1);
+    expect(strict.estimatedTotalHits).toBe(0);
+  });
+
   it("applies hard case filters", async () => {
     const matching = await service.searchCases({
       filters: { aiDomains: ["NLP"], confidence: ["medium"] },

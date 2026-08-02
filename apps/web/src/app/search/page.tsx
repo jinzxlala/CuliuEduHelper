@@ -214,6 +214,7 @@ function Filters({
   state: SearchPageState;
 }>): JSX.Element {
   const clearState = parseSearchPageState({
+    match: state.matchMode === "all" ? "all" : undefined,
     q: state.query,
     type: state.target === "lectures" ? undefined : state.target,
   });
@@ -228,6 +229,7 @@ function Filters({
           <input name="type" type="hidden" value={state.target} />
         )}
         {state.query === "" ? null : <input name="q" type="hidden" value={state.query} />}
+        {state.matchMode === "all" ? <input name="match" type="hidden" value="all" /> : null}
         {state.target === "lectures" ? (
           <>
             <label className="field-label">
@@ -396,20 +398,43 @@ export default async function SearchPage({
           {state.target === "lectures" ? null : (
             <input name="type" type="hidden" value={state.target} />
           )}
-          <label className="sr-only" htmlFor="knowledge-query">
-            搜索关键词
-          </label>
-          <input
-            defaultValue={state.query}
-            id="knowledge-query"
-            maxLength={500}
-            name="q"
-            placeholder="例如：人工智能、跨学科研究、申请失败原因"
-            type="search"
-          />
-          <button className="primary-button" type="submit">
-            搜索
-          </button>
+          <div className="search-query-row">
+            <label className="sr-only" htmlFor="knowledge-query">
+              搜索关键词
+            </label>
+            <input
+              defaultValue={state.query}
+              id="knowledge-query"
+              maxLength={500}
+              name="q"
+              placeholder="例如：人工智能、跨学科研究、申请失败原因"
+              type="search"
+            />
+            <button className="primary-button" type="submit">
+              搜索
+            </button>
+          </div>
+          <fieldset className="search-match-mode">
+            <legend>搜索行为</legend>
+            <label>
+              <input
+                defaultChecked={state.matchMode === "relaxed"}
+                name="match"
+                type="radio"
+                value="relaxed"
+              />
+              宽松匹配
+            </label>
+            <label>
+              <input
+                defaultChecked={state.matchMode === "all"}
+                name="match"
+                type="radio"
+                value="all"
+              />
+              保留全部关键词
+            </label>
+          </fieldset>
         </form>
       </section>
 

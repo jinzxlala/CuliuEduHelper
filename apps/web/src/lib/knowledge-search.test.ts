@@ -49,6 +49,7 @@ describe("runKnowledgeSearch", () => {
         schools: ["MIT"],
       },
       limit: 10,
+      matchingStrategy: "last",
       offset: 10,
       query: "人工智能",
       sort: "date:desc",
@@ -76,6 +77,7 @@ describe("runKnowledgeSearch", () => {
       facets: ["lecture_id", "section"],
       filters: { lectureIds: ["lecture_2026"], sections: [] },
       limit: 10,
+      matchingStrategy: "last",
       offset: 0,
       query: "",
       sort: "start_seconds:asc",
@@ -118,8 +120,30 @@ describe("runKnowledgeSearch", () => {
         schools: [],
       },
       limit: 10,
+      matchingStrategy: "last",
       offset: 0,
       query: "",
     });
+  });
+
+  it("maps the all-keywords URL mode to every-term matching", async () => {
+    const searchCases = vi.fn().mockResolvedValue(emptyPage());
+    const reader = {
+      searchCases,
+      searchLectures: vi.fn(),
+      searchTranscriptSegments: vi.fn(),
+    } as unknown as Pick<
+      KnowledgeSearchService,
+      "searchCases" | "searchLectures" | "searchTranscriptSegments"
+    >;
+
+    await runKnowledgeSearch(
+      reader,
+      parseSearchPageState({ match: "all", q: "AI 教育", type: "cases" }),
+    );
+
+    expect(searchCases).toHaveBeenCalledWith(
+      expect.objectContaining({ matchingStrategy: "all", query: "AI 教育" }),
+    );
   });
 });

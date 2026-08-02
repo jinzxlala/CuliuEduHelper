@@ -5,6 +5,7 @@ import {
   buildSearchHref,
   formatTimestamp,
   parseSearchPageState,
+  searchStateToParams,
   splitHighlightedText,
 } from "./search-page-state";
 
@@ -22,6 +23,7 @@ describe("search page state", () => {
       }),
     ).toMatchObject({
       confidence: ["high"],
+      matchMode: "relaxed",
       page: 1_001,
       query: "问".repeat(500),
       schools: ["MIT"],
@@ -38,13 +40,21 @@ describe("search page state", () => {
   it("preserves query but clears incompatible facets when switching target", () => {
     const state = parseSearchPageState({
       page: "3",
+      match: "all",
       q: "跨学科",
       school: "MIT",
       sort: "date:desc",
     });
     expect(buildSearchHref(state, { target: "cases" })).toBe(
-      "/search?type=cases&q=%E8%B7%A8%E5%AD%A6%E7%A7%91",
+      "/search?type=cases&q=%E8%B7%A8%E5%AD%A6%E7%A7%91&match=all",
     );
+  });
+
+  it("round-trips the strict all-keywords mode and rejects unknown URL values", () => {
+    const strict = parseSearchPageState({ match: "all", q: "人工智能 教育" });
+    expect(strict.matchMode).toBe("all");
+    expect(searchStateToParams(strict).toString()).toContain("match=all");
+    expect(parseSearchPageState({ match: "frequency" }).matchMode).toBe("relaxed");
   });
 });
 

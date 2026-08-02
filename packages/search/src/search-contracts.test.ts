@@ -8,9 +8,17 @@ import {
 
 describe("search input contracts", () => {
   it("applies bounded pagination defaults", () => {
-    expect(LectureSearchInputSchema.parse({}).limit).toBe(20);
+    expect(LectureSearchInputSchema.parse({})).toMatchObject({
+      limit: 20,
+      matchingStrategy: "last",
+    });
     expect(() => LectureSearchInputSchema.parse({ limit: 51 })).toThrow();
     expect(() => LectureSearchInputSchema.parse({ offset: 10_001 })).toThrow();
+  });
+
+  it("accepts only supported keyword matching strategies", () => {
+    expect(CaseSearchInputSchema.parse({ matchingStrategy: "all" }).matchingStrategy).toBe("all");
+    expect(() => TranscriptSearchInputSchema.parse({ matchingStrategy: "frequency" })).toThrow();
   });
 
   it("rejects reversed lecture date filters", () => {

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import type { JSX } from "react";
 
-export default function HomePage(): JSX.Element {
+import { getDatabaseClient } from "../lib/database";
+import { loadPublishedKnowledgeStatistics } from "../lib/knowledge-statistics";
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage(): Promise<JSX.Element> {
+  const statistics = await loadPublishedKnowledgeStatistics(getDatabaseClient().pool);
   return (
     <main className="home-shell">
       <section className="home-hero">
@@ -21,9 +27,9 @@ export default function HomePage(): JSX.Element {
           </div>
         </div>
         <div className="home-visual" aria-hidden="true">
-          <span>48</span>
+          <span>{statistics.lectures}</span>
           <p>场讲座报告</p>
-          <span>169</span>
+          <span>{statistics.cases}</span>
           <p>张匿名案例卡</p>
         </div>
       </section>

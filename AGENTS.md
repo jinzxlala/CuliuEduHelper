@@ -474,3 +474,29 @@ docker compose --env-file .\infra\deploy\.env.production -f .\infra\deploy\docke
 ```
 
 `down -v` 会永久删除该 Compose 项目的 PostgreSQL、Redis 和 Meilisearch 数据卷，仍属于必须先获得明确批准并确认可恢复备份的破坏性操作。
+
+## 24. 搜索匹配模式与动态首页统计
+
+截至 2026-08-02，内部知识搜索和首页统计已按实际导入状态完成以下调整：
+
+- 搜索页在查询框旁提供“宽松匹配”和“保留全部关键词”两个单选项。默认“宽松匹配”对应 Meilisearch `matchingStrategy=last`，允许按查询词顺序逐步放宽；“保留全部关键词”对应 `matchingStrategy=all`，只有全部关键词均出现时才返回结果；
+- 搜索模式属于查询协议的一部分，三个搜索目标 `lectures`、`cases`、`transcript_segments` 均通过严格枚举把 `last`／`all` 传给服务端 Meilisearch 客户端。浏览器仍不持有 Meilisearch 地址或密钥；
+- 页面 URL 使用 `match=all` 保存严格模式；省略或收到未知 `match` 值时回退到宽松模式。切换搜索目标、应用筛选、清除筛选和翻页时必须保留当前模式；
+- 双引号精确短语搜索仍由 Meilisearch 原有查询语义处理。匹配模式只决定关键词是否允许缺失，不得放宽机构、学校、专业、日期等结构化硬过滤；
+- 首页的讲座报告数和匿名案例卡数不再写死。`apps/web/src/lib/knowledge-statistics.ts` 从 PostgreSQL `knowledge_import_batch` 中读取 `is_current=true` 且 `status='published'` 的当前批次计数；当前无已发布批次时显示 0，负数或非整数等异常数据必须拒绝，不使用固定数字掩盖数据问题；
+- PostgreSQL 是首页正式统计来源，Meilisearch 仍是可重建检索索引。不得把搜索索引文档数改成首页业务统计的唯一事实来源，也不得在页面中恢复 `48`／`169` 常量；
+- 单元测试在官方 Node.js 22.23.2 Linux 验证镜像中共 155 项通过，其中搜索包 30 项、Web 23 项；本机 60 项集成测试全部通过，搜索包的 8 项真实 Meilisearch 测试包含宽松模式命中、严格模式拒绝缺失关键词的对照；
+- 官方 Node.js 22.23.2 Linux 构建镜像完成全部 14 个包的生产构建。浏览器实测首页显示当前发布批次的 48 场讲座和 169 张案例；同一查询 `AI zzzznomatchtoken` 在宽松模式下返回 48 条结果，在“保留全部关键词”模式下返回 0 条结果；
+- Windows 开发机若未启用符号链接权限，`pnpm test` 中的符号链接安全用例及 Next.js standalone 文件收集可能以 `EPERM` 失败；不得因此删除安全测试或放宽路径校验，正式兼容性继续以固定 Node.js 22 Linux／CI 结果为准。
+
+后续修改搜索模式或首页统计时，至少执行：
+
+```powershell
+pnpm --filter @culiu/search test
+pnpm --filter @culiu/web test
+pnpm test:integration
+pnpm build
+git diff --check
+```
+
+若 Windows 因符号链接权限无法完成最后两项，应在固定 Node.js 22 Linux 容器或 CI 中复跑，并明确记录环境差异。

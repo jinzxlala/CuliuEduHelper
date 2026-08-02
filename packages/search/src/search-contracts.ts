@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const QuerySchema = z.string().trim().max(500).default("");
+export const SearchMatchingStrategySchema = z.enum(["last", "all"]);
 const PaginationSchema = {
   limit: z.number().int().min(1).max(50).default(20),
   offset: z.number().int().nonnegative().max(10_000).default(0),
@@ -24,6 +25,7 @@ export const LectureSearchInputSchema = z
       .strict()
       .default({}),
     ...PaginationSchema,
+    matchingStrategy: SearchMatchingStrategySchema.default("last"),
     query: QuerySchema,
     sort: z.enum(["date:asc", "date:desc", "title:asc", "title:desc"]).optional(),
   })
@@ -73,6 +75,7 @@ export const CaseSearchInputSchema = z
       .strict()
       .default({}),
     ...PaginationSchema,
+    matchingStrategy: SearchMatchingStrategySchema.default("last"),
     query: QuerySchema,
   })
   .strict();
@@ -93,6 +96,7 @@ export const TranscriptSearchInputSchema = z
       .strict()
       .default({}),
     ...PaginationSchema,
+    matchingStrategy: SearchMatchingStrategySchema.default("last"),
     query: QuerySchema,
     sort: z
       .enum(["start_seconds:asc", "start_seconds:desc", "end_seconds:asc", "end_seconds:desc"])
