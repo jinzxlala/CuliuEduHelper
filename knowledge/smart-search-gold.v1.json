@@ -1,0 +1,227 @@
+{
+  "approval": { "reviewed_at": null, "reviewed_by": null, "status": "draft" },
+  "corpus": {
+    "corpus_hash": "800bcf59480b310c23831b813e2ee8d2d58688e303da0bc83723e1ce455de030",
+    "corpus_id": "eduknow_knowledge_sources_v1",
+    "manifest_version": "1.0.0",
+    "mapping_version": "2.1.0"
+  },
+  "drafted_at": "2026-08-05T00:00:00+08:00",
+  "drafted_by": "Code Agent",
+  "fixture_id": "eduknow_smart_search_gold_v1",
+  "fixture_version": "1.0.0",
+  "queries": [
+    {
+      "id": "smart_001",
+      "prompt": "家长想了解海狸学院相关的项目榜单和录取趋势，有哪些讲座可参考？",
+      "retrieval_query": "海狸学院 项目榜单",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251204_462c077301ff"]
+    },
+    {
+      "id": "smart_002",
+      "prompt": "请找出凭远关于早申成果与第一名表现的讲座资料。",
+      "retrieval_query": "\"屡创第一\" 凭远",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251217_04179e7643c6"]
+    },
+    {
+      "id": "smart_003",
+      "prompt": "我想了解最新录取画像和王牌方向变化，应该看哪场讲座？",
+      "retrieval_query": "最新录取画像 王牌",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251218_94e2e9f6d2dd"]
+    },
+    {
+      "id": "smart_004",
+      "prompt": "请找棒呆讨论爬藤核心策略的相关讲座。",
+      "retrieval_query": "棒呆 爬藤 核心策略",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251218_047520c95ace"]
+    },
+    {
+      "id": "smart_005",
+      "prompt": "CMC 早申风向发生了什么变化，有哪份讲座报告？",
+      "retrieval_query": "CMC 早申风向",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251219_d62425d9f058"]
+    },
+    {
+      "id": "smart_006",
+      "prompt": "请找三士渡对早申数据进行分析的讲座。",
+      "retrieval_query": "三士渡 早申数据",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251219_07fb5dec2f8d"]
+    },
+    {
+      "id": "smart_007",
+      "prompt": "有没有体制内学生辍学后申请斯沃斯莫尔的成长路径讲座？",
+      "retrieval_query": "体制内 辍学 斯沃斯莫尔",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251222_a3ce77606cff"]
+    },
+    {
+      "id": "smart_008",
+      "prompt": "藤校青睐的学生画像如何重构，请找对应趋势讲座。",
+      "retrieval_query": "藤校 青睐 画像重构",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251224_6500fa2967a7"]
+    },
+    {
+      "id": "smart_009",
+      "prompt": "我需要早申大咖圆桌讨论的讲座资料。",
+      "retrieval_query": "大咖 圆桌 早申",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251224_45f787d6277a"]
+    },
+    {
+      "id": "smart_010",
+      "prompt": "请找涉及三十枚录取和王牌专业拆解的讲座。",
+      "retrieval_query": "30枚 王牌专业",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251225_c5bacf73742f"]
+    },
+    {
+      "id": "smart_011",
+      "prompt": "哪些讲座讨论了留学过程中学生成长性的重要性？",
+      "retrieval_query": "留学 成长性",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251226_4efdd28d912a"]
+    },
+    {
+      "id": "smart_012",
+      "prompt": "请找分析特优生早申录取者特质的讲座。",
+      "retrieval_query": "特优生 早申 录取者特质",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20251230_5bc9b7491364"]
+    },
+    {
+      "id": "smart_013",
+      "prompt": "哪场讲座用生活褶皱来解释申请答案？",
+      "retrieval_query": "\"生活褶皱\" 申请答案",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20260105_2655d5915015"]
+    },
+    {
+      "id": "smart_014",
+      "prompt": "我想了解 GPA 中看不见的坑以及如何实现超车。",
+      "retrieval_query": "GPA 看不见的坑 超车",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20260120_dc64c96f9d57"]
+    },
+    {
+      "id": "smart_015",
+      "prompt": "请找讨论交叉学科申请蓝海的讲座。",
+      "retrieval_query": "交叉学科 蓝海",
+      "target": "lectures",
+      "expected_hit_ids": ["lecture_20260126_c92a0273dbe9"]
+    },
+    {
+      "id": "smart_016",
+      "prompt": "有没有把哲学、纯数学和性教育社区行动结合起来的学生案例？",
+      "retrieval_query": "哲学 纯数学 性教育",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251218_94e2e9f6d2dd_002"]
+    },
+    {
+      "id": "smart_017",
+      "prompt": "请找关注视障或行动不便人群出行问题的案例。",
+      "retrieval_query": "视障 行动不便 出行",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251218_94e2e9f6d2dd_003"]
+    },
+    {
+      "id": "smart_018",
+      "prompt": "有没有使用 AI 情绪识别和家庭通讯录改善沟通的案例？",
+      "retrieval_query": "AI 情绪识别 通讯录",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_004"]
+    },
+    {
+      "id": "smart_019",
+      "prompt": "请找将数据科学、STS 与人文作品结合的申请案例。",
+      "retrieval_query": "数据科学 STS 人文作品",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251219_d62425d9f058_003"]
+    },
+    {
+      "id": "smart_020",
+      "prompt": "有没有研究山西胃病并分析基因序列的案例？",
+      "retrieval_query": "基因序列 山西 胃病",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_003"]
+    },
+    {
+      "id": "smart_021",
+      "prompt": "请找包含真实科研经历和与科学家交流细节的案例。",
+      "retrieval_query": "真实科研 幽默 科学家",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251222_a3ce77606cff_001"]
+    },
+    {
+      "id": "smart_022",
+      "prompt": "有没有研究苔藓或食虫植物的罕见主题案例？",
+      "retrieval_query": "苔藓 食虫植物",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251224_45f787d6277a_001"]
+    },
+    {
+      "id": "smart_023",
+      "prompt": "请找把观鸟、摄影和绘画作品集结合起来的跨学科案例。",
+      "retrieval_query": "观鸟 摄影 绘画作品集",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251224_45f787d6277a_002"]
+    },
+    {
+      "id": "smart_024",
+      "prompt": "有没有从气候变化引发的情绪问题延伸到减排行动的案例？",
+      "retrieval_query": "气候变化 情绪 减排行动",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251224_6500fa2967a7_001"]
+    },
+    {
+      "id": "smart_025",
+      "prompt": "请找同时涉及凝聚态物理、天体物理和宇宙结构的案例。",
+      "retrieval_query": "凝聚态物理 天体物理 宇宙结构",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251224_6500fa2967a7_004"]
+    },
+    {
+      "id": "smart_026",
+      "prompt": "有没有围绕迪士尼、商业园区和空间设计开展的案例？",
+      "retrieval_query": "迪士尼 商业 园区",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_001"]
+    },
+    {
+      "id": "smart_027",
+      "prompt": "请找利用情绪识别和通讯录促进家庭互动的案例。",
+      "retrieval_query": "情绪识别 通讯录 家人",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_004"]
+    },
+    {
+      "id": "smart_028",
+      "prompt": "有没有研究部落承认、土地历史及政策经济学的案例？",
+      "retrieval_query": "部落承认 土地历史 政策经济学",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251226_4efdd28d912a_001"]
+    },
+    {
+      "id": "smart_029",
+      "prompt": "请找研究精神压力、身体压力与冰球表现关系的案例。",
+      "retrieval_query": "精神压力 身体压力 冰球",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251226_4efdd28d912a_002"]
+    },
+    {
+      "id": "smart_030",
+      "prompt": "有没有三段科研始终围绕同一种疾病展开的连续研究案例？",
+      "retrieval_query": "三段科研 同一种疾病",
+      "target": "cases",
+      "expected_hit_ids": ["case_20251230_5bc9b7491364_001"]
+    }
+  ],
+  "schema_version": "1.0.0",
+  "thresholds": { "candidate_recall_at_30_min": 0.9 }
+}

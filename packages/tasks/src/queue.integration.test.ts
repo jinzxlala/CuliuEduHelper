@@ -29,6 +29,9 @@ describe("BullMQ foundation", () => {
       handlers: {
         "knowledge.extract": () => Promise.resolve({ status: "not-used" }),
         "knowledge.import": () => Promise.resolve({ status: "not-used" }),
+        "knowledge.smart-search": () => Promise.resolve({ status: "not-used" }),
+        "knowledge.analysis-chat": () => Promise.resolve({ status: "not-used" }),
+        "knowledge.analysis-report": () => Promise.resolve({ status: "not-used" }),
         "profile.draft": () => Promise.resolve({ status: "not-used" }),
         "student.basic.extract": () => Promise.resolve({ status: "not-used" }),
         "student.evidence.extract": () => Promise.resolve({ status: "not-used" }),

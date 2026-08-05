@@ -7,3 +7,4 @@ export * from "./index-manager.js";
 export * from "./integrity.js";
 export * from "./search-contracts.js";
 export * from "./service.js";
+export * from "./smart-gold.js";

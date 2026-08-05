@@ -216,6 +216,43 @@ export const timetableRunStatusEnum = pgEnum("timetable_run_status", [
   "approved",
   "archived",
 ]);
+export const knowledgeWorkspaceStatusEnum = pgEnum("knowledge_workspace_status", [
+  "active",
+  "archived",
+]);
+export const knowledgeWorkspaceRoleEnum = pgEnum("knowledge_workspace_role", [
+  "owner",
+  "editor",
+  "viewer",
+]);
+export const knowledgeAnalysisSourceTypeEnum = pgEnum("knowledge_analysis_source_type", [
+  "lecture",
+  "case",
+]);
+export const knowledgeConversationStatusEnum = pgEnum("knowledge_conversation_status", [
+  "active",
+  "archived",
+]);
+export const knowledgeMessageRoleEnum = pgEnum("knowledge_message_role", ["user", "assistant"]);
+export const knowledgeAgentRunKindEnum = pgEnum("knowledge_agent_run_kind", [
+  "smart_search",
+  "analysis_chat",
+  "analysis_report",
+]);
+export const knowledgeAgentRunStatusEnum = pgEnum("knowledge_agent_run_status", [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+]);
+export const knowledgeReportStatusEnum = pgEnum("knowledge_report_status", [
+  "queued",
+  "planning",
+  "computing",
+  "rendering",
+  "succeeded",
+  "failed",
+]);
 
 export const appUsers = pgTable(
   "app_user",
@@ -2014,6 +2051,463 @@ export const knowledgeCaseVersions = pgTable(
     check(
       "knowledge_case_version_timestamp_gate_check",
       sql`jsonb_array_length(${table.timestampRefs}) = 0`,
+    ),
+  ],
+);
+
+export const knowledgeSmartSearchRuns = pgTable(
+  "knowledge_smart_search_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    authorizationContextId: uuid("authorization_context_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    knowledgeBatchId: uuid("knowledge_batch_id")
+      .notNull()
+      .references(() => knowledgeImportBatches.id, { onDelete: "restrict" }),
+    prompt: text("prompt").notNull(),
+    promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
+    status: knowledgeAgentRunStatusEnum("status").notNull().default("queued"),
+    progressStage: varchar("progress_stage", { length: 32 }).notNull().default("queued"),
+    queryPlan: jsonb("query_plan").$type<Record<string, unknown> | null>(),
+    candidateReferences: jsonb("candidate_references").$type<unknown[]>().notNull().default([]),
+    resultReferences: jsonb("result_references").$type<unknown[]>().notNull().default([]),
+    summary: text("summary"),
+    gitCommitSha: varchar("git_commit_sha", { length: 40 }).notNull(),
+    model: varchar("model", { length: 128 }).notNull(),
+    promptVersion: varchar("prompt_version", { length: 128 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 128 }).notNull(),
+    retrievalVersion: varchar("retrieval_version", { length: 128 }).notNull(),
+    promptTokens: integer("prompt_tokens"),
+    completionTokens: integer("completion_tokens"),
+    totalTokens: integer("total_tokens"),
+    costMicrounits: integer("cost_microunits"),
+    safeErrorCode: varchar("safe_error_code", { length: 128 }),
+    safeErrorSummary: varchar("safe_error_summary", { length: 2048 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("knowledge_smart_search_user_created_idx").on(table.createdByUserId, table.createdAt),
+    index("knowledge_smart_search_batch_created_idx").on(table.knowledgeBatchId, table.createdAt),
+    check("knowledge_smart_search_prompt_hash_check", sql`${table.promptHash} ~ '^[0-9a-f]{64}$'`),
+    check("knowledge_smart_search_git_sha_check", sql`${table.gitCommitSha} ~ '^[0-9a-f]{40}$'`),
+    check(
+      "knowledge_smart_search_progress_check",
+      sql`${table.progressStage} in ('queued', 'planning', 'retrieving', 'reranking', 'succeeded', 'failed')`,
+    ),
+    check(
+      "knowledge_smart_search_prompt_check",
+      sql`char_length(trim(${table.prompt})) between 1 and 4000`,
+    ),
+    check(
+      "knowledge_smart_search_usage_check",
+      sql`(${table.promptTokens} is null and ${table.completionTokens} is null and ${table.totalTokens} is null and ${table.costMicrounits} is null) or (${table.promptTokens} >= 0 and ${table.completionTokens} >= 0 and ${table.totalTokens} >= ${table.promptTokens} + ${table.completionTokens} and ${table.costMicrounits} >= 0)`,
+    ),
+    check(
+      "knowledge_smart_search_state_check",
+      sql`(${table.status} = 'queued' and ${table.progressStage} = 'queued' and ${table.startedAt} is null and ${table.completedAt} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'running' and ${table.progressStage} in ('planning', 'retrieving', 'reranking') and ${table.startedAt} is not null and ${table.completedAt} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'succeeded' and ${table.progressStage} = 'succeeded' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.queryPlan} is not null and ${table.summary} is not null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'failed' and ${table.progressStage} = 'failed' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.safeErrorCode} is not null and ${table.safeErrorSummary} is not null)`,
+    ),
+  ],
+);
+
+export const knowledgeAnalysisWorkspaces = pgTable(
+  "knowledge_analysis_workspace",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    name: varchar("name", { length: 200 }).notNull(),
+    description: varchar("description", { length: 2000 }).notNull().default(""),
+    status: knowledgeWorkspaceStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("knowledge_analysis_workspace_owner_updated_idx").on(table.ownerUserId, table.updatedAt),
+    uniqueIndex("knowledge_analysis_workspace_id_owner_unique").on(table.id, table.ownerUserId),
+    check(
+      "knowledge_analysis_workspace_name_check",
+      sql`char_length(trim(${table.name})) between 1 and 200`,
+    ),
+    check(
+      "knowledge_analysis_workspace_state_check",
+      sql`(${table.status} = 'active' and ${table.archivedAt} is null) or (${table.status} = 'archived' and ${table.archivedAt} is not null)`,
+    ),
+  ],
+);
+
+export const knowledgeAnalysisWorkspaceMembers = pgTable(
+  "knowledge_analysis_workspace_member",
+  {
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => knowledgeAnalysisWorkspaces.id, { onDelete: "restrict" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    role: knowledgeWorkspaceRoleEnum("role").notNull(),
+    grantedByUserId: uuid("granted_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.workspaceId, table.userId] }),
+    index("knowledge_analysis_member_user_idx").on(table.userId, table.workspaceId),
+  ],
+);
+
+export const knowledgeAnalysisSources = pgTable(
+  "knowledge_analysis_source",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => knowledgeAnalysisWorkspaces.id, { onDelete: "restrict" }),
+    sourceType: knowledgeAnalysisSourceTypeEnum("source_type").notNull(),
+    knowledgeBatchId: uuid("knowledge_batch_id")
+      .notNull()
+      .references(() => knowledgeImportBatches.id, { onDelete: "restrict" }),
+    sourceId: varchar("source_id", { length: 511 }).notNull(),
+    lectureId: varchar("lecture_id", { length: 511 }),
+    caseId: varchar("case_id", { length: 511 }),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    supersedesSourceId: uuid("supersedes_source_id").references(
+      (): AnyPgColumn => knowledgeAnalysisSources.id,
+      { onDelete: "restrict" },
+    ),
+    addedByUserId: uuid("added_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    removedByUserId: uuid("removed_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.knowledgeBatchId, table.lectureId],
+      foreignColumns: [knowledgeLectureVersions.batchId, knowledgeLectureVersions.lectureId],
+      name: "knowledge_analysis_source_lecture_fk",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.knowledgeBatchId, table.caseId],
+      foreignColumns: [knowledgeCaseVersions.batchId, knowledgeCaseVersions.caseId],
+      name: "knowledge_analysis_source_case_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("knowledge_analysis_source_active_unique")
+      .on(table.workspaceId, table.sourceType, table.sourceId)
+      .where(sql`${table.removedAt} is null`),
+    uniqueIndex("knowledge_analysis_source_supersedes_unique")
+      .on(table.supersedesSourceId)
+      .where(sql`${table.supersedesSourceId} is not null`),
+    index("knowledge_analysis_source_workspace_created_idx").on(table.workspaceId, table.createdAt),
+    check("knowledge_analysis_source_hash_check", sql`${table.contentHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "knowledge_analysis_source_identity_check",
+      sql`(${table.sourceType} = 'lecture' and ${table.lectureId} is not null and ${table.caseId} is null and ${table.sourceId} = ${table.lectureId}) or (${table.sourceType} = 'case' and ${table.caseId} is not null and ${table.lectureId} is null and ${table.sourceId} = ${table.caseId})`,
+    ),
+    check(
+      "knowledge_analysis_source_removal_check",
+      sql`(${table.removedAt} is null and ${table.removedByUserId} is null) or (${table.removedAt} is not null and ${table.removedByUserId} is not null)`,
+    ),
+    check(
+      "knowledge_analysis_source_not_self_superseding",
+      sql`${table.supersedesSourceId} is null or ${table.supersedesSourceId} <> ${table.id}`,
+    ),
+  ],
+);
+
+export const knowledgeAnalysisConversations = pgTable(
+  "knowledge_analysis_conversation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => knowledgeAnalysisWorkspaces.id, { onDelete: "restrict" }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    title: varchar("title", { length: 200 }).notNull(),
+    status: knowledgeConversationStatusEnum("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("knowledge_analysis_conversation_id_workspace_unique").on(
+      table.id,
+      table.workspaceId,
+    ),
+    index("knowledge_analysis_conversation_workspace_updated_idx").on(
+      table.workspaceId,
+      table.updatedAt,
+    ),
+    check(
+      "knowledge_analysis_conversation_title_check",
+      sql`char_length(trim(${table.title})) between 1 and 200`,
+    ),
+    check(
+      "knowledge_analysis_conversation_state_check",
+      sql`(${table.status} = 'active' and ${table.archivedAt} is null) or (${table.status} = 'archived' and ${table.archivedAt} is not null)`,
+    ),
+  ],
+);
+
+export const knowledgeAgentRuns = pgTable(
+  "knowledge_agent_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: knowledgeAgentRunKindEnum("kind").notNull(),
+    status: knowledgeAgentRunStatusEnum("status").notNull().default("queued"),
+    authorizationContextId: uuid("authorization_context_id")
+      .notNull()
+      .references(() => authorizationContextSnapshots.id, { onDelete: "restrict" }),
+    smartSearchRunId: uuid("smart_search_run_id").references(() => knowledgeSmartSearchRuns.id, {
+      onDelete: "restrict",
+    }),
+    workspaceId: uuid("workspace_id").references(() => knowledgeAnalysisWorkspaces.id, {
+      onDelete: "restrict",
+    }),
+    conversationId: uuid("conversation_id"),
+    inputSnapshotHash: varchar("input_snapshot_hash", { length: 64 }).notNull(),
+    gitCommitSha: varchar("git_commit_sha", { length: 40 }).notNull(),
+    model: varchar("model", { length: 128 }).notNull(),
+    promptVersion: varchar("prompt_version", { length: 128 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 128 }).notNull(),
+    contextVersion: varchar("context_version", { length: 128 }).notNull(),
+    pricingVersion: varchar("pricing_version", { length: 128 }).notNull(),
+    promptTokens: integer("prompt_tokens"),
+    completionTokens: integer("completion_tokens"),
+    totalTokens: integer("total_tokens"),
+    costMicrounits: integer("cost_microunits"),
+    safeErrorCode: varchar("safe_error_code", { length: 128 }),
+    safeErrorSummary: varchar("safe_error_summary", { length: 2048 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.conversationId, table.workspaceId],
+      foreignColumns: [
+        knowledgeAnalysisConversations.id,
+        knowledgeAnalysisConversations.workspaceId,
+      ],
+      name: "knowledge_agent_run_conversation_workspace_fk",
+    }).onDelete("restrict"),
+    index("knowledge_agent_run_workspace_created_idx").on(table.workspaceId, table.createdAt),
+    index("knowledge_agent_run_conversation_created_idx").on(table.conversationId, table.createdAt),
+    check(
+      "knowledge_agent_run_snapshot_hash_check",
+      sql`${table.inputSnapshotHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check("knowledge_agent_run_git_sha_check", sql`${table.gitCommitSha} ~ '^[0-9a-f]{40}$'`),
+    check(
+      "knowledge_agent_run_scope_check",
+      sql`(${table.kind} = 'smart_search' and ${table.smartSearchRunId} is not null and ${table.workspaceId} is null and ${table.conversationId} is null) or (${table.kind} in ('analysis_chat', 'analysis_report') and ${table.smartSearchRunId} is null and ${table.workspaceId} is not null and ${table.conversationId} is not null)`,
+    ),
+    check(
+      "knowledge_agent_run_usage_check",
+      sql`(${table.promptTokens} is null and ${table.completionTokens} is null and ${table.totalTokens} is null and ${table.costMicrounits} is null) or (${table.promptTokens} >= 0 and ${table.completionTokens} >= 0 and ${table.totalTokens} >= ${table.promptTokens} + ${table.completionTokens} and ${table.costMicrounits} >= 0)`,
+    ),
+    check(
+      "knowledge_agent_run_state_check",
+      sql`(${table.status} = 'queued' and ${table.startedAt} is null and ${table.completedAt} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'running' and ${table.startedAt} is not null and ${table.completedAt} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'succeeded' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'failed' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.safeErrorCode} is not null and ${table.safeErrorSummary} is not null)`,
+    ),
+  ],
+);
+
+export const knowledgeAnalysisMessages = pgTable(
+  "knowledge_analysis_message",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => knowledgeAnalysisWorkspaces.id, { onDelete: "restrict" }),
+    conversationId: uuid("conversation_id").notNull(),
+    sequence: integer("sequence").notNull(),
+    role: knowledgeMessageRoleEnum("role").notNull(),
+    contentMarkdown: text("content_markdown").notNull(),
+    citations: jsonb("citations").$type<unknown[]>().notNull().default([]),
+    agentRunId: uuid("agent_run_id").references(() => knowledgeAgentRuns.id, {
+      onDelete: "restrict",
+    }),
+    createdByUserId: uuid("created_by_user_id").references(() => appUsers.id, {
+      onDelete: "restrict",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.conversationId, table.workspaceId],
+      foreignColumns: [
+        knowledgeAnalysisConversations.id,
+        knowledgeAnalysisConversations.workspaceId,
+      ],
+      name: "knowledge_analysis_message_conversation_workspace_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("knowledge_analysis_message_sequence_unique").on(
+      table.conversationId,
+      table.sequence,
+    ),
+    index("knowledge_analysis_message_conversation_created_idx").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+    check("knowledge_analysis_message_sequence_check", sql`${table.sequence} > 0`),
+    check(
+      "knowledge_analysis_message_content_check",
+      sql`char_length(trim(${table.contentMarkdown})) between 1 and 60000`,
+    ),
+    check(
+      "knowledge_analysis_message_actor_check",
+      sql`(${table.role} = 'user' and ${table.createdByUserId} is not null and ${table.agentRunId} is null) or (${table.role} = 'assistant' and ${table.createdByUserId} is null and ${table.agentRunId} is not null)`,
+    ),
+  ],
+);
+
+export const knowledgeAnalysisConversationSummaries = pgTable(
+  "knowledge_analysis_conversation_summary",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => knowledgeAnalysisWorkspaces.id, { onDelete: "restrict" }),
+    conversationId: uuid("conversation_id").notNull(),
+    version: integer("version").notNull(),
+    throughSequence: integer("through_sequence").notNull(),
+    contentMarkdown: text("content_markdown").notNull(),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    agentRunId: uuid("agent_run_id")
+      .notNull()
+      .references(() => knowledgeAgentRuns.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.conversationId, table.workspaceId],
+      foreignColumns: [
+        knowledgeAnalysisConversations.id,
+        knowledgeAnalysisConversations.workspaceId,
+      ],
+      name: "knowledge_analysis_summary_conversation_workspace_fk",
+    }).onDelete("restrict"),
+    uniqueIndex("knowledge_analysis_summary_conversation_version_unique").on(
+      table.conversationId,
+      table.version,
+    ),
+    uniqueIndex("knowledge_analysis_summary_conversation_sequence_unique").on(
+      table.conversationId,
+      table.throughSequence,
+    ),
+    check("knowledge_analysis_summary_version_check", sql`${table.version} > 0`),
+    check("knowledge_analysis_summary_sequence_check", sql`${table.throughSequence} > 0`),
+    check("knowledge_analysis_summary_hash_check", sql`${table.contentHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "knowledge_analysis_summary_content_check",
+      sql`char_length(trim(${table.contentMarkdown})) between 1 and 60000`,
+    ),
+  ],
+);
+
+export const knowledgeAnalysisReports = pgTable(
+  "knowledge_analysis_report",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reportSeriesId: uuid("report_series_id").notNull().defaultRandom(),
+    version: integer("version").notNull().default(1),
+    supersedesReportId: uuid("supersedes_report_id"),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => knowledgeAnalysisWorkspaces.id, { onDelete: "restrict" }),
+    conversationId: uuid("conversation_id").notNull(),
+    agentRunId: uuid("agent_run_id").references(() => knowledgeAgentRuns.id, {
+      onDelete: "restrict",
+    }),
+    createdByUserId: uuid("created_by_user_id")
+      .notNull()
+      .references(() => appUsers.id, { onDelete: "restrict" }),
+    requirements: varchar("requirements", { length: 4000 }).notNull().default(""),
+    sourceSnapshot: jsonb("source_snapshot").$type<unknown[]>().notNull().default([]),
+    conversationThroughSequence: integer("conversation_through_sequence").notNull().default(0),
+    conversationSnapshotHash: varchar("conversation_snapshot_hash", { length: 64 }).notNull(),
+    status: knowledgeReportStatusEnum("status").notNull().default("queued"),
+    structuredReport: jsonb("structured_report").$type<Record<string, unknown> | null>(),
+    interactiveStorageKey: text("interactive_storage_key"),
+    interactiveContentHash: varchar("interactive_content_hash", { length: 64 }),
+    interactiveByteCount: integer("interactive_byte_count"),
+    interactiveScriptHash: varchar("interactive_script_hash", { length: 64 }),
+    staticStorageKey: text("static_storage_key"),
+    staticContentHash: varchar("static_content_hash", { length: 64 }),
+    staticByteCount: integer("static_byte_count"),
+    templateVersion: varchar("template_version", { length: 128 }).notNull(),
+    safeErrorCode: varchar("safe_error_code", { length: 128 }),
+    safeErrorSummary: varchar("safe_error_summary", { length: 2048 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.supersedesReportId],
+      foreignColumns: [table.id],
+      name: "knowledge_analysis_report_supersedes_fk",
+    }).onDelete("restrict"),
+    foreignKey({
+      columns: [table.conversationId, table.workspaceId],
+      foreignColumns: [
+        knowledgeAnalysisConversations.id,
+        knowledgeAnalysisConversations.workspaceId,
+      ],
+      name: "knowledge_analysis_report_conversation_workspace_fk",
+    }).onDelete("restrict"),
+    index("knowledge_analysis_report_workspace_created_idx").on(table.workspaceId, table.createdAt),
+    uniqueIndex("knowledge_analysis_report_series_version_unique").on(
+      table.reportSeriesId,
+      table.version,
+    ),
+    uniqueIndex("knowledge_analysis_report_supersedes_unique").on(table.supersedesReportId),
+    index("knowledge_analysis_report_conversation_created_idx").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+    check(
+      "knowledge_analysis_report_snapshot_hash_check",
+      sql`${table.conversationSnapshotHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "knowledge_analysis_report_sequence_check",
+      sql`${table.conversationThroughSequence} >= 0`,
+    ),
+    check(
+      "knowledge_analysis_report_storage_check",
+      sql`(${table.interactiveStorageKey} is null or (${table.interactiveStorageKey} like 'knowledge/reports/%' and ${table.interactiveStorageKey} not like '%..%')) and (${table.staticStorageKey} is null or (${table.staticStorageKey} like 'knowledge/reports/%' and ${table.staticStorageKey} not like '%..%'))`,
+    ),
+    check(
+      "knowledge_analysis_report_hash_check",
+      sql`(${table.interactiveContentHash} is null or ${table.interactiveContentHash} ~ '^[0-9a-f]{64}$') and (${table.interactiveScriptHash} is null or ${table.interactiveScriptHash} ~ '^[0-9a-f]{64}$') and (${table.staticContentHash} is null or ${table.staticContentHash} ~ '^[0-9a-f]{64}$')`,
+    ),
+    check(
+      "knowledge_analysis_report_version_check",
+      sql`${table.version} > 0 and ((${table.version} = 1 and ${table.supersedesReportId} is null) or (${table.version} > 1 and ${table.supersedesReportId} is not null))`,
+    ),
+    check(
+      "knowledge_analysis_report_size_check",
+      sql`(${table.interactiveByteCount} is null or ${table.interactiveByteCount} between 1 and 2097152) and (${table.staticByteCount} is null or ${table.staticByteCount} between 1 and 2097152)`,
+    ),
+    check(
+      "knowledge_analysis_report_state_check",
+      sql`(${table.status} in ('queued', 'planning', 'computing', 'rendering') and ${table.completedAt} is null and ${table.structuredReport} is null and ${table.interactiveStorageKey} is null and ${table.interactiveContentHash} is null and ${table.interactiveByteCount} is null and ${table.interactiveScriptHash} is null and ${table.staticStorageKey} is null and ${table.staticContentHash} is null and ${table.staticByteCount} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'succeeded' and ${table.completedAt} is not null and ${table.agentRunId} is not null and ${table.structuredReport} is not null and ${table.interactiveStorageKey} is not null and ${table.interactiveContentHash} is not null and ${table.interactiveByteCount} is not null and ${table.interactiveScriptHash} is not null and ${table.staticStorageKey} is not null and ${table.staticContentHash} is not null and ${table.staticByteCount} is not null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'failed' and ${table.completedAt} is not null and ${table.safeErrorCode} is not null and ${table.safeErrorSummary} is not null)`,
     ),
   ],
 );

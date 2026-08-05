@@ -101,7 +101,7 @@ async function deleteIndexIfPresent(uid: string): Promise<void> {
 
 beforeAll(async () => {
   await manager.rebuildKnowledgeIndexes(documents);
-});
+}, 180_000);
 
 afterAll(async () => {
   const cleanupResults = await Promise.allSettled(
@@ -120,7 +120,7 @@ afterAll(async () => {
       "Failed to remove one or more integration-test indexes.",
     );
   }
-});
+}, 180_000);
 
 describe("knowledge search service", () => {
   it("keeps index initialization idempotent and applies canonical settings", async () => {
@@ -144,6 +144,15 @@ describe("knowledge search service", () => {
       expect(new Set(settings.sortableAttributes ?? [])).toEqual(
         new Set(target.definition.sortableAttributes),
       );
+      if (target.definition.embedder !== undefined) {
+        expect(settings.embedders?.knowledge_zh_v1).toMatchObject({
+          model: "BAAI/bge-small-zh-v1.5",
+          revision: "7999e1d3359715c523056ef9478215996d62a620",
+          source: "huggingFace",
+        });
+      } else {
+        expect(settings.embedders ?? {}).toEqual({});
+      }
     }
   });
 
@@ -169,6 +178,14 @@ describe("knowledge search service", () => {
 
     expect(relaxed.estimatedTotalHits).toBe(1);
     expect(strict.estimatedTotalHits).toBe(0);
+  });
+
+  it("runs a pinned local Chinese hybrid query without changing keyword defaults", async () => {
+    const result = await service.searchLectures({
+      hybrid: { embedder: "knowledge_zh_v1", semanticRatio: 0.5 },
+      query: "跨学科申请",
+    });
+    expect(result.hits[0]?.document.lecture_id).toBe("lecture_demo_001");
   });
 
   it("applies hard case filters", async () => {

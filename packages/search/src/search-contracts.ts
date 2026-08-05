@@ -8,6 +8,13 @@ const PaginationSchema = {
 } as const;
 const OptionalFacetFilterSchema = z.array(z.string().trim().min(1).max(512)).max(50).optional();
 
+export const KnowledgeHybridSearchSchema = z
+  .object({
+    embedder: z.literal("knowledge_zh_v1"),
+    semanticRatio: z.number().min(0).max(1),
+  })
+  .strict();
+
 export const LectureFacetSchema = z.enum(["date", "organization", "speakers", "schools", "majors"]);
 
 export const LectureSearchInputSchema = z
@@ -25,6 +32,7 @@ export const LectureSearchInputSchema = z
       .strict()
       .default({}),
     ...PaginationSchema,
+    hybrid: KnowledgeHybridSearchSchema.optional(),
     matchingStrategy: SearchMatchingStrategySchema.default("last"),
     query: QuerySchema,
     sort: z.enum(["date:asc", "date:desc", "title:asc", "title:desc"]).optional(),
@@ -75,6 +83,7 @@ export const CaseSearchInputSchema = z
       .strict()
       .default({}),
     ...PaginationSchema,
+    hybrid: KnowledgeHybridSearchSchema.optional(),
     matchingStrategy: SearchMatchingStrategySchema.default("last"),
     query: QuerySchema,
   })

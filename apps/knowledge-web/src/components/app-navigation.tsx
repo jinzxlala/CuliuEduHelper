@@ -17,6 +17,16 @@ const navigationItems = [
       pathname.startsWith("/knowledge/transcripts/"),
   },
   {
+    href: "/smart-search",
+    label: "智能搜索",
+    matches: (pathname: string) => pathname === "/smart-search",
+  },
+  {
+    href: "/analysis",
+    label: "分析工作区",
+    matches: (pathname: string) => pathname === "/analysis" || pathname.startsWith("/analysis/"),
+  },
+  {
     href: "/knowledge/import",
     label: "导入讲座",
     matches: (pathname: string) => pathname === "/knowledge/import",

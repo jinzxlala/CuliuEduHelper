@@ -22,6 +22,7 @@
     "@culiu/course-planning": "workspace:*",
     "@culiu/database": "workspace:*",
     "@culiu/knowledge-ingest": "workspace:*",
+    "@culiu/knowledge-analysis": "workspace:*",
     "@culiu/search": "workspace:*",
     "@culiu/shared": "workspace:*",
     "@culiu/storage": "workspace:*",

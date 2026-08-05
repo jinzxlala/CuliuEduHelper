@@ -2,6 +2,13 @@
   {
     "uid": "lectures",
     "primaryKey": "lecture_id",
+    "embedder": {
+      "name": "knowledge_zh_v1",
+      "source": "huggingFace",
+      "model": "BAAI/bge-small-zh-v1.5",
+      "revision": "7999e1d3359715c523056ef9478215996d62a620",
+      "documentTemplate": "标题：{{doc.title}}\n摘要：{{doc.summary}}\n趋势：{{doc.trend_text}}\nAI与跨学科：{{doc.ai_cross_disciplinary_text}}\n失败风险：{{doc.failure_text}}\n机构：{{doc.organization}}\n学校：{{doc.schools}}\n专业：{{doc.majors}}"
+    },
     "searchableAttributes": [
       "title",
       "summary",
@@ -19,6 +26,13 @@
   {
     "uid": "cases",
     "primaryKey": "case_id",
+    "embedder": {
+      "name": "knowledge_zh_v1",
+      "source": "huggingFace",
+      "model": "BAAI/bge-small-zh-v1.5",
+      "revision": "7999e1d3359715c523056ef9478215996d62a620",
+      "documentTemplate": "案例概览：{{doc.profile_summary}}\n核实事实：{{doc.verified_facts}}\n背景：{{doc.background}}\n发展路径：{{doc.development_path}}\n核心项目：{{doc.core_projects}}\n优势：{{doc.core_strengths}}\n申请策略：{{doc.application_strategy}}\n顾问启示：{{doc.advisor_insights}}\n专业：{{doc.major}}\n学校：{{doc.schools}}\n研究：{{doc.research_methods}}\n活动：{{doc.activity_types}}\nAI：{{doc.ai_domains}}"
+    },
     "searchableAttributes": [
       "academic_label",
       "background",

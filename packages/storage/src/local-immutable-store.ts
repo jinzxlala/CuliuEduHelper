@@ -41,7 +41,7 @@ export class LocalImmutableObjectStore implements ImmutableObjectStore {
     const input = StoreObjectInputSchema.parse(untrustedInput);
     const content = Buffer.from(input.content);
     const digest = sha256(content);
-    const key = this.#createKey(input.domain, digest, input.studentId);
+    const key = this.#createKey(input.domain, digest, input.studentId, input.purpose);
     const targetPath = this.#resolveKey(key);
 
     await mkdir(dirname(targetPath), { recursive: true });
@@ -58,12 +58,18 @@ export class LocalImmutableObjectStore implements ImmutableObjectStore {
       sha256: digest,
       size: content.byteLength,
       ...(input.studentId === undefined ? {} : { studentId: input.studentId }),
+      ...(input.purpose === undefined ? {} : { purpose: input.purpose }),
     });
   }
 
   public async read(untrustedReference: StoredObjectReference): Promise<Uint8Array> {
     const reference = StoredObjectReferenceSchema.parse(untrustedReference);
-    const expectedKey = this.#createKey(reference.domain, reference.sha256, reference.studentId);
+    const expectedKey = this.#createKey(
+      reference.domain,
+      reference.sha256,
+      reference.studentId,
+      reference.purpose,
+    );
     if (reference.key !== expectedKey) {
       throw new ObjectIntegrityError("Stored object key does not match its domain and digest.");
     }
@@ -79,8 +85,16 @@ export class LocalImmutableObjectStore implements ImmutableObjectStore {
     return content;
   }
 
-  #createKey(domain: StoreObjectInput["domain"], digest: string, studentId?: string): string {
+  #createKey(
+    domain: StoreObjectInput["domain"],
+    digest: string,
+    studentId?: string,
+    purpose?: StoreObjectInput["purpose"],
+  ): string {
     if (domain === "knowledge") {
+      if (purpose === "analysis_report") {
+        return `knowledge/reports/${digest.slice(0, 2)}/${digest}`;
+      }
       return `knowledge/${digest.slice(0, 2)}/${digest}`;
     }
 

@@ -83,12 +83,32 @@ try {
     throw new Error("Knowledge Web login page smoke failed.");
   }
 
-  const protectedSearch = await fetch(`${baseUrl}/search`, { redirect: "manual" });
-  if (
-    protectedSearch.status !== 307 ||
-    !protectedSearch.headers.get("location")?.endsWith("/login")
-  ) {
-    throw new Error("Knowledge search did not require authentication.");
+  for (const path of ["/search", "/smart-search", "/analysis"]) {
+    const protectedPage = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
+    if (
+      protectedPage.status !== 307 ||
+      !protectedPage.headers.get("location")?.endsWith("/login")
+    ) {
+      throw new Error(`${path} did not require authentication.`);
+    }
+  }
+
+  for (const [path, method] of [
+    ["/api/smart-search", "POST"],
+    ["/api/analysis/workspaces", "GET"],
+  ]) {
+    const protectedApi = await fetch(`${baseUrl}${path}`, {
+      body: method === "POST" ? JSON.stringify({ prompt: "synthetic" }) : undefined,
+      headers: method === "POST" ? { "Content-Type": "application/json" } : undefined,
+      method,
+      redirect: "manual",
+    });
+    if (
+      protectedApi.status !== 401 ||
+      protectedApi.headers.get("cache-control") !== "private, no-store"
+    ) {
+      throw new Error(`${path} did not enforce private unauthenticated API access.`);
+    }
   }
 
   const operationsPage = await fetch(`${baseUrl}/students`, { redirect: "manual" });

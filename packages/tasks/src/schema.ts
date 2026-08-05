@@ -175,6 +175,69 @@ export const TimetableSolveTaskSchema = z.object({
   taskName: z.literal("timetable.solve"),
 });
 
+export const KnowledgeSmartSearchTaskSchema = z.object({
+  authorization: AuthorizationSnapshotReferenceSchema,
+  idempotencyKey: TaskIdempotencyKeySchema,
+  payload: z
+    .object({
+      correlationId: z.uuid(),
+      gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
+      model: z.literal("deepseek-v4-flash"),
+      promptVersion: z.literal("knowledge-smart-search.v1"),
+      retrievalVersion: z.literal("knowledge-hybrid.v1"),
+      runId: z.uuid(),
+      schemaVersion: z.literal("knowledge-smart-search-output.v1"),
+    })
+    .strict(),
+  taskId: z.uuid(),
+  taskName: z.literal("knowledge.smart-search"),
+});
+
+export const KnowledgeAnalysisChatTaskSchema = z.object({
+  authorization: AuthorizationSnapshotReferenceSchema,
+  idempotencyKey: TaskIdempotencyKeySchema,
+  payload: z
+    .object({
+      contextVersion: z.literal("knowledge-analysis-context.v1"),
+      conversationId: z.uuid(),
+      correlationId: z.uuid(),
+      gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
+      inputSnapshotHash: z.string().regex(/^[0-9a-f]{64}$/u),
+      model: z.literal("deepseek-v4-flash"),
+      pricingVersion: z.literal("deepseek-v4-flash-cny-2026-08-02"),
+      promptVersion: z.literal("knowledge-analysis-chat.v1"),
+      runId: z.uuid(),
+      schemaVersion: z.literal("knowledge-analysis-chat-output.v1"),
+      workspaceId: z.uuid(),
+    })
+    .strict(),
+  taskId: z.uuid(),
+  taskName: z.literal("knowledge.analysis-chat"),
+});
+
+export const KnowledgeAnalysisReportTaskSchema = z.object({
+  authorization: AuthorizationSnapshotReferenceSchema,
+  idempotencyKey: TaskIdempotencyKeySchema,
+  payload: z
+    .object({
+      contextVersion: z.literal("knowledge-analysis-report-context.v1"),
+      conversationId: z.uuid(),
+      correlationId: z.uuid(),
+      gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
+      inputSnapshotHash: z.string().regex(/^[0-9a-f]{64}$/u),
+      model: z.literal("deepseek-v4-flash"),
+      pricingVersion: z.literal("deepseek-v4-flash-cny-2026-08-02"),
+      promptVersion: z.literal("knowledge-analysis-report.v1"),
+      reportId: z.uuid(),
+      schemaVersion: z.literal("knowledge-analysis-report-output.v1"),
+      templateVersion: z.literal("knowledge-analysis-report-html.v1"),
+      workspaceId: z.uuid(),
+    })
+    .strict(),
+  taskId: z.uuid(),
+  taskName: z.literal("knowledge.analysis-report"),
+});
+
 export const TaskEnvelopeSchema = z.discriminatedUnion("taskName", [
   SystemProbeTaskSchema,
   KnowledgeImportTaskSchema,
@@ -184,6 +247,9 @@ export const TaskEnvelopeSchema = z.discriminatedUnion("taskName", [
   StudentEvidenceExtractTaskSchema,
   CourseRecommendationGenerateTaskSchema,
   TimetableSolveTaskSchema,
+  KnowledgeSmartSearchTaskSchema,
+  KnowledgeAnalysisChatTaskSchema,
+  KnowledgeAnalysisReportTaskSchema,
 ]);
 export type TaskEnvelope = z.infer<typeof TaskEnvelopeSchema>;
 export type TaskName = TaskEnvelope["taskName"];
@@ -196,3 +262,6 @@ export type CourseRecommendationGenerateTask = z.infer<
   typeof CourseRecommendationGenerateTaskSchema
 >;
 export type TimetableSolveTask = z.infer<typeof TimetableSolveTaskSchema>;
+export type KnowledgeSmartSearchTask = z.infer<typeof KnowledgeSmartSearchTaskSchema>;
+export type KnowledgeAnalysisChatTask = z.infer<typeof KnowledgeAnalysisChatTaskSchema>;
+export type KnowledgeAnalysisReportTask = z.infer<typeof KnowledgeAnalysisReportTaskSchema>;

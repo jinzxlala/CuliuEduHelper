@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     "@culiu/authorization",
     "@culiu/database",
+    "@culiu/knowledge-analysis",
     "@culiu/storage",
     "@culiu/tasks",
     "@node-rs/argon2",

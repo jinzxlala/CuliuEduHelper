@@ -14,6 +14,7 @@ packages/shared 共享Schema与类型
 packages/database PostgreSQL Schema、迁移与脱敏fixtures
 packages/authorization 内部账号、Argon2id密码与学生级授权上下文
 packages/knowledge-ingest 知识源清单、校验、保守解析与幂等导入
+packages/knowledge-analysis 智能搜索、共享分析工作区、对话与不可变分析报告
 packages/search Meilisearch文档契约、查询、金标评测与原子重建
 packages/storage 本地不可变证据存储
 packages/student-records 学生事实、证据定位、版本、失效和授权领域服务
@@ -183,6 +184,25 @@ powershell -ExecutionPolicy Bypass -File .\infra\setup-meilisearch.ps1 -SkipPull
 ```
 
 本地服务地址：`http://127.0.0.1:7700`。`GET /health` 可用于健康检查，其余接口需要服务端持有的 API 密钥。
+
+## 智能搜索与分析工作区
+
+顾问知识系统在普通关键词搜索之外提供以下入口：
+
+```text
+/smart-search  由受限查询规划、混合召回和上下文重排组成的智能搜索
+/analysis      私有或显式共享的分析工作区
+```
+
+搜索结果可以加入工作区。工作区资料固定到加入时的知识版本；新版本发布后会提示主动更新，不会静默替换。每个工作区可以建立多个相互隔离的对话，对话只携带当前对话历史和该工作区冻结资料。分析报告同时提供带缩放、聚焦、折叠、搜索和图例强调的交互式单页 HTML，以及禁用脚本的静态 HTML；两者均由固定模板生成并作为不可变知识对象保存。
+
+本地开发需要 PostgreSQL、Redis、Meilisearch、知识 Web 和 Worker 同时运行。第三阶段的合成数据技术验收命令为：
+
+```powershell
+pnpm test:functional:stage3
+```
+
+该命令会运行智能搜索与工作区单元/集成测试、原关键词金标、三档语义权重智能搜索金标、知识 Web 测试与生产构建，以及未登录运行时边界冒烟。金标仍为草案时，测试通过只表示技术评测通过，不代表顾问业务验收完成。
 
 ## 知识库导入 Worker
 

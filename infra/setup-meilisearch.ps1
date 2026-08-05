@@ -259,6 +259,16 @@ foreach ($index in $indexes) {
         filterableAttributes = @($index.filterableAttributes)
         sortableAttributes = @($index.sortableAttributes)
     }
+    if ($null -ne $index.embedder) {
+        $settings.embedders = @{
+            $index.embedder.name = @{
+                source = $index.embedder.source
+                model = $index.embedder.model
+                revision = $index.embedder.revision
+                documentTemplate = $index.embedder.documentTemplate
+            }
+        }
+    }
     Ensure-Index -Uid $index.uid -PrimaryKey $index.primaryKey -Settings $settings
 }
 

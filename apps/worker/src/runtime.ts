@@ -17,8 +17,14 @@ import {
 import {
   createMeilisearchClient,
   KnowledgeIndexManager,
+  KnowledgeSearchService,
   parseMeilisearchAdminConfig,
 } from "@culiu/search";
+import {
+  executeKnowledgeAnalysisChat,
+  executeKnowledgeAnalysisReport,
+  executeKnowledgeSmartSearch,
+} from "@culiu/knowledge-analysis";
 import { LocalImmutableObjectStore } from "@culiu/storage";
 import {
   createDeterministicMockProfileProvider,
@@ -43,9 +49,9 @@ export async function runWorker(): Promise<void> {
   const runtime = parseWorkerRuntimeConfig();
   const databaseClient = createDatabaseClient(parseDatabaseConfig());
   const redis = createRedisConnection(parseRedisUrl());
-  const indexManager = new KnowledgeIndexManager({
-    client: createMeilisearchClient(parseMeilisearchAdminConfig()),
-  });
+  const meilisearchClient = createMeilisearchClient(parseMeilisearchAdminConfig());
+  const indexManager = new KnowledgeIndexManager({ client: meilisearchClient });
+  const knowledgeSearch = new KnowledgeSearchService({ client: meilisearchClient });
   const objectStore = new LocalImmutableObjectStore(runtime.localStorageRoot);
   const importer = new KnowledgeImporter({
     databaseClient,
@@ -84,6 +90,34 @@ export async function runWorker(): Promise<void> {
           );
         },
         "knowledge.import": createKnowledgeImportTaskHandler({ databaseClient, importer }),
+        "knowledge.smart-search": async (task) => {
+          if (task.taskName !== "knowledge.smart-search") throw new Error("Unexpected task type.");
+          return executeKnowledgeSmartSearch(
+            databaseClient.database,
+            task,
+            new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig()),
+            knowledgeSearch,
+          );
+        },
+        "knowledge.analysis-chat": async (task) => {
+          if (task.taskName !== "knowledge.analysis-chat") throw new Error("Unexpected task type.");
+          return executeKnowledgeAnalysisChat(
+            databaseClient.database,
+            task,
+            new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig()),
+            knowledgeSearch,
+          );
+        },
+        "knowledge.analysis-report": async (task) => {
+          if (task.taskName !== "knowledge.analysis-report")
+            throw new Error("Unexpected task type.");
+          return executeKnowledgeAnalysisReport(
+            databaseClient.database,
+            task,
+            new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig()),
+            objectStore,
+          );
+        },
         "profile.draft": async (task) => {
           if (task.taskName !== "profile.draft") throw new Error("Unexpected task type.");
           return executeProfileDraftTask(databaseClient.database, task, profileProvider);

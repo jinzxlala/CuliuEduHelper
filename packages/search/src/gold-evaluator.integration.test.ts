@@ -18,7 +18,7 @@ const indexNames: KnowledgeIndexNames = {
   transcriptSegments: `test_gold_transcripts_${suffix}`,
 };
 const client = createMeilisearchClient(parseMeilisearchAdminConfig());
-const manager = new KnowledgeIndexManager({ client, indexNames });
+const manager = new KnowledgeIndexManager({ client, enableEmbedders: false, indexNames });
 const service = new KnowledgeSearchService({ client, indexNames });
 
 const documents: KnowledgeDocumentSet = {

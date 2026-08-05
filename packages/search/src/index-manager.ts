@@ -42,6 +42,7 @@ export class KnowledgeIndexCleanupError extends Error {
 
 export interface KnowledgeIndexManagerOptions {
   client: Meilisearch;
+  enableEmbedders?: boolean;
   indexNames?: KnowledgeIndexNames;
   taskTimeoutMs?: number;
 }
@@ -64,8 +65,22 @@ interface IndexBuildTarget {
 
 function settingsFor(
   definition: (typeof KNOWLEDGE_INDEX_DEFINITIONS)[keyof typeof KNOWLEDGE_INDEX_DEFINITIONS],
+  enableEmbedders: boolean,
 ): Settings {
+  const embedder = definition.embedder;
   return {
+    ...(enableEmbedders && embedder !== undefined
+      ? {
+          embedders: {
+            [embedder.name]: {
+              documentTemplate: embedder.documentTemplate,
+              model: embedder.model,
+              revision: embedder.revision,
+              source: embedder.source,
+            },
+          },
+        }
+      : {}),
     filterableAttributes: definition.filterableAttributes,
     searchableAttributes: definition.searchableAttributes,
     sortableAttributes: definition.sortableAttributes,
@@ -78,11 +93,13 @@ function isIndexNotFound(error: unknown): boolean {
 
 export class KnowledgeIndexManager {
   readonly #client: Meilisearch;
+  readonly #enableEmbedders: boolean;
   readonly #indexNames: KnowledgeIndexNames;
   readonly #taskTimeoutMs: number;
 
   public constructor(options: KnowledgeIndexManagerOptions) {
     this.#client = options.client;
+    this.#enableEmbedders = options.enableEmbedders ?? true;
     this.#indexNames = KnowledgeIndexNamesSchema.parse(
       options.indexNames ?? DEFAULT_KNOWLEDGE_INDEX_NAMES,
     );
@@ -176,7 +193,7 @@ export class KnowledgeIndexManager {
       await this.#ensureTargetIndex(target.targetUid, target.definition.primaryKey);
       const task = await this.#client
         .index(target.targetUid)
-        .updateSettings(settingsFor(target.definition));
+        .updateSettings(settingsFor(target.definition, this.#enableEmbedders));
       await this.#waitForSuccess(task.taskUid);
     }
   }
@@ -197,7 +214,7 @@ export class KnowledgeIndexManager {
 
         const settingsTask = await this.#client
           .index(target.temporaryUid)
-          .updateSettings(settingsFor(target.definition));
+          .updateSettings(settingsFor(target.definition, this.#enableEmbedders));
         await this.#waitForSuccess(settingsTask.taskUid);
 
         if (target.documents.length > 0) {

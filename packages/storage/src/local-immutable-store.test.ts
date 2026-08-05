@@ -23,6 +23,16 @@ afterEach(async () => {
 });
 
 describe("LocalImmutableObjectStore", () => {
+  it("stores analysis reports in the dedicated immutable knowledge namespace", async () => {
+    const { store } = await createStore();
+    const reference = await store.store({
+      content: Uint8Array.from(Buffer.from("<html>report</html>", "utf8")),
+      domain: "knowledge",
+      purpose: "analysis_report",
+    });
+    expect(reference.key).toMatch(/^knowledge\/reports\/[0-9a-f]{2}\/[0-9a-f]{64}$/u);
+    expect(Buffer.from(await store.read(reference)).toString("utf8")).toBe("<html>report</html>");
+  });
   it("stores restricted import sources outside every student namespace", async () => {
     const { store } = await createStore();
 

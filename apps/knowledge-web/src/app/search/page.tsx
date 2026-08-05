@@ -9,6 +9,7 @@ import Link from "next/link";
 import type { JSX } from "react";
 
 import { HighlightedText } from "../../components/highlighted-text";
+import { AddToWorkspaceButton } from "../../components/add-to-workspace-button";
 import { SignOutButton } from "../../components/sign-out-button";
 import { requireActiveSessionPrincipal } from "../../lib/auth-session";
 import { getKnowledgeSearchService } from "../../lib/knowledge-search";
@@ -80,6 +81,7 @@ function LectureResult({ hit }: Readonly<{ hit: SearchHit<LectureDocument> }>): 
       <ChipList items={[...lecture.schools, ...lecture.majors]} />
       <div className="result-footer">
         <code>{lecture.source_path}</code>
+        <AddToWorkspaceButton sourceId={lecture.lecture_id} sourceType="lecture" />
         <Link href={`/knowledge/lectures/${encodeURIComponent(lecture.lecture_id)}`}>查看证据</Link>
       </div>
     </article>
@@ -122,6 +124,7 @@ function CaseResult({ hit }: Readonly<{ hit: SearchHit<CaseDocument> }>): JSX.El
       />
       <div className="result-footer">
         <span>来源讲座：{item.lecture_id}</span>
+        <AddToWorkspaceButton sourceId={item.case_id} sourceType="case" />
         <Link href={`/knowledge/cases/${encodeURIComponent(item.case_id)}`}>查看证据边界</Link>
       </div>
     </article>

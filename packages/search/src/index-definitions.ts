@@ -7,9 +7,24 @@ const AttributeNameSchema = z
   .min(1)
   .regex(/^[A-Za-z0-9_.]+$/u);
 
+export const KNOWLEDGE_EMBEDDER_NAME = "knowledge_zh_v1" as const;
+export const KNOWLEDGE_EMBEDDER_MODEL = "BAAI/bge-small-zh-v1.5" as const;
+export const KNOWLEDGE_EMBEDDER_REVISION = "7999e1d3359715c523056ef9478215996d62a620" as const;
+
+const KnowledgeEmbedderDefinitionSchema = z
+  .object({
+    documentTemplate: z.string().min(1).max(4_096),
+    model: z.literal(KNOWLEDGE_EMBEDDER_MODEL),
+    name: z.literal(KNOWLEDGE_EMBEDDER_NAME),
+    revision: z.literal(KNOWLEDGE_EMBEDDER_REVISION),
+    source: z.literal("huggingFace"),
+  })
+  .strict();
+
 export const KnowledgeIndexDefinitionSchema = z
   .object({
     filterableAttributes: z.array(AttributeNameSchema),
+    embedder: KnowledgeEmbedderDefinitionSchema.optional(),
     primaryKey: AttributeNameSchema,
     searchableAttributes: z.array(AttributeNameSchema),
     sortableAttributes: z.array(AttributeNameSchema),
@@ -18,6 +33,10 @@ export const KnowledgeIndexDefinitionSchema = z
   .strict();
 
 const parsedDefinitions = z.array(KnowledgeIndexDefinitionSchema).length(3).parse(rawDefinitions);
+
+if (parsedDefinitions.find((item) => item.uid === "transcript_segments")?.embedder !== undefined) {
+  throw new Error("Transcript segments must not use the stage 3 knowledge embedder.");
+}
 
 function definition(
   uid: (typeof parsedDefinitions)[number]["uid"],

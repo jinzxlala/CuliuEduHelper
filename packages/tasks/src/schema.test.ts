@@ -178,4 +178,73 @@ describe("TaskEnvelopeSchema", () => {
     expect(JSON.stringify(task)).not.toContain("studentRosterText");
     expect(JSON.stringify(task)).not.toContain("occurrences");
   });
+
+  it("accepts a smart-search task containing only frozen run and version references", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: `smart_search_${"a".repeat(64)}`,
+      payload: {
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "b".repeat(40),
+        model: "deepseek-v4-flash",
+        promptVersion: "knowledge-smart-search.v1",
+        retrievalVersion: "knowledge-hybrid.v1",
+        runId: "00000000-0000-4000-8000-000000000051",
+        schemaVersion: "knowledge-smart-search-output.v1",
+      },
+      taskName: "knowledge.smart-search",
+    } as const;
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain("promptText");
+    expect(JSON.stringify(task)).not.toContain("candidateDocuments");
+  });
+
+  it("accepts an analysis-chat task containing only frozen context references", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: `analysis_chat_${"a".repeat(64)}`,
+      payload: {
+        contextVersion: "knowledge-analysis-context.v1",
+        conversationId: "00000000-0000-4000-8000-000000000061",
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "b".repeat(40),
+        inputSnapshotHash: "c".repeat(64),
+        model: "deepseek-v4-flash",
+        pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
+        promptVersion: "knowledge-analysis-chat.v1",
+        runId: "00000000-0000-4000-8000-000000000062",
+        schemaVersion: "knowledge-analysis-chat-output.v1",
+        workspaceId: "00000000-0000-4000-8000-000000000063",
+      },
+      taskName: "knowledge.analysis-chat",
+    } as const;
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain("messageContent");
+    expect(JSON.stringify(task)).not.toContain("sourceDocuments");
+  });
+
+  it("accepts an analysis-report task without conversation or source bodies", () => {
+    const task = {
+      ...validTask,
+      idempotencyKey: `analysis_report_${"a".repeat(64)}`,
+      payload: {
+        contextVersion: "knowledge-analysis-report-context.v1",
+        conversationId: "00000000-0000-4000-8000-000000000071",
+        correlationId: validTask.payload.correlationId,
+        gitCommitSha: "b".repeat(40),
+        inputSnapshotHash: "c".repeat(64),
+        model: "deepseek-v4-flash",
+        pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
+        promptVersion: "knowledge-analysis-report.v1",
+        reportId: "00000000-0000-4000-8000-000000000072",
+        schemaVersion: "knowledge-analysis-report-output.v1",
+        templateVersion: "knowledge-analysis-report-html.v1",
+        workspaceId: "00000000-0000-4000-8000-000000000073",
+      },
+      taskName: "knowledge.analysis-report",
+    } as const;
+    expect(TaskEnvelopeSchema.parse(task)).toEqual(task);
+    expect(JSON.stringify(task)).not.toContain("conversationMessages");
+    expect(JSON.stringify(task)).not.toContain("sourceDocuments");
+  });
 });

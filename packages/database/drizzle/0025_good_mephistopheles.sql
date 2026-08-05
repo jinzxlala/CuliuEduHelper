@@ -1,0 +1,3 @@
+ALTER TABLE "knowledge_analysis_report" ADD COLUMN "source_snapshot" jsonb DEFAULT '[]'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "knowledge_analysis_report" ADD COLUMN "conversation_through_sequence" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "knowledge_analysis_report" ADD CONSTRAINT "knowledge_analysis_report_sequence_check" CHECK ("knowledge_analysis_report"."conversation_through_sequence" >= 0);

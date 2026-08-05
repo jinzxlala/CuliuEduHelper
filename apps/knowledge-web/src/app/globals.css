@@ -25,6 +25,41 @@
   --orange-line: #f3c3ab;
 }
 
+.report-panel {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 4px solid var(--orange, #f45b16);
+}
+
+.report-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.report-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid #d5dedb;
+  border-radius: 0.8rem;
+  background: #fff;
+}
+
+.report-card > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.report-card iframe {
+  width: 100%;
+  min-height: 620px;
+  border: 1px solid #bdcbc7;
+  border-radius: 0.6rem;
+  background: #f5f2eb;
+}
+
 .import-workspace {
   display: grid;
   gap: 1rem;
@@ -2792,4 +2827,201 @@ mark {
   color: #075b48;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.smart-search-form,
+.smart-search-status {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #d9d2c8;
+  border-radius: 18px;
+  background: #fffdf9;
+}
+
+.smart-search-form label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-weight: 800;
+}
+
+.smart-search-form textarea {
+  width: 100%;
+  padding: 0.9rem;
+  border: 1px solid #aebbb4;
+  border-radius: 12px;
+  font: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.form-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.8rem;
+}
+
+.smart-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.smart-result-card {
+  padding: 1rem;
+  border: 1px solid #ded6cb;
+  border-radius: 14px;
+  background: white;
+}
+
+.smart-result-card h3 {
+  overflow-wrap: anywhere;
+}
+
+.error-text {
+  color: #a3311b;
+  font-weight: 700;
+}
+
+.workspace-create-form,
+.analysis-panel {
+  margin: 1.25rem 0;
+  padding: 1.2rem;
+  border: 1px solid #ded6cb;
+  border-radius: 16px;
+  background: #fffdf9;
+}
+
+.workspace-create-form label,
+.analysis-panel label,
+.share-form label {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.7rem 0;
+  font-weight: 700;
+}
+
+.workspace-create-form input,
+.workspace-create-form textarea,
+.analysis-panel input,
+.analysis-panel select {
+  padding: 0.65rem;
+  border: 1px solid #aebbb4;
+  border-radius: 9px;
+  font: inherit;
+}
+
+.workspace-card-grid,
+.analysis-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.workspace-card {
+  padding: 1.1rem;
+  border: 1px solid #ded6cb;
+  border-radius: 16px;
+  background: white;
+}
+
+.analysis-item-list,
+.analysis-member-list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  list-style: none;
+}
+
+.analysis-item-list li,
+.analysis-member-list li {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: #f4f6f3;
+}
+
+.analysis-item-list code {
+  overflow-wrap: anywhere;
+}
+.archived-item {
+  opacity: 0.58;
+}
+.share-form {
+  display: grid;
+  grid-template-columns: 1fr 180px auto;
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.workspace-add-control {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.workspace-add-control select,
+.workspace-add-control button {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #98aaa1;
+  border-radius: 8px;
+  background: white;
+}
+
+.conversation-thread {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+.conversation-message {
+  max-width: 88%;
+  padding: 1rem 1.15rem;
+  border-radius: 16px;
+  white-space: pre-wrap;
+}
+.conversation-message.user {
+  justify-self: end;
+  background: #fff0e4;
+}
+.conversation-message.assistant {
+  justify-self: start;
+  background: #eef5f1;
+}
+.markdown-safe-text {
+  line-height: 1.75;
+}
+.citation-list {
+  margin-bottom: 0;
+  padding-left: 1.25rem;
+  font-size: 0.92rem;
+}
+.conversation-composer {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+  border: 1px solid #d9d2c8;
+  border-radius: 16px;
+  background: white;
+}
+.conversation-composer textarea {
+  padding: 0.8rem;
+  border: 1px solid #9baaa2;
+  border-radius: 10px;
+  font: inherit;
+}
+
+@media (max-width: 760px) {
+  .share-form {
+    grid-template-columns: 1fr;
+  }
+  .analysis-member-list li,
+  .analysis-item-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
