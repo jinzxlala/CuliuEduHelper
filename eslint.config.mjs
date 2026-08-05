@@ -53,7 +53,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["apps/web/**/*.{ts,tsx}"],
+    files: ["apps/knowledge-web/**/*.{ts,tsx}", "apps/operations-web/**/*.{ts,tsx}"],
     languageOptions: {
       globals: {
         ...globals.browser,

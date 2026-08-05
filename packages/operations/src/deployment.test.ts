@@ -31,13 +31,16 @@ async function validEnvironment(): Promise<NodeJS.ProcessEnv> {
     "-----BEGIN PRIVATE KEY-----\nsynthetic\n-----END PRIVATE KEY-----\n",
   );
   return {
-    APP_DOMAIN: "advisor.internal-company.cn",
+    KNOWLEDGE_APP_DOMAIN: "knowledge.internal-company.cn",
+    OPERATIONS_APP_DOMAIN: "operations.internal-company.cn",
     BACKUP_ENCRYPTION_KEY: secret,
     BACKUP_HOST_PATH: paths.backup,
     CULIU_GIT_COMMIT_SHA: commit,
     CULIU_IMAGE_TAG: commit,
     DATABASE_POOL_MAX: "10",
     DATABASE_URL: `postgresql://culiu:${secret}@postgres:5432/culiu_edu_helper`,
+    KNOWLEDGE_DATABASE_URL: `postgresql://culiu:${secret}@postgres:5432/culiu_edu_helper`,
+    OPERATIONS_DATABASE_URL: `postgresql://culiu:${secret}@postgres:5432/culiu_edu_helper`,
     DEEPSEEK_API_KEY: "synthetic-deepseek-key-for-tests",
     KNOWLEDGE_ANALYSIS_HOST_PATH: paths.analysis,
     KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: "deepseek",
@@ -47,7 +50,8 @@ async function validEnvironment(): Promise<NodeJS.ProcessEnv> {
     MEILI_HOST: "http://meilisearch:7700",
     MEILI_MAINTENANCE_PORT: "17700",
     MEILI_MASTER_KEY: secret,
-    NEXTAUTH_SECRET: secret,
+    KNOWLEDGE_NEXTAUTH_SECRET: `${secret}-knowledge`,
+    OPERATIONS_NEXTAUTH_SECRET: `${secret}-operations`,
     POSTGRES_DB: "culiu_edu_helper",
     POSTGRES_CONTAINER_NAME: "culiu-edu-helper-postgres",
     POSTGRES_MAINTENANCE_PORT: "15432",
@@ -71,7 +75,10 @@ describe("production deployment preflight", () => {
 
     expect(receipt).toEqual({
       commitSha: commit,
-      domain: "advisor.internal-company.cn",
+      domains: {
+        knowledge: "knowledge.internal-company.cn",
+        operations: "operations.internal-company.cn",
+      },
       httpsPort: 443,
       pathsChecked: 7,
       status: "valid",
@@ -86,7 +93,7 @@ describe("production deployment preflight", () => {
         ...environment,
         CULIU_IMAGE_TAG: "2".repeat(40),
         MEILI_HOST: "http://127.0.0.1:7700",
-        NEXTAUTH_SECRET: "replace-with-this-placeholder-secret",
+        KNOWLEDGE_NEXTAUTH_SECRET: "replace-with-this-placeholder-secret",
       }),
     ).toThrow();
   });

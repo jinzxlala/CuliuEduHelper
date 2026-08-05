@@ -7,7 +7,8 @@
 仓库采用 pnpm + Turborepo：
 
 ```text
-apps/web       Next.js页面和业务API
+apps/knowledge-web 顾问知识搜索、讲座/案例详情与讲座导入API（本地端口3000）
+apps/operations-web 学生档案、画像、课程规划与排课API（本地端口3001）
 apps/worker    独立后台任务进程
 packages/shared 共享Schema与类型
 packages/database PostgreSQL Schema、迁移与脱敏fixtures
@@ -26,7 +27,22 @@ packages/operations 加密备份、隔离恢复与Meilisearch重建验收
 pnpm check
 ```
 
-该命令依次检查格式、潜在密钥、ESLint、严格类型、Drizzle迁移一致性、单元测试、生产构建和Web运行时冒烟。开发机上的其他Node.js主版本不能代替Node.js 22的CI与Docker验证。
+该命令依次检查格式、潜在密钥、ESLint、严格类型、Drizzle迁移一致性、单元测试、双Web边界、生产构建和教务Web运行时冒烟。开发机上的其他Node.js主版本不能代替Node.js 22的CI与Docker验证。
+
+两个Web应用独立启动、独立构建，不通过前端菜单互相跳转：
+
+```powershell
+# 同时启动知识系统（3000）、教务系统（3001）和Worker
+pnpm dev
+
+# 只启动顾问知识系统
+pnpm --filter @culiu/knowledge-web dev
+
+# 只启动内部教务系统
+pnpm --filter @culiu/operations-web dev
+```
+
+本地入口分别是`http://127.0.0.1:3000`和`http://127.0.0.1:3001`。两套应用使用不同的Auth.js Cookie；即使同在`127.0.0.1`上运行，登录会话也不会互相覆盖。
 
 ## 本地 PostgreSQL、Redis 与证据文件
 
@@ -60,7 +76,7 @@ pnpm test:integration
 
 ## 内部账号与学生级授权
 
-基础设施脚本会在`infra/.env`缺少配置时生成至少32字节的`NEXTAUTH_SECRET`，并保留已有值。本地`NEXTAUTH_URL`默认为`http://127.0.0.1:3000`；腾讯云部署必须改为实际HTTPS地址，以启用带`Secure`前缀的会话Cookie。Auth.js使用Credentials与最长8小时的JWT会话；Cookie固定为`HttpOnly`、`SameSite=Lax`，生产HTTPS环境同时启用`Secure`。
+基础设施脚本会为知识系统和教务系统分别生成至少32字节的`KNOWLEDGE_NEXTAUTH_SECRET`与`OPERATIONS_NEXTAUTH_SECRET`，并保留已有值。本地URL默认为`http://127.0.0.1:3000`和`http://127.0.0.1:3001`；腾讯云部署必须分别配置实际HTTPS域名。Auth.js使用Credentials与最长8小时的JWT会话；两套Cookie均为`HttpOnly`、`SameSite=Lax`，生产HTTPS环境同时启用`Secure`。
 
 首次正式使用前，通过一次性CLI创建第一个管理员。命令不接受密码参数，也没有默认密码；密码必须通过进程环境变量提供，至少14位并包含大小写字母、数字和符号。以下PowerShell流程避免将密码写入命令历史：
 
@@ -77,7 +93,7 @@ finally {
 }
 ```
 
-一旦数据库中存在任意可交互的密码账号，该命令会永久拒绝再次初始化；后续账号应由尚待开发的受审计用户管理流程创建。管理员身份不自动获得全部学生资料，所有账号都必须存在仍有效的显式学生授权。当前入口为：
+一旦数据库中存在任意可交互的密码账号，该命令会永久拒绝再次初始化；后续账号应由尚待开发的受审计用户管理流程创建。管理员身份不自动获得全部学生资料，所有账号都必须存在仍有效的显式学生授权。教务系统入口为：
 
 ```text
 /login                 内部账号登录
@@ -85,6 +101,8 @@ finally {
 /students/<student-id> 经服务端授权上下文保护的学生档案
 /api/students/<id>     同样执行账号、学生、操作和数据等级校验的业务API
 ```
+
+知识系统只暴露`/search`、`/knowledge/*`和`/api/knowledge/*`；教务系统只暴露`/students/*`、`/courses`、`/scheduling`及其业务API。`pnpm check:web-boundaries`会阻止跨系统路由或领域包重新混入。
 
 每次学生读取都会创建15分钟的最小作用域授权快照，并在实际查询前重新检查账号状态、当前授权、操作和访问等级。即使已有会话，账号停用或学生授权撤销也会立即阻断后续学生API访问；客户端篡改学生ID统一返回404，避免泄露学生是否存在。
 

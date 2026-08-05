@@ -244,6 +244,114 @@ describe("basic student import workflow", () => {
       }),
     ).rejects.toBeInstanceOf(AuthorizationDeniedError);
   });
+
+  it("links a reviewed duplicate candidate to the detected existing student", async () => {
+    const { context, principal } = await createAdministrator();
+    const studentId = randomUUID();
+    await activeClient()
+      .database.insert(students)
+      .values({
+        id: studentId,
+        ownerUserId: principal.id,
+        privacyLevel: "restricted",
+        publicCode: `SYN-LINK-${studentId.slice(0, 8)}`,
+      });
+    await activeClient()
+      .database.insert(studentFacts)
+      .values([
+        {
+          accessLevel: "restricted",
+          confirmationStatus: "confirmed",
+          fieldKey: "identity.chinese_name",
+          id: randomUUID(),
+          sourceType: "advisor",
+          studentId,
+          value: { text: "合成链接学生" },
+        },
+        {
+          accessLevel: "restricted",
+          confirmationStatus: "confirmed",
+          fieldKey: "education.school",
+          id: randomUUID(),
+          sourceType: "advisor",
+          studentId,
+          value: { text: "合成链接学校" },
+        },
+      ]);
+    const provider: JsonModelProvider = {
+      generateJson() {
+        return Promise.resolve({
+          json: {
+            candidates: [
+              {
+                displayLabel: "合成链接学生",
+                fields: [
+                  {
+                    confidence: "high",
+                    fieldKey: "identity.chinese_name",
+                    sourceLocator: { end: 8, start: 0 },
+                    value: "合成链接学生",
+                  },
+                  {
+                    confidence: "high",
+                    fieldKey: "education.school",
+                    sourceLocator: { end: 17, start: 9 },
+                    value: "合成链接学校",
+                  },
+                ],
+                sourceOrdinal: 1,
+              },
+            ],
+          },
+          model: "deepseek-v4-flash",
+          providerRequestId: "synthetic-link",
+          usage: {
+            completionTokens: 20,
+            promptCacheHitTokens: 0,
+            promptCacheMissTokens: 60,
+            promptTokens: 60,
+            totalTokens: 80,
+          },
+        });
+      },
+    };
+    const batch = await createBasicStudentImportBatch(
+      activeClient().database,
+      activeStore(),
+      context,
+      {
+        content: Buffer.from("学员姓名：合成链接学生\n就读学校：合成链接学校", "utf8"),
+        fileName: "synthetic-link.txt",
+        mimeType: "text/plain",
+      },
+    );
+    const extracted = await extractBasicStudentImportBatch(
+      activeClient().database,
+      activeStore(),
+      provider,
+      context,
+      batch.id,
+    );
+    const candidate = extracted.candidates[0];
+    if (candidate === undefined) throw new Error("Link candidate was not extracted.");
+    expect(candidate.possibleStudentId).toBe(studentId);
+    await expect(
+      applyBasicStudentImportCandidate(activeClient().database, activeStore(), context, {
+        candidateId: candidate.id,
+        decision: "link",
+        fields: candidate.suggestions.map((suggestion) => ({
+          decision: "accepted",
+          suggestionId: suggestion.id,
+        })),
+      }),
+    ).resolves.toEqual({ studentId });
+    await expect(
+      readStudentImportBatch(activeClient().database, context, batch.id),
+    ).resolves.toMatchObject({
+      candidates: [expect.objectContaining({ decision: "link" })],
+      status: "applied",
+    });
+  });
 });
 
 describe("incremental student evidence workflow", () => {

@@ -6,7 +6,7 @@ import { z } from "zod";
 const JsonValueSchema = z.json();
 type JsonValue = z.infer<typeof JsonValueSchema>;
 
-export const PROFILE_PROMPT_VERSION = "profile-draft-prompt.v1";
+export const PROFILE_PROMPT_VERSION = "profile-draft-prompt.v3";
 export const PROFILE_SCHEMA_VERSION = "profile-draft-output.v1";
 export const PROFILE_REDACTION_VERSION = "profile-outbound.v1";
 export const PROFILE_PRICING_VERSION = "deepseek-v4-flash-cny-2026-08-02";
@@ -85,6 +85,33 @@ export const ProfileDraftOutputSchema = z
   .strict()
   .superRefine(validateProfileClaimSet);
 export type ProfileDraftOutput = z.infer<typeof ProfileDraftOutputSchema>;
+
+function normalizeProfileDraftOutput(untrustedOutput: unknown): unknown {
+  if (
+    untrustedOutput === null ||
+    typeof untrustedOutput !== "object" ||
+    Array.isArray(untrustedOutput)
+  ) {
+    return untrustedOutput;
+  }
+  const claims = (untrustedOutput as { claims?: unknown }).claims;
+  if (claims === null || typeof claims !== "object" || Array.isArray(claims)) {
+    return untrustedOutput;
+  }
+  const categories = ProfileClaimCategorySchema.options;
+  const keys = Object.keys(claims);
+  if (keys.length !== categories.length || keys.some((key) => !categories.includes(key as never))) {
+    return untrustedOutput;
+  }
+  const normalizedClaims = categories.map((category) => {
+    const claim = (claims as Record<string, unknown>)[category];
+    if (claim === null || typeof claim !== "object" || Array.isArray(claim)) return claim;
+    const embeddedCategory = (claim as { category?: unknown }).category;
+    if (embeddedCategory !== undefined && embeddedCategory !== category) return claim;
+    return embeddedCategory === undefined ? { ...claim, category } : claim;
+  });
+  return { ...untrustedOutput, claims: normalizedClaims };
+}
 
 function validateProfileClaimSet(
   value: { claims: Array<z.infer<typeof ProfileClaimDraftSchema>> },
@@ -273,23 +300,39 @@ export function sha256(value: string): string {
 
 const PROFILE_SCHEMA_DESCRIPTOR = {
   exactTopLevelKeys: ["schemaVersion", "claims", "questionsToConfirm"],
+  topLevelTypes: { claims: "array", questionsToConfirm: "array", schemaVersion: "string" },
   claims: {
     exactCount: 8,
     exactKeys: ["category", "statement", "informationNature", "confidence", "evidence"],
+    fieldTypes: {
+      category: "string",
+      confidence: "string enum",
+      evidence: "array",
+      informationNature: "string enum",
+      statement: "non-empty string",
+    },
     onePerCategory: ProfileClaimCategorySchema.options,
     evidenceItemExactKeys: ["locatorId", "relation"],
     evidenceRelations: EvidenceRelationSchema.options,
     confidenceValues: ProfileConfidenceSchema.options,
     informationNatureValues: InformationNatureSchema.options,
+    missingRule: "informationNature=missing requires confidence=unknown and evidence=[]",
+    nonMissingRule:
+      "every non-missing claim requires confidence other than unknown and at least one evidence item",
+    oneSentenceLabelRule:
+      "category=one_sentence_label must use informationNature=inference and cite evidence",
   },
   questionsToConfirm: {
     exactKeys: ["question", "relatedFieldKeys"],
+    fieldTypes: { question: "non-empty string", relatedFieldKeys: "array of strings" },
     minimumCount: 1,
+    relatedFieldKeyRule:
+      "every relatedFieldKey must exactly match a fieldKey present in the input snapshot",
   },
   schemaVersionExactValue: PROFILE_SCHEMA_VERSION,
 };
 
-export const PROFILE_SYSTEM_PROMPT = `You create a conservative student profile draft from confirmed, de-identified JSON facts. Return json only. Never invent missing facts, names, contact details, evidence IDs, or knowledge-base cases. Every non-missing claim and the one-sentence label must cite one or more locator IDs present in the input. Use informationNature=missing and confidence=unknown with no evidence when information is absent. Cover every required category. The output schema descriptor is: ${stableJson(PROFILE_SCHEMA_DESCRIPTOR)}`;
+export const PROFILE_SYSTEM_PROMPT = `You create a conservative student profile draft from confirmed, de-identified JSON facts. Return json only. Never invent missing facts, names, contact details, evidence IDs, or knowledge-base cases. The top-level claims value must be a JSON array, never an object keyed by category. Return exactly eight claims: exactly one claim for each listed category, with no duplicate or omitted category. The one_sentence_label claim is always an inference, never a fact, missing item, or advisor judgment, and it must cite one or more locator IDs present in the input. Every other non-missing claim must also cite one or more input locator IDs. Use informationNature=missing, confidence=unknown, and evidence=[] when a category lacks information. The top-level questionsToConfirm value must be an array with at least one object, and it may only cite field keys that already exist in the input snapshot. Do not add keys outside the descriptor. The output schema descriptor is: ${stableJson(PROFILE_SCHEMA_DESCRIPTOR)}`;
 
 export const PROFILE_PROMPT_HASH = sha256(PROFILE_SYSTEM_PROMPT);
 export const PROFILE_SCHEMA_HASH = sha256(stableJson(PROFILE_SCHEMA_DESCRIPTOR));
@@ -302,7 +345,7 @@ export function validateProfileOutputAgainstSnapshot(
   untrustedOutput: unknown,
   snapshot: ProfileInputSnapshotPayload,
 ): ProfileDraftOutput {
-  const output = ProfileDraftOutputSchema.parse(untrustedOutput);
+  const output = ProfileDraftOutputSchema.parse(normalizeProfileDraftOutput(untrustedOutput));
   validateProfileReferences(output, snapshot);
   return output;
 }

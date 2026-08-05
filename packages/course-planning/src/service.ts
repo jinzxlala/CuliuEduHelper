@@ -19,6 +19,7 @@ import {
   ApprovedCourseRuleSchema,
   ApprovedCourseSchema,
   CatalogTransitionInputSchema,
+  CourseCatalogVersionSchema,
   CourseRuleDefinitionSchema,
   CreateCourseInputSchema,
   CreateCourseRuleInputSchema,
@@ -28,6 +29,7 @@ import {
   type ApprovedCourseCatalogSnapshot,
   type ApprovedCourseRule,
   type CatalogTransitionInput,
+  type CourseCatalogVersion,
   type CourseRuleDefinition,
   type CourseVersionContent,
   type CreateCourseInput,
@@ -72,6 +74,13 @@ interface CourseVersionRow {
   updatedAt: Date;
   version: number;
   weeklyLoadMinutes: number;
+}
+
+interface ManagedCourseVersionRow extends CourseVersionRow {
+  createdAt: Date;
+  invalidationReason: string | null;
+  sourceCourseVersionId: string | null;
+  status: "approved" | "archived" | "draft";
 }
 
 async function requireCatalogActor(
@@ -363,6 +372,103 @@ async function readApprovedCourses(database: QueryExecutor): Promise<ApprovedCou
       },
       courseId: row.courseId,
       courseVersionId: row.courseVersionId,
+      version: row.version,
+    }),
+  );
+}
+
+export async function readCourseCatalogVersions(
+  database: QueryExecutor,
+  rawPrincipal: SessionPrincipal,
+): Promise<CourseCatalogVersion[]> {
+  await requireCatalogActor(database, rawPrincipal, "manage");
+  const rows: ManagedCourseVersionRow[] = await database
+    .select({
+      approvedAt: courseVersions.approvedAt,
+      approvedByUserId: courseVersions.approvedByUserId,
+      capabilityTags: courseVersions.capabilityTags,
+      code: courses.code,
+      courseId: courses.id,
+      courseVersionId: courseVersions.id,
+      createdAt: courseVersions.createdAt,
+      deliverables: courseVersions.deliverables,
+      deliveryMode: courseVersions.deliveryMode,
+      difficulty: courseVersions.difficulty,
+      durationWeeks: courseVersions.durationWeeks,
+      invalidationReason: courseVersions.invalidationReason,
+      notSuitableConditions: courseVersions.notSuitableConditions,
+      objectives: courseVersions.objectives,
+      projectTypes: courseVersions.projectTypes,
+      sourceCourseVersionId: courseVersions.sourceCourseVersionId,
+      stage: courseVersions.stage,
+      status: courseVersions.status,
+      subjectTags: courseVersions.subjectTags,
+      summary: courseVersions.summary,
+      termEndDate: courseVersions.termEndDate,
+      termStartDate: courseVersions.termStartDate,
+      title: courseVersions.title,
+      totalInstructionMinutes: courseVersions.totalInstructionMinutes,
+      updatedAt: courseVersions.updatedAt,
+      version: courseVersions.version,
+      weeklyLoadMinutes: courseVersions.weeklyLoadMinutes,
+    })
+    .from(courseVersions)
+    .innerJoin(courses, eq(courses.id, courseVersions.courseId))
+    .orderBy(asc(courses.code), sql`${courseVersions.version} desc`);
+  const versionIds = rows.map((row) => row.courseVersionId);
+  const sessionRows =
+    versionIds.length === 0
+      ? []
+      : await database
+          .select({
+            courseVersionId: courseScheduleSessions.courseVersionId,
+            endMinute: courseScheduleSessions.endMinute,
+            startMinute: courseScheduleSessions.startMinute,
+            weekday: courseScheduleSessions.weekday,
+          })
+          .from(courseScheduleSessions)
+          .where(inArray(courseScheduleSessions.courseVersionId, versionIds))
+          .orderBy(asc(courseScheduleSessions.weekday), asc(courseScheduleSessions.startMinute));
+  const sessionsByVersion = new Map<string, typeof sessionRows>();
+  for (const session of sessionRows) {
+    const current = sessionsByVersion.get(session.courseVersionId) ?? [];
+    current.push(session);
+    sessionsByVersion.set(session.courseVersionId, current);
+  }
+  return rows.map((row) =>
+    CourseCatalogVersionSchema.parse({
+      approvedAt: row.approvedAt?.toISOString() ?? null,
+      code: row.code,
+      content: {
+        capabilityTags: row.capabilityTags,
+        deliverables: row.deliverables,
+        deliveryMode: row.deliveryMode,
+        difficulty: row.difficulty,
+        durationWeeks: row.durationWeeks,
+        notSuitableConditions: row.notSuitableConditions,
+        objectives: row.objectives,
+        projectTypes: row.projectTypes,
+        schedule: (sessionsByVersion.get(row.courseVersionId) ?? []).map((session) => ({
+          endMinute: session.endMinute,
+          startMinute: session.startMinute,
+          weekday: session.weekday,
+        })),
+        stage: row.stage,
+        subjectTags: row.subjectTags,
+        summary: row.summary,
+        ...(row.termEndDate === null ? {} : { termEndDate: row.termEndDate }),
+        ...(row.termStartDate === null ? {} : { termStartDate: row.termStartDate }),
+        title: row.title,
+        totalInstructionMinutes: row.totalInstructionMinutes,
+        weeklyLoadMinutes: row.weeklyLoadMinutes,
+      },
+      courseId: row.courseId,
+      courseVersionId: row.courseVersionId,
+      createdAt: row.createdAt.toISOString(),
+      invalidationReason: row.invalidationReason,
+      sourceCourseVersionId: row.sourceCourseVersionId,
+      status: row.status,
+      updatedAt: row.updatedAt.toISOString(),
       version: row.version,
     }),
   );

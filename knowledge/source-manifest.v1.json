@@ -7,7 +7,7 @@
     "student_data_allowed": false
   },
   "builder_version": "0.1.0",
-  "corpus_hash": "6e0e05d877bce46f09d17f5e1d00d16a96c08a916125646bb45f4394cbbb7008",
+  "corpus_hash": "800bcf59480b310c23831b813e2ee8d2d58688e303da0bc83723e1ce455de030",
   "corpus_id": "eduknow_knowledge_sources_v1",
   "excluded_files": [
     {
@@ -61,6 +61,16 @@
         "ai_depth",
         "confidence",
         "evidence_boundary",
+        "profile_summary",
+        "development_path",
+        "core_projects",
+        "core_strengths",
+        "application_strategy",
+        "advisor_insights",
+        "verified_facts",
+        "interpretations",
+        "missing_information",
+        "evidence_points",
         "timestamp_refs"
       ],
       "target_index": "cases",
@@ -106,14 +116,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "ba6da408d94a40fe7e2271c6651510134a4a646f53c177aa0696f1c9bf090a6f",
+      "bundle_hash": "563aea2c2d0f966e0b7473cfce8c7de8169bc251565e3e43365873681ae1c482",
       "lecture_date": "2025-12-04",
       "lecture_id": "lecture_20251204_462c077301ff",
       "source_key": "2025-12-04_3年115枚大藤海狸学院重磅发布",
       "sources": [
         {
-          "bytes": 8423,
-          "content_sha256": "3234b2517d9df88d2c70f6822e0b07a1bfbba7b0d06a4fa0bd3aba21a1c39fdc",
+          "bytes": 6582,
+          "content_sha256": "3b77bd1a052d7977c1059930aaa52883d4697102da759aae73d2cf8f08c6b089",
           "logical_path": "knowledge/analysis/2025-12-04_3年115枚大藤海狸学院重磅发布.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-04_3年115枚大藤海狸学院重磅发布.md",
@@ -178,14 +188,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "d3b3e24e0aa5e35591fcb51d8199716584b01c29bba3d1233569bbc45d3b949b",
+      "bundle_hash": "9b489a5a0fdffa84cb5b459afba72d2144be8148c0f4af3bdeab9cecf634e615",
       "lecture_date": "2025-12-17",
       "lecture_id": "lecture_20251217_04179e7643c6",
       "source_key": "2025-12-17_早申放榜对话美本屡创第一凭远",
       "sources": [
         {
-          "bytes": 7976,
-          "content_sha256": "6c1e8d78be1e36ddb89902d31bc1ea6b626f334f4dec3e456343560cd2e096e4",
+          "bytes": 6368,
+          "content_sha256": "d515bfcccecfd59163a024cef17fc4dd45c340756dd31f956a5289d864ad0d22",
           "logical_path": "knowledge/analysis/2025-12-17_早申放榜对话美本屡创第一凭远.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-17_早申放榜对话美本屡创第一凭远.md",
@@ -250,14 +260,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "45f2b6c8c224a7294b000b72a37505ac8d16b1456d1bf51f7c9baedacf7c4fbd",
+      "bundle_hash": "d22b67ccd357859a090b341b946d4eff274a2f5d5af22c063cf433523dca1712",
       "lecture_date": "2025-12-18",
       "lecture_id": "lecture_20251218_047520c95ace",
       "source_key": "2025-12-18_放榜棒呆解码爬藤核心策略",
       "sources": [
         {
-          "bytes": 8468,
-          "content_sha256": "6dc57767c409dc1524bc2ec2d53b6b93295a02437c24213c6ba6c8bf4cb81088",
+          "bytes": 6294,
+          "content_sha256": "fa8f315ab6609f44035c7250b0aa9f459047557a5fc68b5098546d34c02059f1",
           "logical_path": "knowledge/analysis/2025-12-18_放榜棒呆解码爬藤核心策略.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-18_放榜棒呆解码爬藤核心策略.md",
@@ -322,14 +332,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "9d0aefbe7502e45b59270fba03c1577799d50976c54eb86c25095b4c888212d6",
+      "bundle_hash": "fc8ad1707308aba7049cf4d8dc5a8e057ab19855f3b2bd147ddf6f8e6c181294",
       "lecture_date": "2025-12-18",
       "lecture_id": "lecture_20251218_94e2e9f6d2dd",
       "source_key": "2025-12-18_老查最新录取画像剖析王牌竟是",
       "sources": [
         {
-          "bytes": 10226,
-          "content_sha256": "a522c1183da69d60368c90f6122213f74f250966045357e2616c4e37d7bdfb34",
+          "bytes": 18074,
+          "content_sha256": "023827c8c0577d2e7755628febe2b5ea96ecd9538091a47cfc0ecd8961e8bfa9",
           "logical_path": "knowledge/analysis/2025-12-18_老查最新录取画像剖析王牌竟是.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-18_老查最新录取画像剖析王牌竟是.md",
@@ -394,14 +404,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "c7ef51d337352aaa11e63e8b00a71066be43f785d54a57c343021942341cc384",
+      "bundle_hash": "e27da1cb6952281ad6fbef5e1d4089e0eab35fd259bc6c3a8abe6c66dcf6a5af",
       "lecture_date": "2025-12-19",
       "lecture_id": "lecture_20251219_d62425d9f058",
       "source_key": "2025-12-19_CMC横纵向对比早申风向变了吗",
       "sources": [
         {
-          "bytes": 13298,
-          "content_sha256": "25e32f7826bd233826fa00e3b9680289fd413d2b7bf7e2a53e419de0fcd11283",
+          "bytes": 36960,
+          "content_sha256": "bc21dcd8122e8e56149bd03777915fa9f713694624e0cd46c0c1f2c422fc8e92",
           "logical_path": "knowledge/analysis/2025-12-19_CMC横纵向对比早申风向变了吗.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-19_CMC横纵向对比早申风向变了吗.md",
@@ -466,14 +476,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "3e600be642b513474329c5ed94980a9bfbd3eb6287996efd5f05d3a87700b709",
+      "bundle_hash": "c6a0f7cfe26b86e7258f49c5ade7d928971982247d1c6b236f50c8d1b8388d80",
       "lecture_date": "2025-12-19",
       "lecture_id": "lecture_20251219_07fb5dec2f8d",
       "source_key": "2025-12-19_放榜三士渡剖析早申数据的背后",
       "sources": [
         {
-          "bytes": 10383,
-          "content_sha256": "2cac07cebca4010186956694c5819464433f10100bd8a18a0ba9e5e9378b7467",
+          "bytes": 6828,
+          "content_sha256": "9acfd2e69952d38ad1a650149401bb34a15f79ae8391284622929990fdcd829a",
           "logical_path": "knowledge/analysis/2025-12-19_放榜三士渡剖析早申数据的背后.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-19_放榜三士渡剖析早申数据的背后.md",
@@ -538,14 +548,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "2c10f2e3273794d842e52e56a9e20534532de5d66e283dd061d194690dbfdd50",
+      "bundle_hash": "66e9d4da1ba17e490e1325b74dbe98b90ceb6ab34eab2473c34e0bb99983fca8",
       "lecture_date": "2025-12-22",
       "lecture_id": "lecture_20251222_a3ce77606cff",
       "source_key": "2025-12-22_体制内辍学后他进了斯沃斯莫尔",
       "sources": [
         {
-          "bytes": 12639,
-          "content_sha256": "2a0a1cecfe805ed8ee77f49062fa4cc28f613590e7e446b57c97f1faa07be817",
+          "bytes": 17573,
+          "content_sha256": "3b6fa464a92f9b4a4070ce34f3294cc2ab7af067b5854048d24d00a9ec97126e",
           "logical_path": "knowledge/analysis/2025-12-22_体制内辍学后他进了斯沃斯莫尔.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-22_体制内辍学后他进了斯沃斯莫尔.md",
@@ -610,14 +620,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "6d23c769e3e99a524bc867745d6ae6b046da5da2e0d8d022c48ef8f32ad04e59",
+      "bundle_hash": "79eb6494ae5525e33f2bfda0dd02e0ca08b45f0c830dc7d38eeaa37d1bccc4f6",
       "lecture_date": "2025-12-24",
       "lecture_id": "lecture_20251224_45f787d6277a",
       "source_key": "2025-12-24_关于早申我有话说大咖圆桌派",
       "sources": [
         {
-          "bytes": 11322,
-          "content_sha256": "972dcbbdd6f6810fa32e45bf31bee09142e610bc1f94da5a4aa11bb4f1c96937",
+          "bytes": 20588,
+          "content_sha256": "789a27526e4def56d22d6a79fc0f56292ddf9712de0cfdd4b3b0c7729462e4ee",
           "logical_path": "knowledge/analysis/2025-12-24_关于早申我有话说大咖圆桌派.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-24_关于早申我有话说大咖圆桌派.md",
@@ -682,14 +692,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "0519fb3dc7c710177c398a611088048831649dcd51bdf9db2e515c33bb47c570",
+      "bundle_hash": "f3d95e9258d3678acf5a2fe64ba93d51201986450acd5c54a355d03b7cf38714",
       "lecture_date": "2025-12-24",
       "lecture_id": "lecture_20251224_6500fa2967a7",
       "source_key": "2025-12-24_早申趋势突变藤校青睐画像重构",
       "sources": [
         {
-          "bytes": 11212,
-          "content_sha256": "afea669d0ad36d5dd4b923b8d568dd07e4ca43dbfd6639d7bdf9323a907fc43f",
+          "bytes": 28703,
+          "content_sha256": "f1111908cb252b426aa460b2626606992587a5b3a514e6f6c02feb4f7bd2b03e",
           "logical_path": "knowledge/analysis/2025-12-24_早申趋势突变藤校青睐画像重构.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-24_早申趋势突变藤校青睐画像重构.md",
@@ -754,14 +764,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "7fe29a527c91078f8676cb5f504b4fafd16fde60ee664c532c6c81e181f35d3e",
+      "bundle_hash": "d3a8524cfe627d70a63efb73065ca10cc3cffdb50069e698bd92e902b5472049",
       "lecture_date": "2025-12-25",
       "lecture_id": "lecture_20251225_c5bacf73742f",
       "source_key": "2025-12-25_早申30枚王牌专业录取案例拆解",
       "sources": [
         {
-          "bytes": 11535,
-          "content_sha256": "0fbb5e9abc81314608bb9bc6741ff16254c698a23ec3b115106495dd3658aff7",
+          "bytes": 21099,
+          "content_sha256": "6cfcce5b85c34a5c26958aa779169310e3c40cd74c4152e27e320c44bd831bd3",
           "logical_path": "knowledge/analysis/2025-12-25_早申30枚王牌专业录取案例拆解.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-25_早申30枚王牌专业录取案例拆解.md",
@@ -826,14 +836,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "f700b86059c42b15d59a4311905bc38ba57869dc0a27807bf02369f0ac57213b",
+      "bundle_hash": "fbdc0905a0ad6c1a02cc65581b1a65ac28d3b6d17d93532eb34e270fe0ba0f63",
       "lecture_date": "2025-12-26",
       "lecture_id": "lecture_20251226_4efdd28d912a",
       "source_key": "2025-12-26_2026早申案例解读留学的成长性",
       "sources": [
         {
-          "bytes": 12304,
-          "content_sha256": "8da6cf396d7bd5dbf5b29f59df0a2c365310bf4831e7858be670818210cdc601",
+          "bytes": 38931,
+          "content_sha256": "45719704d8dc5a5c6b5d69f72139f02b8a2d93b0fe6b2a1a7eedd8eeccc49867",
           "logical_path": "knowledge/analysis/2025-12-26_2026早申案例解读留学的成长性.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-26_2026早申案例解读留学的成长性.md",
@@ -898,14 +908,14 @@
         "summary": "2. 讲座摘要",
         "trends": "3. 2026申请趋势清单"
       },
-      "bundle_hash": "09d0fac1c3c3ae71b642de06b0cadc14ad411ccb8b78c99f29fec42048db754e",
+      "bundle_hash": "b7610ba11c250e734897587b52ebb8da02968a13a9e3d3ec8e1a2c57c50617ad",
       "lecture_date": "2025-12-30",
       "lecture_id": "lecture_20251230_5bc9b7491364",
       "source_key": "2025-12-30_特优生揭秘藤校早申录取者特质",
       "sources": [
         {
-          "bytes": 11507,
-          "content_sha256": "564528f41d82c3b386095f9dcd0381b664e8538b025b868799c0fa774f247ae0",
+          "bytes": 19992,
+          "content_sha256": "96d62b59a5421bea895160c374459ceac3b49ccad5addfb8e96f46d9182325a9",
           "logical_path": "knowledge/analysis/2025-12-30_特优生揭秘藤校早申录取者特质.md",
           "mime_type": "text/markdown",
           "relative_path": "2025-12-30_特优生揭秘藤校早申录取者特质.md",
@@ -970,14 +980,14 @@
         "summary": "2. 约 300 字讲座摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "5b2d41e4f671804dbd99f7959950e894fbc3584bd9d534282f3d3806f2f5c33b",
+      "bundle_hash": "a4ff3bc20efb9259040614fd17802cdc04537053f75ce7ab5a6c7b80344d8744",
       "lecture_date": "2026-01-05",
       "lecture_id": "lecture_20260105_2655d5915015",
       "source_key": "2026-01-05_藤校分享生活褶皱里的申请答案",
       "sources": [
         {
-          "bytes": 19707,
-          "content_sha256": "e33b9f9216cc29c900e80f0336a74c5198892ad1e2d6609cd0c867c53b2c35fe",
+          "bytes": 25740,
+          "content_sha256": "3d8c1a9b1304cfba8a94ff100e8af550225d2e3712b26f22c16dc1fd28103f7f",
           "logical_path": "knowledge/analysis/2026-01-05_藤校分享生活褶皱里的申请答案.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-01-05_藤校分享生活褶皱里的申请答案.md",
@@ -1042,14 +1052,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "2db64d876fd8a010e6ad700d7f8e238eba8b0b266802753663cf5d08b1de00b3",
+      "bundle_hash": "9e2856330b734f453ed1de5f14d3e45903cea1f6d0cdc968a2a57f04e2f93d32",
       "lecture_date": "2026-01-15",
       "lecture_id": "lecture_20260115_b25093d1f07d",
       "source_key": "2026-01-15_屡创大藤第一的传奇是如何成就的",
       "sources": [
         {
-          "bytes": 21260,
-          "content_sha256": "44d235d6d3a925889b99cc8dab12acfedd6efbf99de618bb58a11c9a496aee8a",
+          "bytes": 34851,
+          "content_sha256": "100104d830c9a26471f938bff0f665cd7899b3ab68957cc1b2a1fc30318ee536",
           "logical_path": "knowledge/analysis/2026-01-15_屡创大藤第一的传奇是如何成就的.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-01-15_屡创大藤第一的传奇是如何成就的.md",
@@ -1114,14 +1124,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "d6a6e3639e44b945a7103e53ab4d92cac42b3befcbfd4b804ac505a03c7829d3",
+      "bundle_hash": "85b71ba040a58c7bf048f77a84e7382e61a2564eccb4f92fca5ae7f4c0e00fac",
       "lecture_date": "2026-01-20",
       "lecture_id": "lecture_20260120_dc64c96f9d57",
       "source_key": "2026-01-20_避开GPA看不见的坑与超车指南",
       "sources": [
         {
-          "bytes": 15830,
-          "content_sha256": "0ba8f21bbc5fb7f44791301ed7ce58d39009db0af86e07574c7355a0a3a39116",
+          "bytes": 7155,
+          "content_sha256": "222b1ca2238e70ed458dd27b95a0755d158794125dfdaa4ea19e5b8d61825e47",
           "logical_path": "knowledge/analysis/2026-01-20_避开GPA看不见的坑与超车指南.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-01-20_避开GPA看不见的坑与超车指南.md",
@@ -1186,14 +1196,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "741ca69effa3fdb3cc7f5005373cf0adce670c314674fae3a65104284d6e4252",
+      "bundle_hash": "a9f62ccbd5214313afd6f2ef4d68d80d1b94f06136ce5ab068f8162e43595b05",
       "lecture_date": "2026-01-26",
       "lecture_id": "lecture_20260126_c92a0273dbe9",
       "source_key": "2026-01-26_交叉学科20蓝海依旧",
       "sources": [
         {
-          "bytes": 15846,
-          "content_sha256": "3ed13439703448878467489d18287e2d9dff62905c0f7647e944bc8d6163af4f",
+          "bytes": 16586,
+          "content_sha256": "9c5144b7fec3d7d8f38060b176aa68aa9c19011e15527bffe5005b4fd1db37ad",
           "logical_path": "knowledge/analysis/2026-01-26_交叉学科20蓝海依旧.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-01-26_交叉学科20蓝海依旧.md",
@@ -1258,14 +1268,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "6d2ca00b20bea6292e5ac0abfefb972e2eca59dc33094f5329d707bb7a669235",
+      "bundle_hash": "f18a8c590cb1898bf4c0f920d3fcfe28cdc73bcdd4b7a30353539bd0c21cfe07",
       "lecture_date": "2026-03-06",
       "lecture_id": "lecture_20260306_45b8f41be672",
       "source_key": "2026-03-06_科研竞赛还能为爬藤加Buff吗",
       "sources": [
         {
-          "bytes": 16532,
-          "content_sha256": "152aeb9a3d2cc96566e0c4c8779fdc9eb09c3bffb7a38476f5ee36588c2ee175",
+          "bytes": 28539,
+          "content_sha256": "4d53e4cb054d33b4622871dfc65bb1bce2c5d3fde15405c8353d30ccf480a1cc",
           "logical_path": "knowledge/analysis/2026-03-06_科研竞赛还能为爬藤加Buff吗.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-06_科研竞赛还能为爬藤加Buff吗.md",
@@ -1330,14 +1340,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "b9fdcb6f2b8742db16f89be447e5aa598632fb4e49c2bdb6c27bc827a6c836a3",
+      "bundle_hash": "5c8212ecc3b64bc253bf0e74aa4f84f34c4048d585691093cc2fbd8642d4dc7e",
       "lecture_date": "2026-03-14",
       "lecture_id": "lecture_20260314_18aaf177e1f9",
       "source_key": "2026-03-14_头部PK非头部美高爬藤形势分析",
       "sources": [
         {
-          "bytes": 13036,
-          "content_sha256": "0a9431cca1fd328e44cb166aa0fd24d026dd1fd22e28bf240e655fa1fa7fb779",
+          "bytes": 7046,
+          "content_sha256": "3e4b2ef7ed2602db8af39e0a136bcf1f466d6f7158513c4201f2475b2e1e45f3",
           "logical_path": "knowledge/analysis/2026-03-14_头部PK非头部美高爬藤形势分析.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-14_头部PK非头部美高爬藤形势分析.md",
@@ -1402,14 +1412,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "8e9862b34ba03ae9bca6f9ac1680649fa6dcec9bca07f39dffddf2dd343de74e",
+      "bundle_hash": "50bce9eb58e279a63615480c25f61a6cf9f36c91cec18a386a40b7cee504850b",
       "lecture_date": "2026-03-24",
       "lecture_id": "lecture_20260324_53a7493c68ff",
       "source_key": "2026-03-24_非对称竞争跨界叙事博弈藤校",
       "sources": [
         {
-          "bytes": 15750,
-          "content_sha256": "ce00519fc67d44e08da0958d0b4fff2e511a4f52bbe3c83880f9700faa9dc1f5",
+          "bytes": 21040,
+          "content_sha256": "0919d6be7df5c5c7d4cb501d1575a14cc0a32a8020d484b669aab0eecc2cbf75",
           "logical_path": "knowledge/analysis/2026-03-24_非对称竞争跨界叙事博弈藤校.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-24_非对称竞争跨界叙事博弈藤校.md",
@@ -1474,14 +1484,14 @@
         "summary": "2. 约 300 字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "b8bcf2620f716551847fb3732e2edd6459913f47c97001acd1b9c5863dbb5a46",
+      "bundle_hash": "3101a0dbcd39e9d03654be7191c4a551f85d7854ee0a88e1dc3c2e16429996fc",
       "lecture_date": "2026-03-25",
       "lecture_id": "lecture_20260325_b08f8e83d2df",
       "source_key": "2026-03-25_申请没有既定公式更没完美闭环",
       "sources": [
         {
-          "bytes": 12349,
-          "content_sha256": "91ac6a52581d94d2e937be826d8ac6e9ace07dc1434adc7a849ba231604d5202",
+          "bytes": 10214,
+          "content_sha256": "542fc3a63fe5052f62ffc36fbfb6947ebc5f7c1586fe7c02a7f1878da1ffeb0b",
           "logical_path": "knowledge/analysis/2026-03-25_申请没有既定公式更没完美闭环.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-25_申请没有既定公式更没完美闭环.md",
@@ -1546,14 +1556,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 申请趋势清单"
       },
-      "bundle_hash": "524700a1051fc2c9f666c281ed328b1f4465b1d8771532bffab05481a17378dd",
+      "bundle_hash": "dbe3ff29c258e3d081936c66b74d5f8b429b60452f613a87187e84c64c317698",
       "lecture_date": "2026-03-27",
       "lecture_id": "lecture_20260327_b771da35dd5f",
       "source_key": "2026-03-27_RD放榜首场与学美的麻辣对谈",
       "sources": [
         {
-          "bytes": 9100,
-          "content_sha256": "569625c1a2d3b1f9458977c50dea76572e4b065a460d3824632bb54efc7db813",
+          "bytes": 14147,
+          "content_sha256": "eed7d873da5d7f6f7f378dc21b45c1c1b27db16516342d267988add4af929a7b",
           "logical_path": "knowledge/analysis/2026-03-27_RD放榜首场与学美的麻辣对谈.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-27_RD放榜首场与学美的麻辣对谈.md",
@@ -1618,14 +1628,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "bb3f4924b08686aee9cbc53396685537fef83ce5fd630519b203ea86785ed16e",
+      "bundle_hash": "96de2c19628de6e6153d2a987272f84d8aff329801bd2d3788000cb5844de045",
       "lecture_date": "2026-03-28",
       "lecture_id": "lecture_20260328_552e1407e914",
       "source_key": "2026-03-28_IvyDay开榜爬藤团队真心话",
       "sources": [
         {
-          "bytes": 8144,
-          "content_sha256": "f9103a90480946d1746aefef26b7f1c0a7ec63ad2f13ace586014508d63b69c0",
+          "bytes": 17640,
+          "content_sha256": "a2161123da9e12ec94002f43d8881e33f82cdac54e966f409b56831da036ef24",
           "logical_path": "knowledge/analysis/2026-03-28_IvyDay开榜爬藤团队真心话.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-28_IvyDay开榜爬藤团队真心话.md",
@@ -1690,14 +1700,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "6be9f964c4857dda05b5d5b9429a427df96472793b04b2d6d32c4f37ce211fb3",
+      "bundle_hash": "935c0231ed57e53ace0bd40ad63cdb3064471467c09896d5c56cccd63e7eb3ef",
       "lecture_date": "2026-03-29",
       "lecture_id": "lecture_20260329_22e4653bb356",
       "source_key": "2026-03-29_RD放榜藤思藤校选手做对了什么",
       "sources": [
         {
-          "bytes": 6673,
-          "content_sha256": "022a46a8c65ccc4fd800f37f63d6bfd560cc0f7b5ff709a7ee3045cbf394d4ea",
+          "bytes": 26859,
+          "content_sha256": "74d9487e63814e258266bed4542a95d569389e786644899ae44e7e1813b355c4",
           "logical_path": "knowledge/analysis/2026-03-29_RD放榜藤思藤校选手做对了什么.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-29_RD放榜藤思藤校选手做对了什么.md",
@@ -1762,14 +1772,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "7f28909b13908f2c762ee4109a6364c87ac52752e8c4136c520cdc2ab30ce6df",
+      "bundle_hash": "38d07d23a4530531c793b347dfec8ee991f2450a744c6ce932e3668cf766a38e",
       "lecture_date": "2026-03-29",
       "lecture_id": "lecture_20260329_bbdab777bf86",
       "source_key": "2026-03-29_SAT高分的手到擒来与死去活来",
       "sources": [
         {
-          "bytes": 6558,
-          "content_sha256": "8c0b37d183327aa169c71a19d2d1ba0b5b49502aa05ecbc6b3a33eed62abc0df",
+          "bytes": 3563,
+          "content_sha256": "12fc70bca7412f29fba358282c71aa3e1819243f011a826604a361ed192fa38e",
           "logical_path": "knowledge/analysis/2026-03-29_SAT高分的手到擒来与死去活来.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-29_SAT高分的手到擒来与死去活来.md",
@@ -1834,14 +1844,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "393f4410f54cc43fb75061b6d34d7d1fda33dab75a862c869c36b8048187530b",
+      "bundle_hash": "b10734c74e492e69dfa5fa4feed958816c5adc1e3e3c87cb525d4985291ff81c",
       "lecture_date": "2026-03-30",
       "lecture_id": "lecture_20260330_fe986eaa6438",
       "source_key": "2026-03-30_无大奖无暑校如何上加州理工",
       "sources": [
         {
-          "bytes": 6790,
-          "content_sha256": "eba101ed3bea47fa4a610cdf70f120e911f33be42a227a994932522d74557299",
+          "bytes": 15191,
+          "content_sha256": "0cee36e07b9624ef4ed7677863b042e4a7381d180f03fe2d7fa5d4a0243a9f40",
           "logical_path": "knowledge/analysis/2026-03-30_无大奖无暑校如何上加州理工.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-30_无大奖无暑校如何上加州理工.md",
@@ -1906,14 +1916,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "d8cdbb06b2ccb45027f6ee05027b457a3b58e4615e4188b1d15c62445b8fe9fd",
+      "bundle_hash": "ea8ffb475281394e0ca70105f01a408722975eecbdfc16cbddd2a610de8b5b6c",
       "lecture_date": "2026-03-31",
       "lecture_id": "lecture_20260331_d5cef6e0f390",
       "source_key": "2026-03-31_拆解爬藤背后的真实科研叙事",
       "sources": [
         {
-          "bytes": 7670,
-          "content_sha256": "b26c747f2b85375d46fc9cdf3637f553b8dbb957d9a4692b3e2dee007216800b",
+          "bytes": 22568,
+          "content_sha256": "f7a6937c0bc56d69eddb73b9afd620a581e303230790b14253e185194d36b8b4",
           "logical_path": "knowledge/analysis/2026-03-31_拆解爬藤背后的真实科研叙事.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-03-31_拆解爬藤背后的真实科研叙事.md",
@@ -1978,14 +1988,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "cdc8632a04bb992fcf53d005d781574fde6bb7611515056c7203ab331ca28b9f",
+      "bundle_hash": "17468713f5503081136bd286317c28d90d90015baec7e2a60bd6cb51e79e862b",
       "lecture_date": "2026-04-01",
       "lecture_id": "lecture_20260401_7a9c860381c7",
       "source_key": "2026-04-01_发榜后普娃爬藤要如何叠Buff",
       "sources": [
         {
-          "bytes": 5916,
-          "content_sha256": "73c7f942e6c6a26de69e6b124dd9fd630b60a45b0a5ba3b43a87d5980c30e879",
+          "bytes": 12619,
+          "content_sha256": "5b15c8caa168558ead92a7cf9ba248721ed8b4e50ba27ddbfdc20bd0603f6f9a",
           "logical_path": "knowledge/analysis/2026-04-01_发榜后普娃爬藤要如何叠Buff.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-01_发榜后普娃爬藤要如何叠Buff.md",
@@ -2050,14 +2060,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "ad7ac34e89ef073202436744dc6211f12a0562c6e2d84c458c5c4dffccb94121",
+      "bundle_hash": "5c02fee7663826fcfb2effd7b787c1b049a045c9da25d85e7cff0ffca3195364",
       "lecture_date": "2026-04-01",
       "lecture_id": "lecture_20260401_74253128bca2",
       "source_key": "2026-04-01_海狸专场对话4位藤校顶尖导师",
       "sources": [
         {
-          "bytes": 6500,
-          "content_sha256": "d09e346a0fc1f5407434170c16dca8a770c39322972c3c4bf0b271ed2207ba72",
+          "bytes": 8969,
+          "content_sha256": "d6ddba2df35989245944dcc2384a4e6f0434845be879c7440ebe9f3ec42cadbc",
           "logical_path": "knowledge/analysis/2026-04-01_海狸专场对话4位藤校顶尖导师.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-01_海狸专场对话4位藤校顶尖导师.md",
@@ -2122,14 +2132,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "a65318cedf78b67b3e771b009558f88b7948387bd0335b6700ec229937f5449b",
+      "bundle_hash": "0eedb810ec1b2170577e352fe99894039401051fe2d91c8275c24e142ec8ac9b",
       "lecture_date": "2026-04-02",
       "lecture_id": "lecture_20260402_768ee1a28da8",
       "source_key": "2026-04-02_纵观26申请季名校画像新趋势",
       "sources": [
         {
-          "bytes": 5716,
-          "content_sha256": "2498eacd1c842cc4ab9e922db7b44a6e1e515fd2c41baedf9a6c213d71ba4820",
+          "bytes": 19071,
+          "content_sha256": "e0f0e864620dd949cfdec3a787a432c1b1bda43a5f2b8444e1a3ef5702456906",
           "logical_path": "knowledge/analysis/2026-04-02_纵观26申请季名校画像新趋势.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-02_纵观26申请季名校画像新趋势.md",
@@ -2194,14 +2204,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "75c920de733aa2647a344dc96e8bd230da5ae85a630fc7666db89e0c3fdac827",
+      "bundle_hash": "7ac78e14424d23997c55aaaeb6d7ad705e188fd448a7cdff7825d985d8dbb568",
       "lecture_date": "2026-04-08",
       "lecture_id": "lecture_20260408_e7d8166cad49",
       "source_key": "2026-04-08_算法时代为何录取的关键点在人",
       "sources": [
         {
-          "bytes": 6061,
-          "content_sha256": "21e9f11b71a0431d6117564d6504f7596fef918784ffce7a5762df6f8648d0e3",
+          "bytes": 29215,
+          "content_sha256": "27ed0a6fae0899c3fc0c4efe6b69d56ce5d3398491ce1728a1494b51f1117288",
           "logical_path": "knowledge/analysis/2026-04-08_算法时代为何录取的关键点在人.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-08_算法时代为何录取的关键点在人.md",
@@ -2266,14 +2276,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "e130ea05e25751a9844759b7764e9a00b69465f426bef84928209c4080df277d",
+      "bundle_hash": "6d6732921268bf50c78e59aafcf8b675310c7ae095be9f0ba7c02fb6f148c70c",
       "lecture_date": "2026-04-09",
       "lecture_id": "lecture_20260409_c7c91aa0df44",
       "source_key": "2026-04-09_凭远顾问畅聊陆高海高破局案例",
       "sources": [
         {
-          "bytes": 6803,
-          "content_sha256": "66ec5267e4f3297e7e99cdf92cc2d467949af9653f6aa1dc13dbbeb690799752",
+          "bytes": 33632,
+          "content_sha256": "52343c0273b58b41a8742b17d0816c73bc3740b6d9bc09a520658435ec204635",
           "logical_path": "knowledge/analysis/2026-04-09_凭远顾问畅聊陆高海高破局案例.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-09_凭远顾问畅聊陆高海高破局案例.md",
@@ -2338,14 +2348,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "6ed6e864e2eb3a3eb40b9505db27600c060a762cb3e3881f7f3d31c799ed6928",
+      "bundle_hash": "60aaf2a4398b90f0c9763dec8ca1bb695a3b045825106b426d9aa75e9b331959",
       "lecture_date": "2026-04-13",
       "lecture_id": "lecture_20260413_941778904025",
       "source_key": "2026-04-13_解码2026顶尖录取后的学术方案",
       "sources": [
         {
-          "bytes": 6657,
-          "content_sha256": "a52db2ca95d04438eaa517223b5f9071103ef510918302d0df88306ff0fc5b61",
+          "bytes": 12943,
+          "content_sha256": "1399c957ba8d0c4cda1c0fc85d9db76a5a98c6d38a958508f5d7bdd3ce430817",
           "logical_path": "knowledge/analysis/2026-04-13_解码2026顶尖录取后的学术方案.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-13_解码2026顶尖录取后的学术方案.md",
@@ -2410,14 +2420,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "a3f2477c1c8933f7853d56fcafeef3dc3f76efe8b6a1c68f684a237ba2017397",
+      "bundle_hash": "dfc47a4148d1aa5e8ae0ab3d9df127d32e8cbed15f14798b23b668820d66f2fd",
       "lecture_date": "2026-04-14",
       "lecture_id": "lecture_20260414_776c3cfcfe56",
       "source_key": "2026-04-14_打破藤校玄学揭开3大录取谎言",
       "sources": [
         {
-          "bytes": 7467,
-          "content_sha256": "7d0cfd83d58d6fd44f3bd4d6db43a33ad2eb36ddff81356999430f9096b1e48b",
+          "bytes": 23992,
+          "content_sha256": "67f3562c155e4851b7d4cd6deb2fe4657f6303ee350f45a0d4ce07303dfa4d19",
           "logical_path": "knowledge/analysis/2026-04-14_打破藤校玄学揭开3大录取谎言.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-14_打破藤校玄学揭开3大录取谎言.md",
@@ -2482,14 +2492,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "be794e85e2ab3d15ef1a858a4c69906c5cfdef8437958f1a57764dc8a8c545c5",
+      "bundle_hash": "604ce34d15d29916d0ee30cd967578f84c1ddb5e97928ef3e970e79a40639ecb",
       "lecture_date": "2026-04-15",
       "lecture_id": "lecture_20260415_9c70cb97b499",
       "source_key": "2026-04-15_文理均衡无大奖如何冲美本前十",
       "sources": [
         {
-          "bytes": 8043,
-          "content_sha256": "a84df7c267f258c53eab35b714e393ab735063b8e138a20c163952004b9bf93c",
+          "bytes": 18415,
+          "content_sha256": "0f06b67cbe93d038c17ca790b31bdcda0a0d0bee3b4704364962afe0eb8f38ff",
           "logical_path": "knowledge/analysis/2026-04-15_文理均衡无大奖如何冲美本前十.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-15_文理均衡无大奖如何冲美本前十.md",
@@ -2554,14 +2564,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "f254711ee7475e747fa072108b13360d0f699a1f5ea25ddd5a8679b87d85d027",
+      "bundle_hash": "d2b5d0cc44e597c15dd9aa082e2edecef1599169b0b583d3c1f161833497d67a",
       "lecture_date": "2026-04-16",
       "lecture_id": "lecture_20260416_265e039f09a7",
       "source_key": "2026-04-16_早规划深探索真成长美本申请避坑",
       "sources": [
         {
-          "bytes": 7626,
-          "content_sha256": "fb0bfabd3e66f1bb8cc5bfa81650fb10b4bcffaa1aae3877ab8ddac30044d451",
+          "bytes": 20197,
+          "content_sha256": "66610aefd35f59e62d787b79287b883d4a00109e9457822c6f1cc64452f5a8e6",
           "logical_path": "knowledge/analysis/2026-04-16_早规划深探索真成长美本申请避坑.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-16_早规划深探索真成长美本申请避坑.md",
@@ -2626,14 +2636,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "57078b715600904653c60cf58acbae37df9f765b0919281e3fee74436f9023e5",
+      "bundle_hash": "18e3d91ba00c4ddef6048f21dbf65fe0403e0f872056f1802e37963ed993d130",
       "lecture_date": "2026-04-18",
       "lecture_id": "lecture_20260418_69abd9149b9c",
       "source_key": "2026-04-18_美本顶校录取逻辑一次讲清",
       "sources": [
         {
-          "bytes": 6797,
-          "content_sha256": "b27070742c515e61583d2e35e0ae76dbd96ba5bc703effa099d4a22f25570c67",
+          "bytes": 10810,
+          "content_sha256": "2bb3f9c2277e92ff83721927888ad35a267cb02ae94fd1db67a672776b6a195d",
           "logical_path": "knowledge/analysis/2026-04-18_美本顶校录取逻辑一次讲清.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-18_美本顶校录取逻辑一次讲清.md",
@@ -2698,14 +2708,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "1a4592450a53f03f136e205a3e0846d86f12ed33d1ce1cacf0e5f32cfab78457",
+      "bundle_hash": "db91ff51690a671b09df2aa56c47e050ec97d470319db4e4482b7abe960abf6b",
       "lecture_date": "2026-04-20",
       "lecture_id": "lecture_20260420_a6b5f081dbf7",
       "source_key": "2026-04-20_3位2026er的真实录取经",
       "sources": [
         {
-          "bytes": 8676,
-          "content_sha256": "1226e29e817e728b52b86a0e4970b55803d46db78b3f316fccce30556c6f0c8f",
+          "bytes": 9663,
+          "content_sha256": "77d9054142e9c946f4bd0bcb8c3ad1b6bed5f54efae197f79af9a2ca357c7d7f",
           "logical_path": "knowledge/analysis/2026-04-20_3位2026er的真实录取经.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-20_3位2026er的真实录取经.md",
@@ -2770,14 +2780,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "eb605006ac576ebc4e0c6c9c7ad700c065219e969379a52eb7589756020c92e9",
+      "bundle_hash": "714eb672750104ded590fa68b0a435e7851688b9590563fad3874cadaf467974",
       "lecture_date": "2026-04-21",
       "lecture_id": "lecture_20260421_a7071414431f",
       "source_key": "2026-04-21_剧透的美本申请时代坚守恒定价值",
       "sources": [
         {
-          "bytes": 7539,
-          "content_sha256": "b901dfa9eb9824fa5f5ffd2977a3b9d96b300a8367d7570c9cdd51017ce7e74c",
+          "bytes": 12550,
+          "content_sha256": "ebf4924fd3d82e6789bb254a05f969aa51fb064d7eb944459ede656949d26425",
           "logical_path": "knowledge/analysis/2026-04-21_剧透的美本申请时代坚守恒定价值.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-21_剧透的美本申请时代坚守恒定价值.md",
@@ -2842,14 +2852,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "a881ae62ce7cba61dd90723cd85d6c7798c75adcdd43885c90d322119722c74d",
+      "bundle_hash": "12e5960f7538fed95277fef00c6a74e3ac284fc3df1c8223a8ed883694176827",
       "lecture_date": "2026-04-22",
       "lecture_id": "lecture_20260422_e84eccbad205",
       "source_key": "2026-04-22_跨学科能力爬藤申请新buff",
       "sources": [
         {
-          "bytes": 6525,
-          "content_sha256": "58836e365f76eb4c7004ac8cf7048b1c0a89d89c637980a083e5273a05dc9bf1",
+          "bytes": 23459,
+          "content_sha256": "66099b08fdc73fbacc4cee07d5007eb4813825a04863df8c59755db162ba8a80",
           "logical_path": "knowledge/analysis/2026-04-22_跨学科能力爬藤申请新buff.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-22_跨学科能力爬藤申请新buff.md",
@@ -2914,14 +2924,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "668973af995ef2b2d956c6af075af1b50d3cb525896c230451daccc02340e3e0",
+      "bundle_hash": "3b37ae00eaae628ff28cc620b701f6df6171cac1c408da26b30d8ebbe60cd923",
       "lecture_date": "2026-04-29",
       "lecture_id": "lecture_20260429_93268de7a6f7",
       "source_key": "2026-04-29_满分履历折戟名校是活动不够原创",
       "sources": [
         {
-          "bytes": 9018,
-          "content_sha256": "7bdea92cb2fc826770cc9e3fbebb6c18d15c29cfebf707aeb9ff100271fe8c83",
+          "bytes": 10311,
+          "content_sha256": "49dfeae072bd43de07e344f1cdcd935151f7fe6e88c12728513bf8977fef3141",
           "logical_path": "knowledge/analysis/2026-04-29_满分履历折戟名校是活动不够原创.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-04-29_满分履历折戟名校是活动不够原创.md",
@@ -2986,14 +2996,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "e560a7122fe121996b9c8914d9e0e2fb1cfd2b643124f63dd248d9a08aa2ce04",
+      "bundle_hash": "4dd1b64bc89dc7904e441bc2d91869163b02f86588cb874f92c07ebf76dc56ec",
       "lecture_date": "2026-05-12",
       "lecture_id": "lecture_20260512_92a84d83ad37",
       "source_key": "2026-05-12_从普高到布朗他被录取的关键是",
       "sources": [
         {
-          "bytes": 7292,
-          "content_sha256": "ed121faa1d84546ea82d5be8b77b602bf83c6d81ccafae36ab6bf662a2250836",
+          "bytes": 7566,
+          "content_sha256": "4099cd5573f6e8888ddc090341d10f6940d5d15aebd62706b4e1c2604932028d",
           "logical_path": "knowledge/analysis/2026-05-12_从普高到布朗他被录取的关键是.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-05-12_从普高到布朗他被录取的关键是.md",
@@ -3058,14 +3068,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "174054d8e7f2b92c970a27bb763ada55874c94f1417e49685f0de7da5503bb97",
+      "bundle_hash": "2d630d16ef55accac005c61ea3bc8bfc15fb1e010d812362c9cb22a7620e7712",
       "lecture_date": "2026-05-18",
       "lecture_id": "lecture_20260518_6ade1ad9ee56",
       "source_key": "2026-05-18_爬藤背后的长线养成系统",
       "sources": [
         {
-          "bytes": 6699,
-          "content_sha256": "5dbcee605a23fff1da0ce05e32d5df3b927807aa557efd4067325557dc45a3fe",
+          "bytes": 21598,
+          "content_sha256": "58028d716d46e8acc4aae2984588973fe4a727c08ea71ad4579a3e540236e622",
           "logical_path": "knowledge/analysis/2026-05-18_爬藤背后的长线养成系统.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-05-18_爬藤背后的长线养成系统.md",
@@ -3130,14 +3140,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "b889ff421a0192d407d3bec4706c349ea2c6554339d4034ed887346c61e4880f",
+      "bundle_hash": "b42e1224123333e414a6a3cd58de824f5d02a98fc2a171b4a6d022695ea90538",
       "lecture_date": "2026-05-20",
       "lecture_id": "lecture_20260520_497f95b8c700",
       "source_key": "2026-05-20_用一份努力跑赢三件事",
       "sources": [
         {
-          "bytes": 6437,
-          "content_sha256": "cba37d8ff1223e45c2d6d44fb21323e44a3a9051abd74e80d16efd4ccb68fbf1",
+          "bytes": 24123,
+          "content_sha256": "5cf2e8d04fa02bf62619f43c88a2a15239e87f8c328c24a5bdd5fb63e2ff2393",
           "logical_path": "knowledge/analysis/2026-05-20_用一份努力跑赢三件事.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-05-20_用一份努力跑赢三件事.md",
@@ -3202,14 +3212,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "43a09e2cd413b446129b52872a557a58aac58e2fb8b8e5e4dcef98c3f1880177",
+      "bundle_hash": "4bd0e66187ecfe30b8463adf9cec2422c8ae283eb52e6d3ced41369dc998f512",
       "lecture_date": "2026-05-25",
       "lecture_id": "lecture_20260525_8858b1cb6dce",
       "source_key": "2026-05-25_2026ISEF赛后复盘",
       "sources": [
         {
-          "bytes": 6813,
-          "content_sha256": "fb2fe4c1f594d99be92543141f2800b4e876b67b3cda423886f491b2cd95bc55",
+          "bytes": 8768,
+          "content_sha256": "5ffaf0666a727be7459da1c4c92cb30f5afeb5548aaa35383aa29f23fc530ad0",
           "logical_path": "knowledge/analysis/2026-05-25_2026ISEF赛后复盘.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-05-25_2026ISEF赛后复盘.md",
@@ -3274,14 +3284,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "7f340dd97eba2b1ec956008a1d190cb74d3007af90419fb7b04a4a931041d68c",
+      "bundle_hash": "cc45a0deceea5d18c45011008a2f470f07c6656a920572bed22eb0ac25ab2cea",
       "lecture_date": "2026-06-03",
       "lecture_id": "lecture_20260603_10b103df0902",
       "source_key": "2026-06-03_大藤前20意外录取背后逻辑",
       "sources": [
         {
-          "bytes": 5841,
-          "content_sha256": "abae8e44cedf5994cbe92c3efe3fc0d0ed57605c8fbdf5b059b2c9153d816f9f",
+          "bytes": 14673,
+          "content_sha256": "19bd9dbd542cf9467f997d35300f35b346423f27e3478bab398164e5c7355ccb",
           "logical_path": "knowledge/analysis/2026-06-03_大藤前20意外录取背后逻辑.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-06-03_大藤前20意外录取背后逻辑.md",
@@ -3346,14 +3356,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "12123bf71c82780d6a30041ba2639b98102384f521384a2099f1754dade62438",
+      "bundle_hash": "cffe984e4712d6a3c9b50722e1ba62593310b879d073d61346f797b644c90f9f",
       "lecture_date": "2026-06-08",
       "lecture_id": "lecture_20260608_a5e60ab05d74",
       "source_key": "2026-06-08_交叉学科在美本申请中的利弊",
       "sources": [
         {
-          "bytes": 6889,
-          "content_sha256": "7932be48ddf5d8ac359c54a3796fdd95527f1f6713f6a4693e6f310637a2781c",
+          "bytes": 10361,
+          "content_sha256": "70633432a0c189473015f1b42416e004fc6267dbc2364f2d576a74a1791dbecb",
           "logical_path": "knowledge/analysis/2026-06-08_交叉学科在美本申请中的利弊.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-06-08_交叉学科在美本申请中的利弊.md",
@@ -3418,14 +3428,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "942cb90487f4150e626d74ba9af4460c5db3adbb55a7307d38348bbd154a86e4",
+      "bundle_hash": "00aa788004043b3e4c5a8d20ae06f90d9af32060d0a8bfcda267ee5dd5c5d095",
       "lecture_date": "2026-06-15",
       "lecture_id": "lecture_20260615_ef79b2994b91",
       "source_key": "2026-06-15_Agent时代普娃也有好出路",
       "sources": [
         {
-          "bytes": 6295,
-          "content_sha256": "4f8aac3347c031a3af7712d5ed34b6aff3e3682248defb794220d7f2c9f2ebc1",
+          "bytes": 17561,
+          "content_sha256": "8bf2f8391ffab0310363ebb5cc0c85ae90363c4db8c1721bea6574d50df78326",
           "logical_path": "knowledge/analysis/2026-06-15_Agent时代普娃也有好出路.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-06-15_Agent时代普娃也有好出路.md",
@@ -3490,14 +3500,14 @@
         "summary": "2. 约300字摘要",
         "trends": "3. 趋势清单"
       },
-      "bundle_hash": "4d2aa36a2acb3eef7be08782011d7e8e9935d25e46a8645580479582ce13650f",
+      "bundle_hash": "797d2bf4a0231bbc44e1d4842fe67cf7557212e435d207b1a08b404ce7158023",
       "lecture_date": "2026-06-29",
       "lecture_id": "lecture_20260629_abdb96cc1922",
       "source_key": "2026-06-29_2027ISEF制胜关键策略",
       "sources": [
         {
-          "bytes": 8226,
-          "content_sha256": "029b86ba67a0a0e2c2be8b771080310ccfe3e507f37db605906a5ab94233effe",
+          "bytes": 10516,
+          "content_sha256": "c3cd092e7d17eff7a34e960b316a1db89ad3c7300155879047ad5e846f3c04f2",
           "logical_path": "knowledge/analysis/2026-06-29_2027ISEF制胜关键策略.md",
           "mime_type": "text/markdown",
           "relative_path": "2026-06-29_2027ISEF制胜关键策略.md",
@@ -3552,7 +3562,7 @@
     }
   ],
   "manifest_version": "1.0.0",
-  "mapping_version": "1.0.0",
+  "mapping_version": "2.1.0",
   "source_policies": [
     {
       "allowed_index_targets": [

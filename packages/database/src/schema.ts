@@ -1947,6 +1947,38 @@ export const knowledgeCaseVersions = pgTable(
     aiDepth: text("ai_depth"),
     confidence: varchar("confidence", { length: 16 }).notNull(),
     evidenceBoundary: text("evidence_boundary").notNull(),
+    profileSummary: text("profile_summary").notNull().default(""),
+    developmentPath: jsonb("development_path").$type<string[]>().notNull().default([]),
+    coreProjects: jsonb("core_projects")
+      .$type<
+        Array<{
+          actions: string[];
+          impact: string;
+          methods: string[];
+          name: string;
+          outputs: string[];
+          role: string;
+        }>
+      >()
+      .notNull()
+      .default([]),
+    coreStrengths: jsonb("core_strengths").$type<string[]>().notNull().default([]),
+    applicationStrategy: jsonb("application_strategy").$type<string[]>().notNull().default([]),
+    advisorInsights: jsonb("advisor_insights").$type<string[]>().notNull().default([]),
+    verifiedFacts: jsonb("verified_facts").$type<string[]>().notNull().default([]),
+    interpretations: jsonb("interpretations").$type<string[]>().notNull().default([]),
+    missingInformation: jsonb("missing_information").$type<string[]>().notNull().default([]),
+    evidencePoints: jsonb("evidence_points")
+      .$type<
+        Array<{
+          claim: string;
+          confidence: "high" | "medium" | "low" | "unknown";
+          evidence: string;
+          source_locator: string;
+        }>
+      >()
+      .notNull()
+      .default([]),
     timestampRefs: jsonb("timestamp_refs")
       .$type<
         Array<{

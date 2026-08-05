@@ -24,6 +24,7 @@ import {
   createCourse,
   createCourseRule,
   loadApprovedCourseCatalog,
+  readCourseCatalogVersions,
   reviseCourseVersion,
   transitionCourseRule,
   transitionCourseVersion,
@@ -240,6 +241,9 @@ describe("versioned course catalog service", () => {
         content: scheduledContent("Forbidden Synthetic Course", 780),
       }),
     ).rejects.toBeInstanceOf(CourseCatalogAuthorizationError);
+    await expect(
+      readCourseCatalogVersions(activeClient().database, advisor),
+    ).rejects.toBeInstanceOf(CourseCatalogAuthorizationError);
     await activeClient()
       .database.update(appUsers)
       .set({ active: false })
@@ -272,6 +276,23 @@ describe("versioned course catalog service", () => {
       },
     );
     expect(revision.version).toBe(2);
+    const managedVersions = (
+      await readCourseCatalogVersions(activeClient().database, admin)
+    ).filter((course) => course.code === "SYN_VERSIONED");
+    expect(managedVersions).toMatchObject([
+      {
+        content: { title: "Synthetic Version Two" },
+        sourceCourseVersionId: source.courseVersionId,
+        status: "draft",
+        version: 2,
+      },
+      {
+        content: { title: "Synthetic Version One" },
+        sourceCourseVersionId: null,
+        status: "approved",
+        version: 1,
+      },
+    ]);
     await expect(
       activeClient().pool.query('delete from "course_version" where "id" = $1', [
         revision.courseVersionId,

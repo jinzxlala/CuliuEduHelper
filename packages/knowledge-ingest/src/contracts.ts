@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const KNOWLEDGE_SOURCE_MANIFEST_VERSION = "1.0.0" as const;
-export const KNOWLEDGE_MAPPING_VERSION = "1.0.0" as const;
+export const KNOWLEDGE_MAPPING_VERSION = "2.1.0" as const;
 export const KNOWLEDGE_CORPUS_ID = "eduknow_knowledge_sources_v1" as const;
 export const MAX_LECTURE_COUNT = 10_000 as const;
 

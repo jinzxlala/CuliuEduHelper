@@ -5,15 +5,15 @@
     "status": "draft"
   },
   "corpus": {
-    "corpus_hash": "6e0e05d877bce46f09d17f5e1d00d16a96c08a916125646bb45f4394cbbb7008",
+    "corpus_hash": "800bcf59480b310c23831b813e2ee8d2d58688e303da0bc83723e1ce455de030",
     "corpus_id": "eduknow_knowledge_sources_v1",
     "manifest_version": "1.0.0",
-    "mapping_version": "1.0.0"
+    "mapping_version": "2.1.0"
   },
-  "drafted_at": "2026-08-02T00:00:00+08:00",
+  "drafted_at": "2026-08-05T00:00:00+08:00",
   "drafted_by": "Code Agent",
   "fixture_id": "eduknow_search_gold_v1",
-  "fixture_version": "1.0.0",
+  "fixture_version": "1.1.0",
   "queries": [
     {
       "critical": true,
@@ -273,17 +273,17 @@
     },
     {
       "critical": true,
-      "description": "方言化AI心理支持主题定位",
-      "expected_hit_ids": ["case_20251219_07fb5dec2f8d_002"],
+      "description": "AI情绪识别与家庭通讯录组合定位",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_004"],
       "id": "gold_case_003",
-      "input": { "filters": {}, "query": "方言化AI 心理支持" },
+      "input": { "filters": {}, "query": "AI 情绪识别 通讯录" },
       "tags": ["mixed_language", "evidence_boundary"],
       "target": "cases"
     },
     {
       "critical": false,
       "description": "数据科学STS与人文作品组合定位",
-      "expected_hit_ids": ["case_20251219_d62425d9f058_002"],
+      "expected_hit_ids": ["case_20251219_d62425d9f058_003"],
       "id": "gold_case_004",
       "input": { "filters": {}, "query": "数据科学 STS 人文作品" },
       "tags": ["mixed_language", "alias_or_abbreviation"],
@@ -291,19 +291,19 @@
     },
     {
       "critical": false,
-      "description": "音乐脑科学健康组合定位",
-      "expected_hit_ids": ["case_20251219_d62425d9f058_003"],
+      "description": "基因序列、山西地域与胃病研究组合定位",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_003"],
       "id": "gold_case_005",
-      "input": { "filters": {}, "query": "音乐 脑科学 健康" },
+      "input": { "filters": {}, "query": "基因序列 山西 胃病" },
       "tags": ["chinese_tokenization"],
       "target": "cases"
     },
     {
       "critical": false,
-      "description": "科研自主性与知识生产组合定位STS案例",
-      "expected_hit_ids": ["case_20251222_a3ce77606cff_003"],
+      "description": "真实科研经历与科学家交流组合定位",
+      "expected_hit_ids": ["case_20251222_a3ce77606cff_001"],
       "id": "gold_case_006",
-      "input": { "filters": {}, "query": "科研自主性 STS 知识生产" },
+      "input": { "filters": {}, "query": "真实科研 幽默 科学家" },
       "tags": ["mixed_language", "evidence_boundary"],
       "target": "cases"
     },
@@ -312,16 +312,16 @@
       "description": "罕见主题词定位食肉苔藓案例",
       "expected_hit_ids": ["case_20251224_45f787d6277a_001"],
       "id": "gold_case_007",
-      "input": { "filters": {}, "query": "食肉苔藓" },
+      "input": { "filters": {}, "query": "苔藓 食虫植物" },
       "tags": ["exact_phrase", "chinese_tokenization"],
       "target": "cases"
     },
     {
       "critical": true,
-      "description": "观鸟湿地自然声音组合定位跨学科案例",
-      "expected_hit_ids": ["case_20251224_45f787d6277a_003"],
+      "description": "观鸟摄影与绘画作品集组合定位跨学科案例",
+      "expected_hit_ids": ["case_20251224_45f787d6277a_002"],
       "id": "gold_case_008",
-      "input": { "filters": {}, "query": "长期观鸟 湿地 自然声音" },
+      "input": { "filters": {}, "query": "观鸟 摄影 绘画作品集" },
       "tags": ["chinese_tokenization", "field_weight"],
       "target": "cases"
     },
@@ -345,19 +345,19 @@
     },
     {
       "critical": false,
-      "description": "主题乐园商业工程与童年空间组合定位",
+      "description": "迪士尼商业园区与空间设计组合定位",
       "expected_hit_ids": ["case_20251225_c5bacf73742f_001"],
       "id": "gold_case_011",
-      "input": { "filters": {}, "query": "主题乐园 商业 工程 童年空间" },
+      "input": { "filters": {}, "query": "迪士尼 商业 园区" },
       "tags": ["chinese_tokenization"],
       "target": "cases"
     },
     {
       "critical": true,
-      "description": "语音语调和抑郁倾向组合定位",
+      "description": "情绪识别、通讯录与家庭互动组合定位",
       "expected_hit_ids": ["case_20251225_c5bacf73742f_004"],
       "id": "gold_case_012",
-      "input": { "filters": {}, "query": "语音语调 抑郁倾向" },
+      "input": { "filters": {}, "query": "情绪识别 通讯录 家人" },
       "tags": ["chinese_tokenization", "evidence_boundary"],
       "target": "cases"
     },
@@ -391,7 +391,7 @@
     {
       "critical": false,
       "description": "文化遗产与社区行动组合定位古建筑保护案例",
-      "expected_hit_ids": ["case_20251230_5bc9b7491364_004"],
+      "expected_hit_ids": ["case_20251230_5bc9b7491364_005"],
       "id": "gold_case_016",
       "input": { "filters": {}, "query": "古建筑保护 文化遗产 社区行动" },
       "tags": ["chinese_tokenization"],
@@ -417,27 +417,27 @@
     },
     {
       "critical": false,
-      "description": "水污染数据与光纤装置组合定位失败案例",
-      "expected_hit_ids": ["case_20260324_53a7493c68ff_002"],
+      "description": "柔性外骨骼与生物医药工程组合定位",
+      "expected_hit_ids": ["case_20260330_fe986eaa6438_001"],
       "id": "gold_case_019",
-      "input": { "filters": {}, "query": "水污染数据 光纤装置" },
+      "input": { "filters": {}, "query": "柔性外骨骼 生物医药工程" },
       "tags": ["chinese_tokenization", "evidence_boundary"],
       "target": "cases"
     },
     {
       "critical": false,
-      "description": "柑橘废弃物与外卖包装组合定位失败案例",
-      "expected_hit_ids": ["case_20260328_552e1407e914_001"],
+      "description": "低成本空气净化器与环保科研组合定位",
+      "expected_hit_ids": ["case_20260328_552e1407e914_004"],
       "id": "gold_case_020",
-      "input": { "filters": {}, "query": "柑橘废弃物 外卖包装" },
+      "input": { "filters": {}, "query": "低成本空气净化器 环保科研" },
       "tags": ["chinese_tokenization", "evidence_boundary"],
       "target": "cases"
     },
     {
       "critical": true,
       "description": "可信度硬过滤只允许medium案例",
-      "expected_hit_ids": ["case_20260115_b25093d1f07d_001"],
-      "forbidden_hit_ids": ["case_20260115_b25093d1f07d_002"],
+      "expected_hit_ids": ["case_20251219_d62425d9f058_001"],
+      "forbidden_hit_ids": ["case_20251225_c5bacf73742f_001"],
       "id": "gold_case_021",
       "input": { "filters": { "confidence": ["medium"] }, "query": "" },
       "tags": ["hard_filter", "negative_condition"],
@@ -445,36 +445,41 @@
     },
     {
       "critical": true,
-      "description": "学校硬过滤定位Swarthmore哲学案例",
+      "description": "学校硬过滤定位斯沃斯莫尔哲学案例",
       "expected_hit_ids": ["case_20251222_a3ce77606cff_004"],
       "forbidden_hit_ids": ["case_20251218_94e2e9f6d2dd_002"],
       "id": "gold_case_022",
-      "input": { "filters": { "schools": ["Swarthmore"] }, "query": "哲学" },
+      "input": {
+        "filters": { "schools": ["斯沃斯莫尔学院"] },
+        "query": "哲学 自我救赎"
+      },
       "tags": ["hard_filter", "negative_condition", "mixed_language"],
       "target": "cases"
     },
     {
       "critical": true,
-      "description": "案例性质硬过滤只允许诚信风险案例",
-      "expected_hit_ids": ["case_20251224_6500fa2967a7_005"],
-      "forbidden_hit_ids": ["case_20251224_6500fa2967a7_004"],
+      "description": "课程体系硬过滤只允许AP案例",
+      "expected_hit_ids": ["case_20251225_c5bacf73742f_004"],
+      "forbidden_hit_ids": ["case_20251225_c5bacf73742f_001"],
       "id": "gold_case_023",
-      "input": { "filters": { "caseTypes": ["诚信风险案例"] }, "query": "" },
+      "input": {
+        "filters": { "curriculumSystems": ["AP"] },
+        "query": "情绪识别 通讯录"
+      },
       "tags": ["hard_filter", "negative_condition", "evidence_boundary"],
       "target": "cases"
     },
     {
       "critical": false,
-      "description": "失败案例性质过滤AI相关项目并排除学生录取案例",
-      "expected_hit_ids": [
-        "case_20260324_53a7493c68ff_004",
-        "case_20260520_497f95b8c700_002",
-        "case_20260629_abdb96cc1922_001"
-      ],
-      "forbidden_hit_ids": ["case_20251219_d62425d9f058_002"],
+      "description": "学校硬过滤定位加州理工柔性外骨骼案例",
+      "expected_hit_ids": ["case_20260330_fe986eaa6438_001"],
+      "forbidden_hit_ids": ["case_20260330_fe986eaa6438_002"],
       "id": "gold_case_024",
-      "input": { "filters": { "caseTypes": ["失败与反例"] }, "query": "AI" },
-      "tags": ["hard_filter", "negative_condition", "mixed_language", "evidence_boundary"],
+      "input": {
+        "filters": { "schools": ["加州理工学院"] },
+        "query": "柔性外骨骼"
+      },
+      "tags": ["hard_filter", "negative_condition", "evidence_boundary"],
       "target": "cases"
     }
   ],

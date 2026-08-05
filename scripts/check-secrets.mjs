@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname } from "node:path";
 
 const MAX_FILE_SIZE_BYTES = 1024 * 1024;
@@ -27,7 +27,7 @@ const secretPatterns = [
   {
     name: "assigned application secret",
     pattern:
-      /^\s*(?:DATABASE_URL|DEEPSEEK_API_KEY|MEILI_ADMIN_API_KEY|MEILI_MASTER_KEY|MEILI_SEARCH_API_KEY|NEXTAUTH_SECRET|POSTGRES_PASSWORD|REDIS_PASSWORD|REDIS_URL)\s*=\s*(?!(?:replace|example|changeme|postgresql:\/\/[^:\s]+:(?:replace|ci-only)|redis:\/\/:(?:replace|ci-only)|<|\$\{))\S+/imu,
+      /^\s*(?:(?:KNOWLEDGE_|OPERATIONS_)?(?:DATABASE_URL|NEXTAUTH_SECRET)|DEEPSEEK_API_KEY|MEILI_ADMIN_API_KEY|MEILI_MASTER_KEY|MEILI_SEARCH_API_KEY|POSTGRES_PASSWORD|REDIS_PASSWORD|REDIS_URL)\s*=\s*(?!(?:replace|example|changeme|postgresql:\/\/[^:\s]+:(?:replace|ci-only)|redis:\/\/:(?:replace|ci-only)|<|\$\{))\S+/imu,
   },
 ];
 
@@ -40,6 +40,9 @@ function listRepositoryFiles() {
 }
 
 function isScannable(filePath) {
+  if (!existsSync(filePath)) {
+    return false;
+  }
   if (!TEXT_EXTENSIONS.has(extname(filePath).toLowerCase())) {
     return false;
   }

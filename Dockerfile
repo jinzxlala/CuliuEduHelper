@@ -25,7 +25,7 @@ FROM build AS deployment-assets
 RUN pnpm --filter @culiu/worker deploy --prod --legacy /out/worker
 RUN pnpm --filter @culiu/authorization deploy --prod --legacy /out/authorization
 
-FROM node:22.23.2-bookworm-slim AS web
+FROM node:22.23.2-bookworm-slim AS knowledge-web
 
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -33,12 +33,27 @@ ENV NODE_ENV=production
 ENV PORT=3000
 WORKDIR /app
 
-COPY --from=build --chown=node:node /app/apps/web/.next/standalone ./
-COPY --from=build --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=node:node /app/apps/knowledge-web/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/knowledge-web/.next/static ./apps/knowledge-web/.next/static
 
 USER node
 EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "apps/knowledge-web/server.js"]
+
+FROM node:22.23.2-bookworm-slim AS operations-web
+
+ENV HOSTNAME=0.0.0.0
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+ENV PORT=3000
+WORKDIR /app
+
+COPY --from=build --chown=node:node /app/apps/operations-web/.next/standalone ./
+COPY --from=build --chown=node:node /app/apps/operations-web/.next/static ./apps/operations-web/.next/static
+
+USER node
+EXPOSE 3000
+CMD ["node", "apps/operations-web/server.js"]
 
 FROM node:22.23.2-bookworm-slim AS worker
 

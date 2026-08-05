@@ -7,11 +7,11 @@
 生产拓扑固定为单台 Linux 服务器上的 Docker Compose：
 
 ```text
-Internet -> 80/443 -> Nginx -> Web
-                              |-> PostgreSQL（内部网络）
-                              |-> Redis（内部网络）
-                              |-> Meilisearch（内部网络）
-Worker -----------------------+
+Internet -> 80/443 -> Nginx -> Knowledge Web（独立域名）
+                              -> Operations Web（独立域名）
+Knowledge Web -----------------> PostgreSQL / Redis / Meilisearch / 对象目录
+Operations Web ----------------> PostgreSQL / Redis / 对象目录
+Worker ------------------------> PostgreSQL / Redis / Meilisearch / 对象目录
 ```
 
 只有 Nginx 监听公网端口。PostgreSQL 和 Meilisearch 额外绑定两个 `127.0.0.1` 维护端口，供服务器本机执行加密备份和恢复验收；它们不得绑定 `0.0.0.0`，也不得在腾讯云安全组中放行。Redis 没有宿主机端口。
@@ -23,12 +23,12 @@ Worker -----------------------+
 需要项目负责人或服务器管理员提供并确认：
 
 - 一台运行受支持 Linux 和 Docker Engine／Compose v2 的腾讯云服务器；
-- 实际域名，且 DNS 已指向服务器；
+- 两个实际域名，分别用于顾问知识系统和内部教务系统，且 DNS 均已指向服务器；
 - 该域名的完整证书链和私钥；
 - 安全组只开放必要的 SSH 管理来源、80 和 443；
 - 五个互不嵌套的持久目录：证据、加密备份、知识分析、2025 逐字稿、2026 逐字稿；
 - 将要部署的 40 位 Git 提交 SHA；
-- 独立生成的数据库、Redis、Meilisearch、Auth.js、备份加密密钥和 DeepSeek API Key。
+- 独立生成的数据库、Redis、Meilisearch、两套Auth.js会话密钥、备份加密密钥和DeepSeek API Key；知识系统与教务系统不得复用会话密钥。
 
 生产环境不得启用脱敏 fixture 授权、mock 模型或开发数据库。真实学生资料和课程目录仍受 `dev_plan.md` 的人工输入门禁约束。
 
@@ -57,7 +57,7 @@ docker compose \
   config --quiet
 ```
 
-预检会检查真实域名、内部服务地址、密钥门槛、镜像提交身份、端口冲突、持久目录、目录互相嵌套和 PEM 文件头。成功回执只显示域名、HTTPS 端口、提交 SHA 和检查数量，不显示密钥。
+预检会检查两个真实域名、内部服务地址、密钥门槛、两套会话密钥隔离、镜像提交身份、端口冲突、持久目录、目录互相嵌套和 PEM 文件头。成功回执只显示域名、HTTPS 端口、提交 SHA 和检查数量，不显示密钥。
 
 ## 4. 构建和启动
 
@@ -78,13 +78,14 @@ docker compose \
   ps
 ```
 
-`migrate` 是一次性容器：等待 PostgreSQL 健康后应用已有迁移，成功退出后 Web 和 Worker 才能启动。Web 的 `/api/ready` 同时探测 PostgreSQL、Redis、Meilisearch 和证据目录；Nginx 只在 Web 健康后启动。
+`migrate` 是一次性容器：等待 PostgreSQL 健康后应用已有迁移，成功退出后两个Web和Worker才会启动。知识系统的`/api/ready`探测PostgreSQL、Redis、Meilisearch和对象目录；教务系统不依赖Meilisearch，只探测PostgreSQL、Redis和对象目录。Nginx只在两个Web都健康后启动。
 
 检查外部入口：
 
 ```bash
-curl -I "http://你的域名/"
-curl --fail --show-error "https://你的域名/api/ready"
+curl -I "http://知识系统域名/"
+curl --fail --show-error "https://知识系统域名/api/ready"
+curl --fail --show-error "https://教务系统域名/api/ready"
 ```
 
 第一条应跳转到 HTTPS；第二条应返回 `status=ready`。回执只显示依赖可用性，不返回连接串、路径或异常详情。
@@ -114,10 +115,10 @@ unset CULIU_BOOTSTRAP_ADMIN_PASSWORD
 docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-compose.production.yml ps
 
 # 查看最近日志；不要把完整日志复制到公开渠道
-docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-compose.production.yml logs --tail 200 web worker nginx
+docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-compose.production.yml logs --tail 200 knowledge-web operations-web worker nginx
 
 # 重启应用，不删除数据卷
-docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-compose.production.yml restart web worker nginx
+docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-compose.production.yml restart knowledge-web operations-web worker nginx
 
 # 停止服务但保留数据卷
 docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-compose.production.yml down
@@ -127,7 +128,7 @@ docker compose --env-file infra/deploy/.env.production -f infra/deploy/docker-co
 
 ### 加密备份与恢复验收
 
-备份前暂停 Web 和 Worker 写入。服务器仓库中的 `infra/.env` 可以保存一份仅供运维 CLI 使用、权限为 `600` 的配置；它不得进入 Git。生产 Compose 的 PostgreSQL 与 Meilisearch 维护端口只监听回环地址，CLI 应分别使用：
+备份前暂停两个Web和Worker写入。服务器仓库中的`infra/.env`可以保存一份仅供运维CLI使用、权限为`600`的配置；它不得进入Git。生产Compose的PostgreSQL与Meilisearch维护端口只监听回环地址，CLI应分别使用：
 
 ```dotenv
 DATABASE_URL=${SERVER_LOCAL_DATABASE_URL}

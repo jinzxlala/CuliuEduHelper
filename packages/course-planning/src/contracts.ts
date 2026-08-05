@@ -149,6 +149,23 @@ export const CourseVersionContentSchema = z
   });
 export type CourseVersionContent = z.infer<typeof CourseVersionContentSchema>;
 
+export const CourseCatalogVersionSchema = z
+  .object({
+    approvedAt: z.iso.datetime({ offset: true }).nullable(),
+    code: CourseCodeSchema,
+    content: CourseVersionContentSchema,
+    courseId: z.uuid(),
+    courseVersionId: z.uuid(),
+    createdAt: z.iso.datetime({ offset: true }),
+    invalidationReason: z.string().min(1).max(512).nullable(),
+    sourceCourseVersionId: z.uuid().nullable(),
+    status: CourseCatalogStatusSchema,
+    updatedAt: z.iso.datetime({ offset: true }),
+    version: z.number().int().positive(),
+  })
+  .strict();
+export type CourseCatalogVersion = z.infer<typeof CourseCatalogVersionSchema>;
+
 export const CreateCourseInputSchema = z
   .object({ code: CourseCodeSchema, content: CourseVersionContentSchema })
   .strict();

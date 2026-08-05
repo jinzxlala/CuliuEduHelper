@@ -1,0 +1,35 @@
+{
+  "name": "@culiu/knowledge-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "dev": "node --env-file-if-exists=../../infra/.env ../../scripts/run-next-app.mjs knowledge dev",
+    "lint": "eslint .",
+    "start": "node --env-file-if-exists=../../infra/.env ../../scripts/run-next-app.mjs knowledge start",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@culiu/authorization": "workspace:*",
+    "@culiu/database": "workspace:*",
+    "@culiu/knowledge-ingest": "workspace:*",
+    "@culiu/search": "workspace:*",
+    "@culiu/shared": "workspace:*",
+    "@culiu/storage": "workspace:*",
+    "@culiu/tasks": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "next": "15.5.22",
+    "next-auth": "4.24.15",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "vitest": "4.1.10"
+  }
+}

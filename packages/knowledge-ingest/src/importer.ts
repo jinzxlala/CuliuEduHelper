@@ -125,13 +125,23 @@ interface PublishedCaseRow {
   readonly case_id: string;
   readonly case_type: string;
   readonly confidence: CaseDocument["confidence"];
+  readonly core_projects: CaseDocument["core_projects"];
+  readonly core_strengths: CaseDocument["core_strengths"];
   readonly curriculum_system: string | null;
+  readonly development_path: CaseDocument["development_path"];
   readonly evidence_boundary: string;
+  readonly evidence_points: CaseDocument["evidence_points"];
+  readonly advisor_insights: CaseDocument["advisor_insights"];
+  readonly application_strategy: CaseDocument["application_strategy"];
+  readonly interpretations: CaseDocument["interpretations"];
   readonly lecture_id: string;
   readonly major: string | null;
+  readonly missing_information: CaseDocument["missing_information"];
+  readonly profile_summary: string;
   readonly research_methods: string[];
   readonly schools: string[];
   readonly timestamp_refs: CaseDocument["timestamp_refs"];
+  readonly verified_facts: CaseDocument["verified_facts"];
 }
 
 async function transaction<T>(connection: DatabaseConnection, work: () => Promise<T>): Promise<T> {
@@ -175,7 +185,9 @@ async function loadCurrentPublishedDocuments(
     `select case_id, lecture_id, case_type, curriculum_system, academic_label,
             background, admission_result, schools, major, research_methods,
             activity_types, ai_domains, ai_depth, confidence, evidence_boundary,
-            timestamp_refs
+            profile_summary, development_path, core_projects, core_strengths,
+            application_strategy, advisor_insights, verified_facts, interpretations,
+            missing_information, evidence_points, timestamp_refs
        from knowledge_case_version
       where batch_id = $1
       order by case_id`,
@@ -193,13 +205,23 @@ async function loadCurrentPublishedDocuments(
       case_id: row.case_id,
       case_type: row.case_type,
       confidence: row.confidence,
+      core_projects: row.core_projects,
+      core_strengths: row.core_strengths,
       curriculum_system: row.curriculum_system,
+      development_path: row.development_path,
       evidence_boundary: row.evidence_boundary,
+      evidence_points: row.evidence_points,
+      advisor_insights: row.advisor_insights,
+      application_strategy: row.application_strategy,
+      interpretations: row.interpretations,
       lecture_id: row.lecture_id,
       major: row.major,
+      missing_information: row.missing_information,
+      profile_summary: row.profile_summary,
       research_methods: row.research_methods,
       schools: row.schools,
       timestamp_refs: row.timestamp_refs,
+      verified_facts: row.verified_facts,
     })),
     lectures: lectureResult.rows.map((row) => ({
       ai_cross_disciplinary_text: row.ai_cross_disciplinary_text,
@@ -534,8 +556,11 @@ async function insertCase(
     `insert into knowledge_case_version
       (batch_id, case_id, lecture_id, source_document_id, case_type, curriculum_system,
        academic_label, background, admission_result, schools, major, research_methods,
-       activity_types, ai_domains, ai_depth, confidence, evidence_boundary, timestamp_refs)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+       activity_types, ai_domains, ai_depth, confidence, evidence_boundary, profile_summary,
+       development_path, core_projects, core_strengths, application_strategy, advisor_insights,
+       verified_facts, interpretations, missing_information, evidence_points, timestamp_refs)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+             $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)`,
     [
       batchId,
       document.case_id,
@@ -554,6 +579,16 @@ async function insertCase(
       document.ai_depth,
       document.confidence,
       document.evidence_boundary,
+      document.profile_summary,
+      JSON.stringify(document.development_path),
+      JSON.stringify(document.core_projects),
+      JSON.stringify(document.core_strengths),
+      JSON.stringify(document.application_strategy),
+      JSON.stringify(document.advisor_insights),
+      JSON.stringify(document.verified_facts),
+      JSON.stringify(document.interpretations),
+      JSON.stringify(document.missing_information),
+      JSON.stringify(document.evidence_points),
       JSON.stringify(document.timestamp_refs),
     ],
   );
@@ -603,11 +638,15 @@ async function persistStagedImport(
           (batch_id, data_domain, case_id, lecture_id, source_document_id, case_type,
            curriculum_system, academic_label, background, admission_result, schools, major,
            research_methods, activity_types, ai_domains, ai_depth, confidence,
-           evidence_boundary, timestamp_refs)
+           evidence_boundary, profile_summary, development_path, core_projects,
+           core_strengths, application_strategy, advisor_insights, verified_facts,
+           interpretations, missing_information, evidence_points, timestamp_refs)
          select $1, data_domain, case_id, lecture_id, source_document_id, case_type,
                 curriculum_system, academic_label, background, admission_result, schools, major,
                 research_methods, activity_types, ai_domains, ai_depth, confidence,
-                evidence_boundary, timestamp_refs
+                evidence_boundary, profile_summary, development_path, core_projects,
+                core_strengths, application_strategy, advisor_insights, verified_facts,
+                interpretations, missing_information, evidence_points, timestamp_refs
            from knowledge_case_version
           where batch_id = $2 and not (lecture_id = any($3::text[]))`,
         [batchId, options.currentBatchId, incomingLectureIds],

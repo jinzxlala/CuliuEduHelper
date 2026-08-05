@@ -151,6 +151,7 @@ describe("analysis document parser", () => {
     expect(parsed.cases[0]).toMatchObject({
       activity_types: ["研究", "活动"],
       admission_result: "经济学方向，获 UChicago 录取。",
+      background: "女生；其他信息未披露。",
       case_id: "case_20260314_aaaaaaaaaaaa_001",
       case_type: "学生录取案例",
       confidence: "unknown",
@@ -162,6 +163,27 @@ describe("analysis document parser", () => {
       case_type: "诚信风险案例",
       timestamp_refs: [],
     });
+  });
+
+  it("keeps useful case text when only one part remains undisclosed", () => {
+    const richMarkdown = markdown.replace(
+      "- **证据缺口：** 样本与导师未披露。",
+      `- **案例概览：** 学生已完成气候经济研究，具体样本规模未披露。
+- **证据缺口：** 样本与导师未披露。`,
+    );
+    const parsed = parseAnalysisDocuments(richMarkdown, bundle, "fixture-rich.md");
+
+    expect(parsed.cases[0]?.profile_summary).toBe("学生已完成气候经济研究，具体样本规模未披露。");
+  });
+
+  it("normalizes free-form case types into stable advisor-facing categories", () => {
+    const researchMarkdown = markdown.replace(
+      "- **卡片性质：** 学生录取案例。",
+      "- **卡片性质：** 科研竞赛型申请。",
+    );
+    const parsed = parseAnalysisDocuments(researchMarkdown, bundle, "fixture-research.md");
+
+    expect(parsed.cases[0]?.case_type).toBe("科研与竞赛案例");
   });
 
   it("rejects a case section without level-three cards", () => {

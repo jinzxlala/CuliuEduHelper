@@ -104,9 +104,15 @@ function Write-EnvValues {
         "POSTGRES_USER",
         "POSTGRES_PASSWORD",
         "DATABASE_URL",
+        "KNOWLEDGE_DATABASE_URL",
+        "OPERATIONS_DATABASE_URL",
         "DATABASE_POOL_MAX",
         "NEXTAUTH_SECRET",
         "NEXTAUTH_URL",
+        "KNOWLEDGE_NEXTAUTH_SECRET",
+        "KNOWLEDGE_NEXTAUTH_URL",
+        "OPERATIONS_NEXTAUTH_SECRET",
+        "OPERATIONS_NEXTAUTH_URL",
         "REDIS_PASSWORD",
         "REDIS_URL",
         "LOCAL_STORAGE_ROOT",
@@ -162,6 +168,18 @@ function Ensure-LocalEnv {
     if (Test-MissingOrPlaceholder -Values $values -Key "NEXTAUTH_URL") {
         $values["NEXTAUTH_URL"] = "http://127.0.0.1:3000"
     }
+    if (Test-MissingOrPlaceholder -Values $values -Key "KNOWLEDGE_NEXTAUTH_SECRET") {
+        $values["KNOWLEDGE_NEXTAUTH_SECRET"] = New-SecureToken
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "KNOWLEDGE_NEXTAUTH_URL") {
+        $values["KNOWLEDGE_NEXTAUTH_URL"] = "http://127.0.0.1:3000"
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "OPERATIONS_NEXTAUTH_SECRET") {
+        $values["OPERATIONS_NEXTAUTH_SECRET"] = New-SecureToken
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "OPERATIONS_NEXTAUTH_URL") {
+        $values["OPERATIONS_NEXTAUTH_URL"] = "http://127.0.0.1:3001"
+    }
     if (Test-MissingOrPlaceholder -Values $values -Key "REDIS_PASSWORD") {
         $values["REDIS_PASSWORD"] = New-SecureToken
     }
@@ -169,6 +187,8 @@ function Ensure-LocalEnv {
     $databasePassword = [Uri]::EscapeDataString($values["POSTGRES_PASSWORD"])
     $redisPassword = [Uri]::EscapeDataString($values["REDIS_PASSWORD"])
     $values["DATABASE_URL"] = "postgresql://$($values['POSTGRES_USER']):$databasePassword@127.0.0.1:5432/$($values['POSTGRES_DB'])"
+    $values["KNOWLEDGE_DATABASE_URL"] = $values["DATABASE_URL"]
+    $values["OPERATIONS_DATABASE_URL"] = $values["DATABASE_URL"]
     $values["REDIS_URL"] = "redis://:$redisPassword@127.0.0.1:6379"
 
     if (Test-MissingOrPlaceholder -Values $values -Key "LOCAL_STORAGE_ROOT") {

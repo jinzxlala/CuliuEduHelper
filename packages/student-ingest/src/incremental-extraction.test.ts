@@ -66,4 +66,37 @@ describe("incremental student evidence isolation", () => {
       extractIncrementalFactSuggestions(provider, paragraphMaterial("目标学生材料")),
     ).rejects.toThrow("outside");
   });
+
+  it("normalizes a single bracketed source marker", async () => {
+    const provider: JsonModelProvider = {
+      generateJson: () =>
+        Promise.resolve({
+          json: {
+            suggestions: [
+              {
+                confidence: "high",
+                fieldKey: "skill.algorithm_reasoning",
+                informationNature: "fact",
+                sourceRef: "[P1]",
+                value: { text: "能解释 DFS" },
+              },
+            ],
+          },
+          model: "deepseek-v4-flash",
+          providerRequestId: "synthetic",
+          usage: {
+            completionTokens: 1,
+            promptCacheHitTokens: 0,
+            promptCacheMissTokens: 1,
+            promptTokens: 1,
+            totalTokens: 2,
+          },
+        }),
+    };
+    const result = await extractIncrementalFactSuggestions(
+      provider,
+      paragraphMaterial("目标学生材料"),
+    );
+    expect(result.output.suggestions[0]?.sourceRef).toBe("P1");
+  });
 });

@@ -3,11 +3,17 @@ import { describe, expect, it } from "vitest";
 import { buildKnowledgeSubmission } from "./submission.js";
 import {
   createDeterministicMockKnowledgeExtractionProvider,
+  ExtractedCaseTypeSchema,
   renderKnowledgeAnalysisMarkdown,
   sanitizeKnowledgeTranscriptForModel,
 } from "./knowledge-extraction.js";
 
 describe("knowledge transcript extraction", () => {
+  it("normalizes bounded legacy case type wording", () => {
+    expect(ExtractedCaseTypeSchema.parse("科研竞赛型申请")).toBe("科研与竞赛案例");
+    expect(() => ExtractedCaseTypeSchema.parse("随意分类")).toThrow();
+  });
+
   it("redacts common outbound identifiers before a model request", () => {
     const sanitized = sanitizeKnowledgeTranscriptForModel(
       "邮箱 student@example.com，手机 13800138000，编号 110101199901011234。",
@@ -50,6 +56,15 @@ describe("knowledge transcript extraction", () => {
     });
     expect(submission.documents.lectures).toHaveLength(1);
     expect(submission.documents.cases).toHaveLength(1);
+    expect(submission.documents.cases[0]).toMatchObject({
+      core_projects: [{ name: "虚构测试项目" }],
+      development_path: ["识别问题", "完成项目"],
+      evidence_points: [
+        { source_locator: "00:00:01-00:00:02" },
+        { source_locator: "00:00:03-00:00:04" },
+      ],
+      verified_facts: ["逐字稿陈述其完成了虚构项目", "逐字稿陈述其形成了测试报告"],
+    });
   });
 
   it("rejects model output that does not match the extraction schema", () => {
@@ -66,7 +81,7 @@ describe("knowledge transcript extraction", () => {
       majors: [],
       organization: "未披露",
       quotes: [],
-      schemaVersion: "knowledge-analysis-markdown.v3",
+      schemaVersion: "knowledge-analysis-markdown.v4",
       schools: [],
       speakers: [],
       summary: "讲座讨论跨学科学习。",
@@ -100,7 +115,7 @@ describe("knowledge transcript extraction", () => {
       majors: [],
       organization: "未披露",
       quotes,
-      schemaVersion: "knowledge-analysis-markdown.v3",
+      schemaVersion: "knowledge-analysis-markdown.v4",
       schools: [],
       speakers: [],
       summary: "虚构摘要。",

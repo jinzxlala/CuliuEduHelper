@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { parseCsv } from "./document-parser.js";
 
-export const INCREMENTAL_IMPORT_PROMPT_VERSION = "student-evidence-extract.v1";
+export const INCREMENTAL_IMPORT_PROMPT_VERSION = "student-evidence-extract.v2";
 export const INCREMENTAL_IMPORT_SCHEMA_VERSION = "student-fact-suggestions.v1";
 export const INCREMENTAL_IMPORT_REDACTION_VERSION = "student-evidence-minimal-outbound.v1";
 
@@ -106,7 +106,7 @@ export function redactSelectedStudentMaterial(
 }
 
 const SYSTEM_PROMPT = `你是单一学生证据事实提取助手。输入已经只保留目标学生材料并完成身份脱敏。
-只提取原文明确支持的事实或有明确依据的推断；不得补全其他学生信息。输出严格 JSON：{"suggestions":[{"fieldKey":"稳定小写命名空间键","value":{"text":"建议值"},"informationNature":"fact|inference|missing|advisor_judgment","confidence":"high|medium|low|unknown","sourceRef":"输入中存在的R行C列或P段落编号"}]}。sourceRef 必须逐字来自输入标记，不得生成数据库 ID。`;
+只提取原文明确支持的事实或有明确依据的推断；不得补全其他学生信息。输出严格 JSON：{"suggestions":[{"fieldKey":"稳定小写命名空间键","value":{"text":"建议值"},"informationNature":"fact|inference|missing|advisor_judgment","confidence":"high|medium|low|unknown","sourceRef":"P1"}]}。suggestions 必须是数组，每项只能包含示例中的五个字段。sourceRef 必须是输入中存在的单个 R行C列或 P段落编号，例如 P1 或 R2C3；不要包含方括号、多个编号、编号范围、解释文字或数据库 ID。`;
 
 export const INCREMENTAL_IMPORT_PROMPT_HASH = createHash("sha256")
   .update(SYSTEM_PROMPT)
@@ -123,7 +123,35 @@ export async function extractIncrementalFactSuggestions(
     systemPrompt: SYSTEM_PROMPT,
     userPrompt: `仅处理以下目标学生材料：\n\n${material.text}`,
   });
-  const output = IncrementalFactOutputSchema.parse(providerResult.json);
+  const untrustedOutput = providerResult.json;
+  if (
+    untrustedOutput !== null &&
+    typeof untrustedOutput === "object" &&
+    !Array.isArray(untrustedOutput) &&
+    Array.isArray((untrustedOutput as { suggestions?: unknown }).suggestions)
+  ) {
+    const suggestions = (untrustedOutput as { suggestions: unknown[] }).suggestions.map(
+      (suggestion) => {
+        if (suggestion === null || typeof suggestion !== "object" || Array.isArray(suggestion)) {
+          return suggestion;
+        }
+        const sourceRef = (suggestion as { sourceRef?: unknown }).sourceRef;
+        const match =
+          typeof sourceRef === "string"
+            ? /^\[(R[1-9]\d*C[1-9]\d*|P[1-9]\d*)\]$/u.exec(sourceRef.trim())
+            : null;
+        return match?.[1] === undefined ? suggestion : { ...suggestion, sourceRef: match[1] };
+      },
+    );
+    const output = IncrementalFactOutputSchema.parse({ ...untrustedOutput, suggestions });
+    for (const suggestion of output.suggestions) {
+      if (!material.allowedSourceRefs.has(suggestion.sourceRef)) {
+        throw new Error("Model returned a sourceRef outside the isolated student material.");
+      }
+    }
+    return { output, provider: providerResult };
+  }
+  const output = IncrementalFactOutputSchema.parse(untrustedOutput);
   for (const suggestion of output.suggestions) {
     if (!material.allowedSourceRefs.has(suggestion.sourceRef)) {
       throw new Error("Model returned a sourceRef outside the isolated student material.");

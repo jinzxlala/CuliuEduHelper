@@ -1054,6 +1054,16 @@ export async function exportApprovedManualPlanMarkdown(
   const planVersionId = IdentifierSchema.parse(untrustedPlanVersionId);
   const now = options.now ?? new Date();
   const context = await requirePlanContext(database, rawContext, "student:plan:export", now);
+  const identityRows = await database
+    .select({ status: planVersions.status })
+    .from(planVersions)
+    .where(and(eq(planVersions.id, planVersionId), eq(planVersions.studentId, context.studentId)))
+    .limit(1);
+  const identity = identityRows[0];
+  if (identity === undefined) throw new PlanWorkflowNotFoundError();
+  if (identity.status !== "approved") {
+    throw new PlanWorkflowConflictError("Only an approved, current plan can be exported.");
+  }
   const rows = await database
     .select({
       approvedByDisplayName: appUsers.displayName,

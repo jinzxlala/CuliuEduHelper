@@ -24,7 +24,7 @@ import {
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const port = 3100;
 const baseUrl = `http://127.0.0.1:${port}`;
-const nextCli = resolve(rootDirectory, "apps/web/node_modules/next/dist/bin/next");
+const nextCli = resolve(rootDirectory, "apps/operations-web/node_modules/next/dist/bin/next");
 const workerEntry = resolve(rootDirectory, "apps/worker/dist/index.js");
 const output = [];
 const workerOutput = [];
@@ -34,6 +34,8 @@ const temporaryGrantId = randomUUID();
 const temporaryAdminId = randomUUID();
 const temporaryEmail = `${temporaryUserId}@example.invalid`;
 const temporaryPassword = `E2e-${randomBytes(24).toString("base64url")}!9aA`;
+const operationsAuthSecret =
+  process.env.OPERATIONS_NEXTAUTH_SECRET ?? randomBytes(32).toString("base64url");
 const baseDatabaseConfig = parseDatabaseConfig();
 const temporaryDatabaseName = `culiu_e2e_${randomUUID().replaceAll("-", "")}`;
 const maintenanceUrl = new URL(baseDatabaseConfig.connectionString);
@@ -279,22 +281,29 @@ async function dropTemporaryDatabase() {
 }
 
 function startServer() {
-  const child = spawn(process.execPath, [nextCli, "start", "apps/web", "-p", String(port)], {
-    cwd: rootDirectory,
-    env: {
-      ...process.env,
-      DATABASE_URL: temporaryDatabaseUrl.toString(),
-      CULIU_GIT_COMMIT_SHA: "1".repeat(40),
-      CULIU_TASK_QUEUE_NAME: queueName,
-      LOCAL_STORAGE_ROOT: temporaryStorageRoot,
-      NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ?? randomBytes(32).toString("base64url"),
-      NEXTAUTH_URL: baseUrl,
-      NEXT_TELEMETRY_DISABLED: "1",
-      NODE_ENV: "production",
+  const child = spawn(
+    process.execPath,
+    [nextCli, "start", "apps/operations-web", "-p", String(port)],
+    {
+      cwd: rootDirectory,
+      env: {
+        ...process.env,
+        OPERATIONS_DATABASE_URL: temporaryDatabaseUrl.toString(),
+        DATABASE_URL: temporaryDatabaseUrl.toString(),
+        CULIU_GIT_COMMIT_SHA: "1".repeat(40),
+        CULIU_TASK_QUEUE_NAME: queueName,
+        LOCAL_STORAGE_ROOT: temporaryStorageRoot,
+        OPERATIONS_NEXTAUTH_SECRET: operationsAuthSecret,
+        OPERATIONS_NEXTAUTH_URL: baseUrl,
+        NEXTAUTH_SECRET: operationsAuthSecret,
+        NEXTAUTH_URL: baseUrl,
+        NEXT_TELEMETRY_DISABLED: "1",
+        NODE_ENV: "production",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
     },
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  );
   for (const stream of [child.stdout, child.stderr]) {
     stream.setEncoding("utf8");
     stream.on("data", (chunk) => {
@@ -400,28 +409,28 @@ try {
 
   const healthResponse = await waitForHealth();
   const health = await healthResponse.json();
-  if (health.service !== "web" || health.status !== "available") {
+  if (health.service !== "operations-web" || health.status !== "available") {
     throw new Error("Unexpected health payload.");
   }
 
   const homeResponse = await fetch(`${baseUrl}/`);
   const home = await homeResponse.text();
-  if (!homeResponse.ok || !home.includes("醋溜教育智能助手")) {
+  if (!homeResponse.ok || !home.includes("醋溜教育教务系统")) {
     throw new Error("Home page smoke test failed.");
   }
 
   const loginResponse = await fetch(`${baseUrl}/login`);
   const loginPage = await loginResponse.text();
-  if (!loginResponse.ok || !loginPage.includes("内部账号登录")) {
+  if (!loginResponse.ok || !loginPage.includes("教务系统登录")) {
     throw new Error("Login page smoke test failed.");
   }
 
-  const protectedSearch = await fetch(`${baseUrl}/search?q=test`, { redirect: "manual" });
+  const protectedStudents = await fetch(`${baseUrl}/students`, { redirect: "manual" });
   if (
-    protectedSearch.status !== 307 ||
-    !protectedSearch.headers.get("location")?.endsWith("/login")
+    protectedStudents.status !== 307 ||
+    !protectedStudents.headers.get("location")?.endsWith("/login")
   ) {
-    throw new Error("Unauthenticated search was not redirected to login.");
+    throw new Error("Unauthenticated student directory was not redirected to login.");
   }
 
   const unauthorizedStudent = await fetch(
@@ -450,7 +459,7 @@ try {
     throw new Error("Valid credentials did not create a session.");
   }
   const sessionCookie = accepted.setCookies.find((cookie) =>
-    cookie.startsWith("next-auth.session-token="),
+    cookie.startsWith("culiu-operations.session-token="),
   );
   if (
     sessionCookie === undefined ||
@@ -554,9 +563,10 @@ try {
     accepted.jar,
     { method: "POST" },
   );
+  const profileEnqueuePayload = await profileEnqueueResponse.json();
   if (profileEnqueueResponse.status !== 202) {
     throw new Error(
-      `Profile draft enqueue failed (status=${String(profileEnqueueResponse.status)}).`,
+      `Profile draft enqueue failed (status=${String(profileEnqueueResponse.status)}, error=${String(profileEnqueuePayload.error ?? "unknown")}).`,
     );
   }
   let profilePayload;

@@ -78,6 +78,26 @@ export type LectureDocument = z.infer<typeof LectureDocumentSchema>;
 
 export const CaseConfidenceSchema = z.enum(["high", "medium", "low", "unknown"]);
 
+export const CaseProjectSchema = z
+  .object({
+    actions: FacetValuesSchema,
+    impact: OptionalTextSchema,
+    methods: FacetValuesSchema,
+    name: RequiredTextSchema.pipe(z.string().max(512)),
+    outputs: FacetValuesSchema,
+    role: OptionalTextSchema.pipe(z.string().max(2_000)),
+  })
+  .strict();
+
+export const CaseEvidencePointSchema = z
+  .object({
+    claim: RequiredTextSchema.pipe(z.string().max(4_000)),
+    confidence: CaseConfidenceSchema,
+    evidence: RequiredTextSchema.pipe(z.string().max(4_000)),
+    source_locator: OptionalTextSchema.pipe(z.string().max(512)),
+  })
+  .strict();
+
 export const CaseDocumentSchema = z
   .object({
     academic_label: OptionalTextSchema,
@@ -89,13 +109,23 @@ export const CaseDocumentSchema = z
     case_id: MeilisearchDocumentIdSchema,
     case_type: FacetValueSchema,
     confidence: CaseConfidenceSchema,
+    core_projects: z.array(CaseProjectSchema).max(12).default([]),
+    core_strengths: FacetValuesSchema.default([]),
     curriculum_system: FacetValueSchema.nullable(),
+    development_path: z.array(OptionalTextSchema).max(20).default([]),
     evidence_boundary: OptionalTextSchema,
+    evidence_points: z.array(CaseEvidencePointSchema).max(30).default([]),
+    advisor_insights: z.array(OptionalTextSchema).max(20).default([]),
+    application_strategy: z.array(OptionalTextSchema).max(20).default([]),
+    interpretations: z.array(OptionalTextSchema).max(20).default([]),
     lecture_id: MeilisearchDocumentIdSchema,
     major: FacetValueSchema.nullable(),
+    missing_information: z.array(OptionalTextSchema).max(20).default([]),
+    profile_summary: OptionalTextSchema.default(""),
     research_methods: FacetValuesSchema,
     schools: FacetValuesSchema,
     timestamp_refs: z.array(TimestampReferenceSchema).max(256),
+    verified_facts: z.array(OptionalTextSchema).max(30).default([]),
   })
   .strict();
 

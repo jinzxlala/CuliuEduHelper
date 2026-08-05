@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   PROFILE_REDACTION_VERSION,
+  PROFILE_PROMPT_VERSION,
   PROFILE_SCHEMA_VERSION,
+  PROFILE_SYSTEM_PROMPT,
   ProfileDraftOutputSchema,
   ProfileRevisionInputSchema,
   ProfileTransitionInputSchema,
@@ -59,6 +61,30 @@ function output(locatorId = "00000000-0000-4000-8000-000000000030"): ProfileDraf
 }
 
 describe("profile contracts", () => {
+  it("freezes the v3 prompt rules for array shape, claim coverage and label semantics", () => {
+    expect(PROFILE_PROMPT_VERSION).toBe("profile-draft-prompt.v3");
+    expect(PROFILE_SYSTEM_PROMPT).toContain("claims value must be a JSON array");
+    expect(PROFILE_SYSTEM_PROMPT).toContain("exactly one claim for each listed category");
+    expect(PROFILE_SYSTEM_PROMPT).toContain("one_sentence_label claim is always an inference");
+  });
+
+  it("normalizes an exact category-keyed claims object without relaxing claim validation", () => {
+    const valid = output();
+    const keyedClaims = Object.fromEntries(valid.claims.map((claim) => [claim.category, claim]));
+    expect(
+      validateProfileOutputAgainstSnapshot({ ...valid, claims: keyedClaims }, snapshot()).claims,
+    ).toHaveLength(8);
+    expect(() =>
+      validateProfileOutputAgainstSnapshot(
+        {
+          ...valid,
+          claims: { ...keyedClaims, academic_foundation: undefined },
+        },
+        snapshot(),
+      ),
+    ).toThrow();
+  });
+
   it("requires all eight sections and evidence for every non-missing claim", () => {
     expect(ProfileDraftOutputSchema.parse(output()).claims).toHaveLength(8);
     expect(() =>

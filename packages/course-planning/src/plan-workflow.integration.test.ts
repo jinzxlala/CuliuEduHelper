@@ -35,7 +35,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { CourseRuleDefinition, CourseVersionContent } from "./contracts.js";
-import { PlanWorkflowConflictError } from "./errors.js";
+import { PlanWorkflowConflictError, PlanWorkflowNotFoundError } from "./errors.js";
 import type { CreateManualPlanInput } from "./plan-contracts.js";
 import {
   createCourse,
@@ -733,6 +733,10 @@ describe("manual plan workflow", () => {
     expect(secondExport).toBe(firstExport);
     expect(firstExport).toContain("Synthetic manual course plan");
     expect(firstExport).toContain("人工覆盖（Synthetic Planning Advisor）");
+    const otherActor = await createApprovedProfile();
+    await expect(
+      exportApprovedManualPlanMarkdown(activeClient().database, otherActor.exportContext, plan.id),
+    ).rejects.toBeInstanceOf(PlanWorkflowNotFoundError);
 
     const tamperAttempt = await readManualPlanVersion(
       activeClient().database,

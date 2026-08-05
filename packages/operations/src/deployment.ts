@@ -13,21 +13,24 @@ const StrongSecretSchema = z
   .min(32)
   .refine((value) => !PlaceholderPattern.test(value), "secret must not be a placeholder");
 
+const DeploymentHostnameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(HostnamePattern)
+  .refine(
+    (value) =>
+      value !== "localhost" &&
+      !value.endsWith(".localhost") &&
+      !value.endsWith(".example.com") &&
+      !value.endsWith(".example.invalid"),
+    "deployment hostname must be real",
+  );
+
 export const DeploymentEnvironmentSchema = z
   .object({
-    APP_DOMAIN: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .regex(HostnamePattern)
-      .refine(
-        (value) =>
-          value !== "localhost" &&
-          !value.endsWith(".localhost") &&
-          !value.endsWith(".example.com") &&
-          !value.endsWith(".example.invalid"),
-        "APP_DOMAIN must be a real deployment hostname",
-      ),
+    KNOWLEDGE_APP_DOMAIN: DeploymentHostnameSchema,
+    OPERATIONS_APP_DOMAIN: DeploymentHostnameSchema,
     BACKUP_ENCRYPTION_KEY: StrongSecretSchema,
     BACKUP_HOST_PATH: z.string().min(1).refine(isAbsolute),
     CULIU_GIT_COMMIT_SHA: z
@@ -37,6 +40,8 @@ export const DeploymentEnvironmentSchema = z
     CULIU_IMAGE_TAG: z.string().regex(ShaPattern),
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(10),
     DATABASE_URL: z.url(),
+    KNOWLEDGE_DATABASE_URL: z.url(),
+    OPERATIONS_DATABASE_URL: z.url(),
     DEEPSEEK_API_KEY: z
       .string()
       .min(20)
@@ -49,7 +54,8 @@ export const DeploymentEnvironmentSchema = z
     MEILI_HOST: z.url(),
     MEILI_MAINTENANCE_PORT: z.coerce.number().int().min(1).max(65_535),
     MEILI_MASTER_KEY: StrongSecretSchema,
-    NEXTAUTH_SECRET: StrongSecretSchema,
+    KNOWLEDGE_NEXTAUTH_SECRET: StrongSecretSchema,
+    OPERATIONS_NEXTAUTH_SECRET: StrongSecretSchema,
     POSTGRES_DB: z.string().regex(/^[a-z][a-z\d_]{0,62}$/u),
     POSTGRES_CONTAINER_NAME: z.string().regex(/^[a-z\d][a-z\d_.-]+$/iu),
     POSTGRES_MAINTENANCE_PORT: z.coerce.number().int().min(1).max(65_535),
@@ -93,8 +99,36 @@ export const DeploymentEnvironmentSchema = z
         path: ["CULIU_IMAGE_TAG"],
       });
     }
+    if (value.KNOWLEDGE_APP_DOMAIN === value.OPERATIONS_APP_DOMAIN) {
+      context.addIssue({
+        code: "custom",
+        message: "knowledge and operations domains must be different",
+        path: ["OPERATIONS_APP_DOMAIN"],
+      });
+    }
+    if (value.KNOWLEDGE_NEXTAUTH_SECRET === value.OPERATIONS_NEXTAUTH_SECRET) {
+      context.addIssue({
+        code: "custom",
+        message: "knowledge and operations session secrets must be different",
+        path: ["OPERATIONS_NEXTAUTH_SECRET"],
+      });
+    }
 
     validateServiceUrl(value.DATABASE_URL, "postgresql:", "postgres", "DATABASE_URL", context);
+    validateServiceUrl(
+      value.KNOWLEDGE_DATABASE_URL,
+      "postgresql:",
+      "postgres",
+      "KNOWLEDGE_DATABASE_URL",
+      context,
+    );
+    validateServiceUrl(
+      value.OPERATIONS_DATABASE_URL,
+      "postgresql:",
+      "postgres",
+      "OPERATIONS_DATABASE_URL",
+      context,
+    );
     validateServiceUrl(value.REDIS_URL, "redis:", "redis", "REDIS_URL", context);
     validateServiceUrl(value.MEILI_HOST, "http:", "meilisearch", "MEILI_HOST", context);
 
@@ -136,7 +170,10 @@ type DeploymentEnvironment = z.infer<typeof DeploymentEnvironmentSchema>;
 
 export interface DeploymentCheckReceipt {
   readonly commitSha: string;
-  readonly domain: string;
+  readonly domains: {
+    readonly knowledge: string;
+    readonly operations: string;
+  };
   readonly httpsPort: number;
   readonly pathsChecked: number;
   readonly status: "valid";
@@ -235,7 +272,10 @@ export async function checkProductionDeployment(
 
   return {
     commitSha: parsed.CULIU_GIT_COMMIT_SHA,
-    domain: parsed.APP_DOMAIN,
+    domains: {
+      knowledge: parsed.KNOWLEDGE_APP_DOMAIN,
+      operations: parsed.OPERATIONS_APP_DOMAIN,
+    },
     httpsPort: parsed.PUBLIC_HTTPS_PORT,
     pathsChecked: directoryEntries.length + 2,
     status: "valid",

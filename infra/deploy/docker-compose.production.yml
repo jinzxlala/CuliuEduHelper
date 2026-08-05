@@ -126,23 +126,25 @@ services:
     logging: *default-logging
     <<: *service-security
 
-  web:
-    image: culiu-edu-helper-web:${CULIU_IMAGE_TAG:?CULIU_IMAGE_TAG must be set}
+  knowledge-web:
+    image: culiu-edu-helper-knowledge-web:${CULIU_IMAGE_TAG:?CULIU_IMAGE_TAG must be set}
     build:
       context: ../..
       dockerfile: Dockerfile
-      target: web
+      target: knowledge-web
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
-      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      KNOWLEDGE_DATABASE_URL: ${KNOWLEDGE_DATABASE_URL:?KNOWLEDGE_DATABASE_URL must be set}
+      KNOWLEDGE_DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
       REDIS_URL: ${REDIS_URL:?REDIS_URL must be set}
       MEILI_HOST: ${MEILI_HOST:-http://meilisearch:7700}
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
       MEILI_SEARCH_API_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY must be set}
-      NEXTAUTH_URL: https://${APP_DOMAIN:?APP_DOMAIN must be set}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET must be set}
+      KNOWLEDGE_NEXTAUTH_URL: https://${KNOWLEDGE_APP_DOMAIN:?KNOWLEDGE_APP_DOMAIN must be set}
+      KNOWLEDGE_NEXTAUTH_SECRET: ${KNOWLEDGE_NEXTAUTH_SECRET:?KNOWLEDGE_NEXTAUTH_SECRET must be set}
+      NEXTAUTH_URL: https://${KNOWLEDGE_APP_DOMAIN:?KNOWLEDGE_APP_DOMAIN must be set}
+      NEXTAUTH_SECRET: ${KNOWLEDGE_NEXTAUTH_SECRET:?KNOWLEDGE_NEXTAUTH_SECRET must be set}
       LOCAL_STORAGE_ROOT: /srv/culiu/evidence
       CULIU_GIT_COMMIT_SHA: ${CULIU_GIT_COMMIT_SHA:?CULIU_GIT_COMMIT_SHA must be set}
     volumes:
@@ -158,6 +160,56 @@ services:
       redis:
         condition: service_healthy
       meilisearch:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cpus: 1.5
+    mem_limit: 1g
+    logging: *default-logging
+    <<: *service-security
+
+  operations-web:
+    image: culiu-edu-helper-operations-web:${CULIU_IMAGE_TAG:?CULIU_IMAGE_TAG must be set}
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: operations-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      OPERATIONS_DATABASE_URL: ${OPERATIONS_DATABASE_URL:?OPERATIONS_DATABASE_URL must be set}
+      OPERATIONS_DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must be set}
+      OPERATIONS_NEXTAUTH_URL: https://${OPERATIONS_APP_DOMAIN:?OPERATIONS_APP_DOMAIN must be set}
+      OPERATIONS_NEXTAUTH_SECRET: ${OPERATIONS_NEXTAUTH_SECRET:?OPERATIONS_NEXTAUTH_SECRET must be set}
+      NEXTAUTH_URL: https://${OPERATIONS_APP_DOMAIN:?OPERATIONS_APP_DOMAIN must be set}
+      NEXTAUTH_SECRET: ${OPERATIONS_NEXTAUTH_SECRET:?OPERATIONS_NEXTAUTH_SECRET must be set}
+      LOCAL_STORAGE_ROOT: /srv/culiu/evidence
+      CULIU_GIT_COMMIT_SHA: ${CULIU_GIT_COMMIT_SHA:?CULIU_GIT_COMMIT_SHA must be set}
+    volumes:
+      - type: bind
+        source: ${LOCAL_STORAGE_HOST_PATH:?LOCAL_STORAGE_HOST_PATH must be set}
+        target: /srv/culiu/evidence
+    networks:
+      - edge
+      - backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
         condition: service_healthy
     healthcheck:
       test:
@@ -266,8 +318,9 @@ services:
     image: nginx:1.28.0-alpine
     restart: unless-stopped
     environment:
-      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN must be set}
-      NGINX_ENVSUBST_FILTER: APP_DOMAIN
+      KNOWLEDGE_APP_DOMAIN: ${KNOWLEDGE_APP_DOMAIN:?KNOWLEDGE_APP_DOMAIN must be set}
+      OPERATIONS_APP_DOMAIN: ${OPERATIONS_APP_DOMAIN:?OPERATIONS_APP_DOMAIN must be set}
+      NGINX_ENVSUBST_FILTER: ^(KNOWLEDGE_APP_DOMAIN|OPERATIONS_APP_DOMAIN)$$
     ports:
       - ${PUBLIC_HTTP_PORT:-80}:80
       - ${PUBLIC_HTTPS_PORT:-443}:443
@@ -291,7 +344,9 @@ services:
     networks:
       - edge
     depends_on:
-      web:
+      knowledge-web:
+        condition: service_healthy
+      operations-web:
         condition: service_healthy
     read_only: true
     tmpfs:

@@ -48,7 +48,7 @@ const CandidateIdSchema = z.uuid();
 const ApplyBasicCandidateInputSchema = z
   .object({
     candidateId: z.uuid(),
-    decision: z.enum(["create", "rejected"]),
+    decision: z.enum(["create", "link", "rejected"]),
     fields: z
       .array(
         z
@@ -69,12 +69,12 @@ const ApplyBasicCandidateInputSchema = z
       context.addIssue({ code: "custom", message: "Suggestion decisions must be unique." });
     }
     if (
-      value.decision === "create" &&
+      (value.decision === "create" || value.decision === "link") &&
       !value.fields.some((field) => field.decision === "accepted")
     ) {
       context.addIssue({
         code: "custom",
-        message: "Creating a student requires an accepted field.",
+        message: "Creating or linking a student requires an accepted field.",
       });
     }
   });
@@ -446,6 +446,7 @@ export async function applyBasicStudentImportCandidate(
       batchId: studentImportCandidates.batchId,
       decision: studentImportCandidates.decision,
       ownerUserId: studentImportBatches.createdByUserId,
+      possibleStudentId: studentImportCandidates.possibleStudentId,
     })
     .from(studentImportCandidates)
     .innerJoin(studentImportBatches, eq(studentImportBatches.id, studentImportCandidates.batchId))
@@ -484,7 +485,13 @@ export async function applyBasicStudentImportCandidate(
     return { studentId: null };
   }
 
-  const studentId = randomUUID();
+  if (input.decision === "link" && candidate.possibleStudentId === null) {
+    throw new StudentImportConflictError("This candidate has no unique existing student match.");
+  }
+  const studentId = input.decision === "link" ? candidate.possibleStudentId : randomUUID();
+  if (studentId === null) {
+    throw new StudentImportConflictError("The linked student is unavailable.");
+  }
   const accepted = suggestions.flatMap((suggestion) => {
     const requested = requestedById.get(suggestion.id);
     if (requested?.decision !== "accepted") return [];
@@ -511,35 +518,37 @@ export async function applyBasicStudentImportCandidate(
   const evidenceId = randomUUID();
   const locatorBySuggestion = new Map(accepted.map((suggestion) => [suggestion.id, randomUUID()]));
   await database.transaction(async (transaction) => {
-    await transaction.insert(students).values({
-      createdAt: now,
-      id: studentId,
-      ownerUserId: context.actorUserId,
-      privacyLevel: "restricted",
-      publicCode: `STU-${studentId.slice(0, 8).toUpperCase()}`,
-      updatedAt: now,
-    });
-    await transaction.insert(studentAuthorizations).values({
-      allowedActions: [
-        "student:read",
-        "student:write",
-        "student:profile:generate",
-        "student:recommendation:generate",
-        "student:recommendation:review",
-        "student:profile:review",
-        "student:profile:approve",
-        "student:plan:write",
-        "student:plan:review",
-        "student:plan:approve",
-        "student:plan:export",
-      ],
-      createdAt: now,
-      grantedByUserId: context.actorUserId,
-      maxAccessLevel: "restricted",
-      studentId,
-      userId: context.actorUserId,
-      validFrom: now,
-    });
+    if (input.decision === "create") {
+      await transaction.insert(students).values({
+        createdAt: now,
+        id: studentId,
+        ownerUserId: context.actorUserId,
+        privacyLevel: "restricted",
+        publicCode: `STU-${studentId.slice(0, 8).toUpperCase()}`,
+        updatedAt: now,
+      });
+      await transaction.insert(studentAuthorizations).values({
+        allowedActions: [
+          "student:read",
+          "student:write",
+          "student:profile:generate",
+          "student:recommendation:generate",
+          "student:recommendation:review",
+          "student:profile:review",
+          "student:profile:approve",
+          "student:plan:write",
+          "student:plan:review",
+          "student:plan:approve",
+          "student:plan:export",
+        ],
+        createdAt: now,
+        grantedByUserId: context.actorUserId,
+        maxAccessLevel: "restricted",
+        studentId,
+        userId: context.actorUserId,
+        validFrom: now,
+      });
+    }
     await transaction.insert(evidenceObjects).values({
       accessLevel: "restricted",
       byteCount: stored.size,
@@ -577,19 +586,57 @@ export async function applyBasicStudentImportCandidate(
       if (acceptedSuggestion === undefined || locatorId === undefined) {
         throw new StudentImportConflictError("Accepted field could not be materialized.");
       }
-      const factId = randomUUID();
-      await transaction.insert(studentFacts).values({
-        accessLevel: factAccessLevel(),
-        confirmationStatus: "confirmed",
-        createdAt: now,
-        fieldKey: suggestion.fieldKey,
-        id: factId,
-        sourceType: "import",
-        studentId,
-        updatedAt: now,
-        validFrom: now,
-        value: acceptedSuggestion.value,
-      });
+      const current =
+        input.decision === "link"
+          ? await transaction
+              .select({
+                id: studentFacts.id,
+                validFrom: studentFacts.validFrom,
+                value: studentFacts.value,
+              })
+              .from(studentFacts)
+              .where(
+                and(
+                  eq(studentFacts.studentId, studentId),
+                  eq(studentFacts.fieldKey, suggestion.fieldKey),
+                  isNull(studentFacts.validTo),
+                ),
+              )
+              .for("update")
+              .limit(1)
+          : [];
+      const prior = current[0];
+      const unchanged =
+        prior !== undefined &&
+        JSON.stringify(prior.value) === JSON.stringify(acceptedSuggestion.value);
+      let factId = prior?.id ?? randomUUID();
+      if (!unchanged) {
+        if (prior !== undefined) {
+          if (now <= prior.validFrom) {
+            throw new StudentImportConflictError(
+              "Linked fact revision time must follow the current fact.",
+            );
+          }
+          await transaction
+            .update(studentFacts)
+            .set({ confirmationStatus: "superseded", updatedAt: now, validTo: now })
+            .where(eq(studentFacts.id, prior.id));
+          factId = randomUUID();
+        }
+        await transaction.insert(studentFacts).values({
+          accessLevel: factAccessLevel(),
+          confirmationStatus: "confirmed",
+          createdAt: now,
+          fieldKey: suggestion.fieldKey,
+          id: factId,
+          sourceType: "import",
+          studentId,
+          ...(prior === undefined ? {} : { supersedesId: prior.id }),
+          updatedAt: now,
+          validFrom: now,
+          value: acceptedSuggestion.value,
+        });
+      }
       await transaction.insert(factEvidence).values({
         createdAt: now,
         evidenceLocatorId: locatorId,
@@ -614,14 +661,17 @@ export async function applyBasicStudentImportCandidate(
     await transaction
       .update(studentImportCandidates)
       .set({
-        createdStudentId: studentId,
-        decision: "create",
+        createdStudentId: input.decision === "create" ? studentId : null,
+        decision: input.decision,
         decidedAt: now,
         decidedByUserId: context.actorUserId,
       })
       .where(eq(studentImportCandidates.id, candidateId));
     await transaction.insert(auditEvents).values({
-      action: "student.import.candidate.create",
+      action:
+        input.decision === "create"
+          ? "student.import.candidate.create"
+          : "student.import.candidate.link",
       actorType: "user",
       actorUserId: context.actorUserId,
       createdAt: now,

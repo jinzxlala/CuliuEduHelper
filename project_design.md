@@ -923,7 +923,7 @@ Code Agent任务时长不是人力工时，也不与人工工时直接相加；�
 | 运行环境 | Node.js 22 LTS | 长期支持版本，确保生产稳定性 |
 | 主要语言 | TypeScript 5.x | 严格模式，全栈类型共享 |
 | 全栈Web框架 | Next.js 15 (App Router) | 统一承载页面和业务API，Server Components优先 |
-| 工程组织 | Turborepo monorepo | `apps/web` + `apps/worker` + `packages/*` |
+| 工程组织 | Turborepo monorepo | `apps/knowledge-web` + `apps/operations-web` + `apps/worker` + `packages/*` |
 | ORM | Drizzle ORM | TypeScript-first，与PostgreSQL配合良好，迁移简洁 |
 | 身份认证 | Auth.js | 负责登录会话；学生级授权由独立业务授权层实现 |
 | 数据校验 | Zod | 前后端和模型任务输出共享Schema定义 |
@@ -945,6 +945,7 @@ Code Agent任务时长不是人力工时，也不与人工工时直接相加；�
 - 第一版避免过早引入大量基础设施（包括重量级工作流引擎、向量数据库、动态Skill Registry）；
 - 前端、业务API和共享类型采用同一套TypeScript定义；
 - 单仓库不等于单进程，长任务与Web请求保持运行隔离；
+- 顾问知识系统与内部教务系统是两个独立Next.js应用，使用不同入口、会话Cookie和可分别配置的数据库连接；领域包与Worker继续共享，浏览器路由和业务API不得跨系统混用；
 - MVP领域能力以普通TypeScript模块组织，通过稳定Schema、权限接口和测试保持可提取性；
 - 搜索、规则和正式数据不依赖模型；
 - Agent框架可以替换，业务数据不可被框架锁定；
