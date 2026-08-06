@@ -16,10 +16,42 @@ describe("worker profile model configuration", () => {
     expect(
       parseWorkerRuntimeConfig({ ...baseEnvironment, CULIU_TASK_QUEUE_NAME: "synthetic-queue" }),
     ).toMatchObject({
+      knowledgeEmbeddersEnabled: true,
       knowledgeExtractionModelProvider: "deepseek",
+      meilisearchTaskPollingIntervalMs: 500,
+      meilisearchTaskTimeoutMs: 600_000,
       profileModelProvider: "deepseek",
       queueName: "synthetic-queue",
     });
+  });
+
+  it("supports a keyword-only production deployment and bounded Meilisearch waits", () => {
+    expect(
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_EMBEDDERS_ENABLED: "false",
+        MEILI_TASK_POLL_INTERVAL_MS: "1000",
+        MEILI_TASK_TIMEOUT_MS: "900000",
+        NODE_ENV: "production",
+      }),
+    ).toMatchObject({
+      knowledgeEmbeddersEnabled: false,
+      meilisearchTaskPollingIntervalMs: 1_000,
+      meilisearchTaskTimeoutMs: 900_000,
+    });
+
+    expect(() =>
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_EMBEDDERS_ENABLED: "yes",
+      }),
+    ).toThrow();
+    expect(() =>
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        MEILI_TASK_POLL_INTERVAL_MS: "50",
+      }),
+    ).toThrow();
   });
 
   it("allows the deterministic provider only outside production", () => {

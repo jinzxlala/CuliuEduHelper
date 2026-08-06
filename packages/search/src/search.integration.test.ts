@@ -156,6 +156,22 @@ describe("knowledge search service", () => {
     }
   });
 
+  it("removes existing embedders when keyword-only mode is selected", async () => {
+    const keywordOnlyManager = new KnowledgeIndexManager({
+      client,
+      enableEmbedders: false,
+      indexNames,
+    });
+
+    await keywordOnlyManager.ensureKnowledgeIndexes();
+    for (const uid of Object.values(indexNames)) {
+      const settings = await client.index(uid).getSettings();
+      expect(settings.embedders ?? {}).toEqual({});
+    }
+
+    await manager.ensureKnowledgeIndexes();
+  });
+
   it("searches and filters lectures with safe highlight markers and facets", async () => {
     const result = await service.searchLectures({
       facets: ["schools"],

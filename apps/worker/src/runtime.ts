@@ -50,7 +50,12 @@ export async function runWorker(): Promise<void> {
   const databaseClient = createDatabaseClient(parseDatabaseConfig());
   const redis = createRedisConnection(parseRedisUrl());
   const meilisearchClient = createMeilisearchClient(parseMeilisearchAdminConfig());
-  const indexManager = new KnowledgeIndexManager({ client: meilisearchClient });
+  const indexManager = new KnowledgeIndexManager({
+    client: meilisearchClient,
+    enableEmbedders: runtime.knowledgeEmbeddersEnabled,
+    taskPollingIntervalMs: runtime.meilisearchTaskPollingIntervalMs,
+    taskTimeoutMs: runtime.meilisearchTaskTimeoutMs,
+  });
   const knowledgeSearch = new KnowledgeSearchService({ client: meilisearchClient });
   const objectStore = new LocalImmutableObjectStore(runtime.localStorageRoot);
   const importer = new KnowledgeImporter({

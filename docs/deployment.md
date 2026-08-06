@@ -43,6 +43,14 @@ chmod 600 infra/deploy/.env.production
 
 使用 `openssl rand -base64 48` 分别生成各项密钥，不要复用。数据库和 Redis 密码写入 URL 时必须进行 URL 编码。`CULIU_IMAGE_TAG` 必须与 `CULIU_GIT_COMMIT_SHA` 完全相同，确保运行镜像可追溯到唯一提交。
 
+`KNOWLEDGE_EMBEDDERS_ENABLED` 控制 Meilisearch 是否配置本地 Hugging Face 中文向量模型：
+
+- `true`：启用关键词／向量混合召回；首次启动必须能下载固定 revision 的模型，并为索引生成向量；
+- `false`：不配置本地向量模型。智能搜索仍执行 DeepSeek 查询规划、Meilisearch 关键词召回和 DeepSeek 候选筛选，但暂时不执行语义向量召回；
+- 中国大陆服务器无法稳定访问模型源时，应先使用 `false` 完成可用部署，再通过受控模型缓存或自建镜像恢复混合召回，不应让 Worker 因下载失败持续重启。
+
+`MEILI_TASK_TIMEOUT_MS` 默认 600000（10 分钟），`MEILI_TASK_POLL_INTERVAL_MS` 默认 500。两者只控制 Worker 等待 Meilisearch 异步任务的时间与轮询频率，不会绕过任务失败。
+
 将证书和私钥放入配置指定位置，权限只授予服务器管理员和 Docker。
 
 证据目录必须允许容器内 UID/GID `1000:1000` 读写，三个知识源目录只需允许该 UID/GID 读取；备份目录只授予执行运维 CLI 的服务器账号。应由服务器管理员按现有磁盘和账号策略设置所有权与权限，不要使用 `chmod 777`。
@@ -60,6 +68,51 @@ docker compose \
 预检会检查两个真实域名、内部服务地址、密钥门槛、两套会话密钥隔离、镜像提交身份、端口冲突、持久目录、目录互相嵌套和 PEM 文件头。成功回执只显示域名、HTTPS 端口、提交 SHA 和检查数量，不显示密钥。
 
 ## 4. 构建和启动
+
+### 4.1 使用运维脚本（推荐）
+
+仓库提供 `infra/deploy/scripts/` 下的 Bash 脚本。脚本在 CVM 上默认读取 `/srv/culiu/config/.env.production`，并在存在时自动叠加 `/srv/culiu/config/docker-compose.tcr.yml`；其他环境可通过 `CULIU_DEPLOY_ENV_FILE` 和 `CULIU_DEPLOY_OVERRIDE_FILE` 指定绝对路径。
+
+首次检出代码后赋予执行权限：
+
+```bash
+chmod +x infra/deploy/scripts/*.sh
+```
+
+常用命令：
+
+```bash
+# 校验配置、启动全部生产服务并显示状态
+infra/deploy/scripts/start.sh
+
+# 停止全部服务但保留容器、网络、数据卷和宿主机数据
+infra/deploy/scripts/stop.sh
+
+# 只停止或启动 Worker
+infra/deploy/scripts/stop.sh worker
+infra/deploy/scripts/compose.sh start worker
+
+# 查看全部容器（包括已退出的一次性迁移容器）
+infra/deploy/scripts/status.sh
+
+# 默认查看四个应用服务最近 200 行日志
+infra/deploy/scripts/logs.sh
+infra/deploy/scripts/logs.sh worker
+infra/deploy/scripts/logs.sh -f worker
+
+# 重启默认应用服务，或只重启指定服务
+infra/deploy/scripts/restart.sh
+infra/deploy/scripts/restart.sh worker
+
+# 代替手工声明 DC 数组，直接传递任意 Compose 子命令
+infra/deploy/scripts/compose.sh config --quiet
+infra/deploy/scripts/compose.sh pull
+infra/deploy/scripts/compose.sh up -d
+```
+
+`stop.sh` 不执行 `down` 或 `down -v`。任何删除数据卷的操作仍受第 8 节破坏性操作门禁约束。
+
+### 4.2 直接使用 Docker Compose
 
 ```bash
 docker compose \
@@ -109,6 +162,8 @@ unset CULIU_BOOTSTRAP_ADMIN_PASSWORD
 数据库内一旦存在可交互密码账号，初始化命令会永久拒绝再次执行。管理员也不自动获得所有学生权限，仍需显式学生级授权。
 
 ## 6. 日常运维
+
+日常操作优先使用第 4.1 节脚本。以下原生命令保留用于理解和排障：
 
 ```bash
 # 查看状态

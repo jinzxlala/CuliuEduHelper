@@ -44,6 +44,7 @@ export interface KnowledgeIndexManagerOptions {
   client: Meilisearch;
   enableEmbedders?: boolean;
   indexNames?: KnowledgeIndexNames;
+  taskPollingIntervalMs?: number;
   taskTimeoutMs?: number;
 }
 
@@ -95,6 +96,7 @@ export class KnowledgeIndexManager {
   readonly #client: Meilisearch;
   readonly #enableEmbedders: boolean;
   readonly #indexNames: KnowledgeIndexNames;
+  readonly #taskPollingIntervalMs: number;
   readonly #taskTimeoutMs: number;
 
   public constructor(options: KnowledgeIndexManagerOptions) {
@@ -103,7 +105,11 @@ export class KnowledgeIndexManager {
     this.#indexNames = KnowledgeIndexNamesSchema.parse(
       options.indexNames ?? DEFAULT_KNOWLEDGE_INDEX_NAMES,
     );
+    this.#taskPollingIntervalMs = options.taskPollingIntervalMs ?? 500;
     this.#taskTimeoutMs = options.taskTimeoutMs ?? 60_000;
+    if (!Number.isInteger(this.#taskPollingIntervalMs) || this.#taskPollingIntervalMs <= 0) {
+      throw new RangeError("taskPollingIntervalMs must be a positive integer.");
+    }
     if (!Number.isInteger(this.#taskTimeoutMs) || this.#taskTimeoutMs <= 0) {
       throw new RangeError("taskTimeoutMs must be a positive integer.");
     }
@@ -111,13 +117,26 @@ export class KnowledgeIndexManager {
 
   async #waitForSuccess(taskUid: number): Promise<Task> {
     const task = await this.#client.tasks.waitForTask(taskUid, {
-      interval: 50,
+      interval: this.#taskPollingIntervalMs,
       timeout: this.#taskTimeoutMs,
     });
     if (task.status !== "succeeded") {
       throw new KnowledgeIndexTaskError(task);
     }
     return task;
+  }
+
+  async #applyCanonicalSettings(
+    indexUid: string,
+    definition: (typeof KNOWLEDGE_INDEX_DEFINITIONS)[keyof typeof KNOWLEDGE_INDEX_DEFINITIONS],
+  ): Promise<void> {
+    const index = this.#client.index(indexUid);
+    if (!this.#enableEmbedders) {
+      const resetTask = await index.resetEmbedders();
+      await this.#waitForSuccess(resetTask.taskUid);
+    }
+    const settingsTask = await index.updateSettings(settingsFor(definition, this.#enableEmbedders));
+    await this.#waitForSuccess(settingsTask.taskUid);
   }
 
   async #ensureTargetIndex(uid: string, primaryKey: string): Promise<void> {
@@ -191,10 +210,7 @@ export class KnowledgeIndexManager {
     const targets = this.#buildTargets({ cases: [], lectures: [], transcriptSegments: [] });
     for (const target of targets) {
       await this.#ensureTargetIndex(target.targetUid, target.definition.primaryKey);
-      const task = await this.#client
-        .index(target.targetUid)
-        .updateSettings(settingsFor(target.definition, this.#enableEmbedders));
-      await this.#waitForSuccess(task.taskUid);
+      await this.#applyCanonicalSettings(target.targetUid, target.definition);
     }
   }
 
@@ -212,10 +228,7 @@ export class KnowledgeIndexManager {
         });
         await this.#waitForSuccess(createTask.taskUid);
 
-        const settingsTask = await this.#client
-          .index(target.temporaryUid)
-          .updateSettings(settingsFor(target.definition, this.#enableEmbedders));
-        await this.#waitForSuccess(settingsTask.taskUid);
+        await this.#applyCanonicalSettings(target.temporaryUid, target.definition);
 
         if (target.documents.length > 0) {
           const documentsTask = await this.#client
