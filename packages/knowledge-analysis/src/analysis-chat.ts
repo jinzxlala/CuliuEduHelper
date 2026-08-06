@@ -34,7 +34,7 @@ import {
   KnowledgeWorkspaceNotFoundError,
 } from "./workspace-service.js";
 
-export const KNOWLEDGE_ANALYSIS_CHAT_PROMPT_VERSION = "knowledge-analysis-chat.v1" as const;
+export const KNOWLEDGE_ANALYSIS_CHAT_PROMPT_VERSION = "knowledge-analysis-chat.v2" as const;
 export const KNOWLEDGE_ANALYSIS_CHAT_SCHEMA_VERSION = "knowledge-analysis-chat-output.v1" as const;
 export const KNOWLEDGE_ANALYSIS_CONTEXT_VERSION = "knowledge-analysis-context.v1" as const;
 export const KNOWLEDGE_ANALYSIS_PRICING_VERSION = "deepseek-v4-flash-cny-2026-08-02" as const;
@@ -579,6 +579,7 @@ export async function executeKnowledgeAnalysisChat(
             },
           },
         ],
+        conversationTopic: "根据当前问题概括的简短中文主题，不超过 30 个汉字",
         suggestedFollowUps: ["string"],
         uncertainties: ["string"],
       },
@@ -588,7 +589,7 @@ export async function executeKnowledgeAnalysisChat(
       throw new Error("analysis_context_limit_exceeded");
     const generated = await provider.generateJson({
       systemPrompt:
-        "你是内部教育知识分析助手，只输出 JSON。只能使用工作区冻结资料与当前对话；引用必须逐字段复制允许的 source；资料不支持的判断要标记为分析性判断或待核实；answerMarkdown 禁止原始 HTML。",
+        "你是内部教育知识分析助手，只输出 JSON。只能使用工作区冻结资料与当前对话；引用必须逐字段复制允许的 source；资料不支持的判断要标记为分析性判断或待核实；answerMarkdown 禁止原始 HTML；conversationTopic 必须根据当前问题生成简短、具体的中文主题，不要使用‘新对话’或泛化标题。",
       userPrompt,
     });
     usages.push(generated.usage);
@@ -649,6 +650,16 @@ export async function executeKnowledgeAnalysisChat(
         .update(knowledgeAnalysisConversations)
         .set({ updatedAt: completedAt })
         .where(eq(knowledgeAnalysisConversations.id, task.payload.conversationId));
+      if (messages.every((message) => message.role !== "assistant"))
+        await transaction
+          .update(knowledgeAnalysisConversations)
+          .set({ title: output.conversationTopic })
+          .where(
+            and(
+              eq(knowledgeAnalysisConversations.id, task.payload.conversationId),
+              eq(knowledgeAnalysisConversations.title, "新对话"),
+            ),
+          );
     });
     return { messageId };
   } catch (error) {

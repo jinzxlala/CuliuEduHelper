@@ -35,6 +35,7 @@ import {
   ANALYSIS_REPORT_MAX_BYTES,
   ANALYSIS_REPORT_TEMPLATE_VERSION,
   renderAnalysisReport,
+  type ReportCitationPresentation,
 } from "./report-renderer.js";
 import {
   assertKnowledgeWorkspacePermission,
@@ -42,7 +43,7 @@ import {
   KnowledgeWorkspaceNotFoundError,
 } from "./workspace-service.js";
 
-export const ANALYSIS_REPORT_PROMPT_VERSION = "knowledge-analysis-report.v1" as const;
+export const ANALYSIS_REPORT_PROMPT_VERSION = "knowledge-analysis-report.v2" as const;
 export const ANALYSIS_REPORT_SCHEMA_VERSION = "knowledge-analysis-report-output.v1" as const;
 export const ANALYSIS_REPORT_CONTEXT_VERSION = "knowledge-analysis-report-context.v1" as const;
 export const ANALYSIS_REPORT_PRICING_VERSION = "deepseek-v4-flash-cny-2026-08-02" as const;
@@ -98,6 +99,14 @@ interface LoadedSource {
   content: Record<string, unknown>;
   reference: KnowledgeSourceReference;
   title: string;
+}
+
+export interface KnowledgeAnalysisReportCitationAuditRow {
+  contentHash: string;
+  publicDescription: string;
+  publicLabel: string;
+  sourceId: string;
+  sourceType: "lecture" | "case";
 }
 
 function stableJson(value: unknown): string {
@@ -445,6 +454,49 @@ function validateCitations(citations: KnowledgeCitation[], sources: LoadedSource
     throw new Error("report_citation_outside_snapshot");
 }
 
+function safePublicDescription(source: LoadedSource): string {
+  const candidate = source.title.replace(/\s+/gu, " ").trim().slice(0, 200);
+  if (
+    candidate === "" ||
+    candidate.includes(source.reference.sourceId) ||
+    candidate.includes(source.reference.contentHash) ||
+    /\b(?:case|lecture)_[a-z0-9_-]{8,}\b/iu.test(candidate) ||
+    /\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/iu.test(candidate) ||
+    /\b[0-9a-f]{32,}\b/iu.test(candidate)
+  )
+    return "";
+  return candidate;
+}
+
+function buildCitationPresentations(
+  sources: LoadedSource[],
+  reportSpec: AnalysisReportSpec,
+): ReportCitationPresentation[] {
+  const sourceByIdentity = new Map(
+    sources.map((source) => [stableJson(source.reference), source] as const),
+  );
+  const output: ReportCitationPresentation[] = [];
+  const seen = new Set<string>();
+  const counters = { case: 0, lecture: 0 };
+  for (const citation of reportSpec.sections.flatMap((section) => section.citations)) {
+    const identity = stableJson(citation.source);
+    if (seen.has(identity)) continue;
+    const source = sourceByIdentity.get(identity);
+    if (source === undefined) throw new Error("report_citation_outside_snapshot");
+    seen.add(identity);
+    counters[source.reference.sourceType] += 1;
+    output.push({
+      publicDescription: safePublicDescription(source),
+      publicLabel:
+        source.reference.sourceType === "case"
+          ? `匿名案例 ${String(counters.case).padStart(2, "0")}`
+          : `讲座资料 ${String(counters.lecture).padStart(2, "0")}`,
+      source: source.reference,
+    });
+  }
+  return output;
+}
+
 function modelSource(source: LoadedSource): Record<string, unknown> {
   const permitted =
     source.reference.sourceType === "lecture"
@@ -594,7 +646,17 @@ export async function executeKnowledgeAnalysisReport(
         sections: [
           {
             chartKey: "allowed chart key or null",
-            citations: [{ claim: "string", source: "exact frozen reference" }],
+            citations: [
+              {
+                claim: "string",
+                source: {
+                  batchId: "逐字段复制 sources[].reference.batchId 的 uuid",
+                  contentHash: "逐字段复制 sources[].reference.contentHash 的 sha256",
+                  sourceId: "逐字段复制 sources[].reference.sourceId",
+                  sourceType: "逐字段复制 sources[].reference.sourceType，只能是 lecture 或 case",
+                },
+              },
+            ],
             id: "stable-id",
             paragraphs: ["string"],
             title: "string",
@@ -609,7 +671,7 @@ export async function executeKnowledgeAnalysisReport(
     if (userPrompt.length > 200_000) throw new Error("report_context_limit_exceeded");
     const response = await provider.generateJson({
       systemPrompt:
-        "你是醋溜教育内部分析报告撰稿器。只输出 JSON。所有数字和图表只能引用输入 charts 中的服务端确定性统计；不能重新计算、创造样本或编写 SQL、JavaScript、Python、HTML。引用必须逐字使用 sources 中的冻结 reference。证据不足时明确写为分析判断或待核实。",
+        "你是醋溜教育内部分析报告撰稿器。只输出 JSON。所有数字和图表只能引用输入 charts 中的服务端确定性统计；不能重新计算、创造样本或编写 SQL、JavaScript、Python、HTML。每条 citations[].source 必须是包含 batchId、contentHash、sourceId、sourceType 四个字段的 JSON 对象，并逐字段复制 sources[].reference；绝对不能把 source 写成字符串。证据不足时明确写为分析判断或待核实。",
       userPrompt,
     });
     if (response.model !== task.payload.model) throw new Error("report_model_mismatch");
@@ -651,7 +713,10 @@ export async function executeKnowledgeAnalysisReport(
       .update(knowledgeAnalysisReports)
       .set({ status: "rendering", updatedAt: new Date() })
       .where(eq(knowledgeAnalysisReports.id, record.report.id));
-    const rendered = renderAnalysisReport(reportSpec);
+    const rendered = renderAnalysisReport(
+      reportSpec,
+      buildCitationPresentations(sources, reportSpec),
+    );
     const [interactiveRef, staticRef] = await Promise.all([
       objectStore.store({
         content: Uint8Array.from(rendered.interactive),
@@ -788,6 +853,7 @@ export async function listKnowledgeAnalysisReports(
   conversationId: string,
 ): Promise<
   Array<{
+    canCreatePresentationCopy: boolean;
     completedAt: Date | null;
     createdAt: Date;
     id: string;
@@ -795,6 +861,7 @@ export async function listKnowledgeAnalysisReports(
     safeErrorSummary: string | null;
     status: "queued" | "planning" | "computing" | "rendering" | "succeeded" | "failed";
     title: string;
+    publicSafe: boolean;
     version: number;
   }>
 > {
@@ -808,6 +875,8 @@ export async function listKnowledgeAnalysisReports(
       safeErrorSummary: knowledgeAnalysisReports.safeErrorSummary,
       status: knowledgeAnalysisReports.status,
       structuredReport: knowledgeAnalysisReports.structuredReport,
+      supersedesReportId: knowledgeAnalysisReports.supersedesReportId,
+      templateVersion: knowledgeAnalysisReports.templateVersion,
       version: knowledgeAnalysisReports.version,
     })
     .from(knowledgeAnalysisReports)
@@ -818,10 +887,179 @@ export async function listKnowledgeAnalysisReports(
       ),
     )
     .orderBy(desc(knowledgeAnalysisReports.createdAt));
-  return rows.map(({ structuredReport, ...row }) => ({
-    ...row,
-    title: AnalysisReportSpecSchema.safeParse(structuredReport).data?.title ?? "分析报告",
+  const supersededIds = new Set(
+    rows
+      .map((row) => row.supersedesReportId)
+      .filter((reportId): reportId is string => reportId !== null),
+  );
+  return rows.map(
+    ({ structuredReport, supersedesReportId: _supersedesReportId, templateVersion, ...row }) => {
+      const publicSafe = templateVersion === ANALYSIS_REPORT_TEMPLATE_VERSION;
+      return {
+        ...row,
+        canCreatePresentationCopy:
+          row.status === "succeeded" && !publicSafe && !supersededIds.has(row.id),
+        publicSafe,
+        title: AnalysisReportSpecSchema.safeParse(structuredReport).data?.title ?? "分析报告",
+      };
+    },
+  );
+}
+
+export async function readKnowledgeAnalysisReportCitationAudit(
+  database: Database,
+  actorUserId: string,
+  workspaceId: string,
+  reportId: string,
+): Promise<KnowledgeAnalysisReportCitationAuditRow[]> {
+  await assertKnowledgeWorkspacePermission(database, actorUserId, workspaceId, "read");
+  const rows = await database
+    .select({
+      sourceSnapshot: knowledgeAnalysisReports.sourceSnapshot,
+      status: knowledgeAnalysisReports.status,
+      structuredReport: knowledgeAnalysisReports.structuredReport,
+    })
+    .from(knowledgeAnalysisReports)
+    .where(
+      and(
+        eq(knowledgeAnalysisReports.id, reportId),
+        eq(knowledgeAnalysisReports.workspaceId, workspaceId),
+      ),
+    )
+    .limit(1);
+  if (rows[0]?.status !== "succeeded" || rows[0].structuredReport === null)
+    throw new KnowledgeWorkspaceNotFoundError();
+  const reportSpec = AnalysisReportSpecSchema.parse(rows[0].structuredReport);
+  const snapshot = z.array(FrozenReportSourceSchema).parse(rows[0].sourceSnapshot);
+  const sources = await loadFrozenSources(database, snapshot);
+  return buildCitationPresentations(sources, reportSpec).map((presentation) => ({
+    contentHash: presentation.source.contentHash,
+    publicDescription: presentation.publicDescription,
+    publicLabel: presentation.publicLabel,
+    sourceId: presentation.source.sourceId,
+    sourceType: presentation.source.sourceType,
   }));
+}
+
+export async function rerenderKnowledgeAnalysisReportPresentation(
+  database: Database,
+  objectStore: ImmutableObjectStore,
+  authorization: AuthorizationContext,
+  workspaceId: string,
+  reportId: string,
+  gitCommitSha: string,
+): Promise<{ reportId: string; version: number }> {
+  assertAuthorizationContext(authorization, {
+    action: "knowledge:analysis:write",
+    accessLevel: "internal",
+    actorUserId: authorization.actorUserId,
+    studentId: null,
+  });
+  await assertKnowledgeWorkspacePermission(
+    database,
+    authorization.actorUserId,
+    workspaceId,
+    "create_report",
+  );
+  if (!/^[0-9a-f]{40}$/u.test(gitCommitSha)) throw new Error("invalid_git_commit_sha");
+  const priorRows = await database
+    .select()
+    .from(knowledgeAnalysisReports)
+    .where(
+      and(
+        eq(knowledgeAnalysisReports.id, reportId),
+        eq(knowledgeAnalysisReports.workspaceId, workspaceId),
+      ),
+    )
+    .limit(1);
+  const prior = priorRows[0];
+  if (prior?.status !== "succeeded" || prior.structuredReport === null)
+    throw new KnowledgeWorkspaceNotFoundError();
+  if (prior.templateVersion === ANALYSIS_REPORT_TEMPLATE_VERSION)
+    throw new KnowledgeWorkspaceConflictError("该报告已经是对外安全版本。");
+  const reportSpec = AnalysisReportSpecSchema.parse(prior.structuredReport);
+  const snapshot = z.array(FrozenReportSourceSchema).parse(prior.sourceSnapshot);
+  const sources = await loadFrozenSources(database, snapshot);
+  const rendered = renderAnalysisReport(
+    reportSpec,
+    buildCitationPresentations(sources, reportSpec),
+  );
+  const [interactiveRef, staticRef] = await Promise.all([
+    objectStore.store({
+      content: Uint8Array.from(rendered.interactive),
+      domain: "knowledge",
+      purpose: "analysis_report",
+    }),
+    objectStore.store({
+      content: Uint8Array.from(rendered.static),
+      domain: "knowledge",
+      purpose: "analysis_report",
+    }),
+  ]);
+  const newReportId = randomUUID();
+  const runId = randomUUID();
+  const version = prior.version + 1;
+  const completedAt = new Date();
+  await database.transaction(async (transaction) => {
+    await transaction.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${prior.reportSeriesId}::text, 0))`,
+    );
+    const successor = await transaction
+      .select({ id: knowledgeAnalysisReports.id })
+      .from(knowledgeAnalysisReports)
+      .where(eq(knowledgeAnalysisReports.supersedesReportId, prior.id))
+      .limit(1);
+    if (successor[0] !== undefined)
+      throw new KnowledgeWorkspaceConflictError("该报告已经存在后续版本。");
+    await transaction.insert(knowledgeAgentRuns).values({
+      authorizationContextId: authorization.id,
+      completedAt,
+      completionTokens: 0,
+      contextVersion: ANALYSIS_REPORT_CONTEXT_VERSION,
+      conversationId: prior.conversationId,
+      costMicrounits: 0,
+      gitCommitSha,
+      id: runId,
+      inputSnapshotHash: prior.conversationSnapshotHash,
+      kind: "analysis_report",
+      model: "deterministic-renderer",
+      pricingVersion: "no-model.v1",
+      promptTokens: 0,
+      promptVersion: "knowledge-analysis-report-presentation.v1",
+      schemaVersion: ANALYSIS_REPORT_SCHEMA_VERSION,
+      startedAt: completedAt,
+      status: "succeeded",
+      totalTokens: 0,
+      workspaceId,
+    });
+    await transaction.insert(knowledgeAnalysisReports).values({
+      agentRunId: runId,
+      completedAt,
+      conversationId: prior.conversationId,
+      conversationSnapshotHash: prior.conversationSnapshotHash,
+      conversationThroughSequence: prior.conversationThroughSequence,
+      createdByUserId: authorization.actorUserId,
+      id: newReportId,
+      interactiveByteCount: interactiveRef.size,
+      interactiveContentHash: interactiveRef.sha256,
+      interactiveScriptHash: rendered.scriptHash,
+      interactiveStorageKey: interactiveRef.key,
+      reportSeriesId: prior.reportSeriesId,
+      requirements: prior.requirements,
+      sourceSnapshot: prior.sourceSnapshot,
+      staticByteCount: staticRef.size,
+      staticContentHash: staticRef.sha256,
+      staticStorageKey: staticRef.key,
+      status: "succeeded",
+      structuredReport: reportSpec,
+      supersedesReportId: prior.id,
+      templateVersion: ANALYSIS_REPORT_TEMPLATE_VERSION,
+      updatedAt: completedAt,
+      version,
+      workspaceId,
+    });
+  });
+  return { reportId: newReportId, version };
 }
 
 export async function readKnowledgeAnalysisReportArtifact(

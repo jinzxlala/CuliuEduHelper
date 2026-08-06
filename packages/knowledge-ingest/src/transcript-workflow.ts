@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { basename, extname } from "node:path";
 
 import { ModelGatewayError, type JsonModelProvider } from "@culiu/ai";
 import type { AuthorizationContext, SessionPrincipal } from "@culiu/authorization";
@@ -18,11 +19,13 @@ import {
   KNOWLEDGE_EXTRACTION_SCHEMA_HASH,
   KNOWLEDGE_EXTRACTION_SCHEMA_VERSION,
   KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
+  KnowledgeExtractionOutputSchema,
   knowledgeExtractionSha256,
   renderKnowledgeAnalysisMarkdown,
   sanitizeKnowledgeTranscriptForModel,
 } from "./knowledge-extraction.js";
 import { buildKnowledgeSubmission } from "./submission.js";
+import { knowledgeLectureId } from "./manifest.js";
 import type { ParsedTranscriptDocument } from "./transcript-documents.js";
 
 const JOB_LEASE_MS = 120_000;
@@ -54,7 +57,14 @@ export interface KnowledgeTranscriptSubmissionView {
   readonly failureMessage: string | null;
   readonly generatedAnalysisMarkdown: string | null;
   readonly logs: readonly KnowledgeTranscriptLogEntry[];
+  readonly lectureDate: string | null;
+  readonly lectureDateConfidence: "高" | "中" | "低" | "未知";
+  readonly lectureDateEvidence: string;
+  readonly lectureTitle: string;
+  readonly lectureTitleConfidence: "高" | "中" | "低" | "未知";
+  readonly lectureTitleEvidence: string;
   readonly originalFileName: string;
+  readonly processingStage: "extracting" | "publishing" | null;
   readonly publishedBatchId: string | null;
   readonly sourceKey: string;
   readonly status: "draft_ready" | "failed" | "processing" | "published" | "queued";
@@ -66,6 +76,7 @@ export interface KnowledgeTranscriptSubmissionSummary {
   readonly completedAt: string | null;
   readonly createdAt: string;
   readonly originalFileName: string;
+  readonly processingStage: KnowledgeTranscriptSubmissionView["processingStage"];
   readonly sourceKey: string;
   readonly status: KnowledgeTranscriptSubmissionView["status"];
   readonly submissionId: string;
@@ -128,6 +139,98 @@ interface WorkflowRow {
 
 function iso(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+export function knowledgeTranscriptProcessingStage(
+  status: KnowledgeTranscriptSubmissionView["status"],
+  hasGeneratedDraft: boolean,
+): KnowledgeTranscriptSubmissionView["processingStage"] {
+  if (status !== "processing") return null;
+  return hasGeneratedDraft ? "publishing" : "extracting";
+}
+
+const CanonicalLectureMetadataSchema = z
+  .object({
+    lectureDate: z.iso.date(),
+    lectureTitle: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .refine((value) => !/[\\/\u0000-\u001f\u007f]/u.test(value), {
+        message: "lecture title contains unsafe path characters",
+      }),
+  })
+  .strict();
+
+function canonicalLectureSourceKey(input: {
+  readonly lectureDate: string;
+  readonly lectureTitle: string;
+}): { readonly lectureId: string; readonly sourceKey: string; readonly title: string } {
+  const parsed = CanonicalLectureMetadataSchema.parse(input);
+  const title = parsed.lectureTitle.replace(/\s+/gu, " ").trim();
+  const sourceKey = `${parsed.lectureDate}_${title}`;
+  return { lectureId: knowledgeLectureId(sourceKey), sourceKey, title };
+}
+
+function safeModelLectureTitle(value: string): string {
+  const normalized = value
+    .replace(/[\\/\u0000-\u001f\u007f]/gu, "-")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, 200);
+  return normalized === "" ? "待人工确认讲座主题" : normalized;
+}
+
+function markdownMetadata(
+  markdown: string | null,
+  row: WorkflowRow,
+): {
+  readonly lectureDate: string | null;
+  readonly lectureDateConfidence: "高" | "中" | "低" | "未知";
+  readonly lectureDateEvidence: string;
+  readonly lectureTitle: string;
+  readonly lectureTitleConfidence: "高" | "中" | "低" | "未知";
+  readonly lectureTitleEvidence: string;
+} {
+  const field = (label: string): string | null => {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+    return new RegExp(`^- ${escaped}：(.+)$`, "mu").exec(markdown ?? "")?.[1]?.trim() ?? null;
+  };
+  const heading = /^#\s+(.+)$/mu.exec(markdown ?? "")?.[1]?.trim();
+  const sourceKeyMatch = /^(\d{4}-\d{2}-\d{2})_(.+)$/u.exec(row.source_key);
+  const markdownDate = field("讲座日期");
+  const originalStem = basename(row.original_file_name, extname(row.original_file_name)).trim();
+  return {
+    lectureDate:
+      markdownDate !== null && z.iso.date().safeParse(markdownDate).success
+        ? markdownDate
+        : (sourceKeyMatch?.[1] ?? null),
+    lectureDateConfidence:
+      (field("日期识别置信度") as "高" | "中" | "低" | "未知" | null) ?? "未知",
+    lectureDateEvidence: field("日期识别依据") ?? "尚未完成模型识别。",
+    lectureTitle: (heading ?? sourceKeyMatch?.[2]?.trim() ?? originalStem) || "待人工确认讲座主题",
+    lectureTitleConfidence:
+      (field("主题识别置信度") as "高" | "中" | "低" | "未知" | null) ?? "未知",
+    lectureTitleEvidence: field("主题识别依据") ?? "尚未完成模型识别。",
+  };
+}
+
+function applyReviewedLectureMetadata(
+  markdown: string,
+  metadata: { readonly lectureDate: string; readonly lectureTitle: string },
+): string {
+  let reviewed = markdown.replace(/^#\s+.*$/mu, `# ${metadata.lectureTitle}`);
+  if (!/^#\s+/mu.test(reviewed)) reviewed = `# ${metadata.lectureTitle}\n\n${reviewed}`;
+  if (/^- 讲座日期：.*$/mu.test(reviewed)) {
+    reviewed = reviewed.replace(/^- 讲座日期：.*$/mu, `- 讲座日期：${metadata.lectureDate}`);
+  } else if (/^## 基础信息\s*$/mu.test(reviewed)) {
+    reviewed = reviewed.replace(
+      /^## 基础信息\s*$/mu,
+      `## 基础信息\n\n- 讲座日期：${metadata.lectureDate}`,
+    );
+  }
+  return reviewed.trim();
 }
 
 function deterministicUuid(seed: string): string {
@@ -590,27 +693,43 @@ export async function executeKnowledgeTranscriptExtraction(
     const result = await provider.generateJson({
       systemPrompt: KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
       userPrompt: buildKnowledgeExtractionUserPrompt({
-        sourceKey: row.source_key,
-        title: row.source_key.slice(11),
+        originalFileName: row.original_file_name,
+        titleHint: basename(row.original_file_name, extname(row.original_file_name)),
         transcriptText: modelInput,
       }),
     });
     if (result.model !== parsedTask.payload.model) {
       throw new Error("Model provider returned an unexpected model identity.");
     }
-    const markdown = renderKnowledgeAnalysisMarkdown(row.source_key.slice(11), result.json);
+    const extracted = KnowledgeExtractionOutputSchema.parse(result.json);
+    const safeTitle = safeModelLectureTitle(extracted.lecture.title);
+    const normalizedOutput = {
+      ...extracted,
+      lecture: { ...extracted.lecture, title: safeTitle },
+    };
+    const resolved =
+      extracted.lecture.date === null
+        ? null
+        : canonicalLectureSourceKey({
+            lectureDate: extracted.lecture.date,
+            lectureTitle: safeTitle,
+          });
+    const markdown = renderKnowledgeAnalysisMarkdown(safeTitle, normalizedOutput);
     const analysisHash = knowledgeExtractionSha256(markdown);
-    buildKnowledgeSubmission({
-      analysis: {
-        bytes: Buffer.from(markdown, "utf8"),
-        fileName: `${row.source_key}.md`,
-      },
-    });
+    if (resolved !== null) {
+      buildKnowledgeSubmission({
+        analysis: {
+          bytes: Buffer.from(markdown, "utf8"),
+          fileName: `${resolved.sourceKey}.md`,
+        },
+      });
+    }
     await databaseClient.pool.query(
       `update knowledge_transcript_submission
           set status = 'draft_ready', generated_analysis_markdown = $2,
               generated_analysis_hash = $3, provider_request_id = $4,
               prompt_tokens = $5, completion_tokens = $6, total_tokens = $7,
+              source_key = $8, lecture_id = $9,
               updated_at = now(), completed_at = now()
         where id = $1 and status = 'processing'`,
       [
@@ -621,6 +740,8 @@ export async function executeKnowledgeTranscriptExtraction(
         result.usage.promptTokens,
         result.usage.completionTokens,
         result.usage.totalTokens,
+        resolved?.sourceKey ?? row.source_key,
+        resolved?.lectureId ?? row.lecture_id,
       ],
     );
     await databaseClient.pool.query(
@@ -685,17 +806,24 @@ async function requireSubmissionViewer(
 function submissionView(row: WorkflowRow, submissionId: string): KnowledgeTranscriptSubmissionView {
   const retryPending =
     row.status === "failed" && row.job_attempts > 0 && row.job_attempts < row.job_max_attempts;
+  const effectiveStatus = retryPending ? "processing" : row.status;
+  const metadata = markdownMetadata(row.generated_analysis_markdown, row);
   return {
     completedAt: retryPending || row.completed_at === null ? null : iso(row.completed_at),
     createdAt: iso(row.created_at),
     failureCode: row.failure_code,
     failureMessage: row.failure_summary,
     generatedAnalysisMarkdown: row.generated_analysis_markdown,
+    ...metadata,
     logs: buildSubmissionLogs(row),
     originalFileName: row.original_file_name,
+    processingStage: knowledgeTranscriptProcessingStage(
+      effectiveStatus,
+      row.generated_analysis_markdown !== null,
+    ),
     publishedBatchId: row.published_batch_id,
     sourceKey: row.source_key,
-    status: retryPending ? "processing" : row.status,
+    status: effectiveStatus,
     submissionId,
     updatedAt: iso(row.updated_at),
   };
@@ -748,6 +876,7 @@ export async function listKnowledgeTranscriptSubmissions(
     completed_at: Date | string | null;
     created_at: Date | string;
     id: string;
+    has_generated_draft: boolean;
     job_attempts: number;
     job_max_attempts: number;
     original_file_name: string;
@@ -757,6 +886,7 @@ export async function listKnowledgeTranscriptSubmissions(
   }>(
     `select submission.id, submission.completed_at, submission.created_at,
             job.attempts as job_attempts, job.max_attempts as job_max_attempts,
+            (submission.generated_analysis_markdown is not null) as has_generated_draft,
             submission.original_file_name, submission.source_key,
             submission.status, submission.updated_at
        from knowledge_transcript_submission submission
@@ -768,12 +898,14 @@ export async function listKnowledgeTranscriptSubmissions(
   return result.rows.map((row) => {
     const retryPending =
       row.status === "failed" && row.job_attempts > 0 && row.job_attempts < row.job_max_attempts;
+    const effectiveStatus = retryPending ? "processing" : row.status;
     return {
       completedAt: retryPending || row.completed_at === null ? null : iso(row.completed_at),
       createdAt: iso(row.created_at),
       originalFileName: row.original_file_name,
+      processingStage: knowledgeTranscriptProcessingStage(effectiveStatus, row.has_generated_draft),
       sourceKey: row.source_key,
-      status: retryPending ? "processing" : row.status,
+      status: effectiveStatus,
       submissionId: row.id,
       updatedAt: iso(row.updated_at),
     };
@@ -794,7 +926,12 @@ export async function publishKnowledgeTranscriptDraft(
   objectStore: ImmutableObjectStore,
   importer: KnowledgeImporter,
   principal: SessionPrincipal,
-  input: { readonly analysisMarkdown: string; readonly submissionId: string },
+  input: {
+    readonly analysisMarkdown: string;
+    readonly lectureDate: string;
+    readonly lectureTitle: string;
+    readonly submissionId: string;
+  },
 ): Promise<KnowledgeImportResult> {
   const connection = await databaseClient.pool.connect();
   let row: WorkflowRow;
@@ -827,7 +964,14 @@ export async function publishKnowledgeTranscriptDraft(
 
   try {
     const transcriptBytes = await objectStore.read(objectReference(row));
-    const analysisMarkdown = input.analysisMarkdown.trim();
+    const lecture = canonicalLectureSourceKey({
+      lectureDate: input.lectureDate,
+      lectureTitle: input.lectureTitle,
+    });
+    const analysisMarkdown = applyReviewedLectureMetadata(input.analysisMarkdown.trim(), {
+      lectureDate: input.lectureDate,
+      lectureTitle: lecture.title,
+    });
     if (analysisMarkdown.length === 0 || analysisMarkdown.length > 500_000) {
       throw new KnowledgeTranscriptWorkflowError(
         "invalid_draft",
@@ -837,7 +981,7 @@ export async function publishKnowledgeTranscriptDraft(
     const loaded = buildKnowledgeSubmission({
       analysis: {
         bytes: Buffer.from(analysisMarkdown, "utf8"),
-        fileName: `${row.source_key}.md`,
+        fileName: `${lecture.sourceKey}.md`,
       },
       transcriptDocument: { bytes: transcriptBytes, fileName: row.original_file_name },
     });
@@ -867,9 +1011,17 @@ export async function publishKnowledgeTranscriptDraft(
       `update knowledge_transcript_submission
           set status = 'published', reviewed_analysis_markdown = $2,
               reviewed_analysis_hash = $3, published_batch_id = $4,
+              source_key = $5, lecture_id = $6,
               updated_at = now(), completed_at = now()
         where id = $1 and status = 'processing'`,
-      [input.submissionId, analysisMarkdown, reviewedHash, result.batchId],
+      [
+        input.submissionId,
+        analysisMarkdown,
+        reviewedHash,
+        result.batchId,
+        lecture.sourceKey,
+        lecture.lectureId,
+      ],
     );
     await databaseClient.pool.query(
       `insert into audit_event

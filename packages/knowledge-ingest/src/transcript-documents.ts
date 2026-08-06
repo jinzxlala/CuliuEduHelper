@@ -1,4 +1,4 @@
-import { basename } from "node:path";
+import { basename, extname } from "node:path";
 
 import mammoth from "mammoth";
 
@@ -9,7 +9,7 @@ import { decodeUtf8 } from "./source-parsers.js";
 import { MAX_KNOWLEDGE_SUBMISSION_BYTES, type SubmittedKnowledgeFile } from "./submission.js";
 
 export const MAX_TRANSCRIPT_TEXT_CHARACTERS = 500_000;
-const SOURCE_FILE_PATTERN = /^(\d{4}-\d{2}-\d{2})_(.+)\.(md|docx)$/u;
+const SOURCE_FILE_PATTERN = /^(\d{4}-\d{2}-\d{2})_(.+)$/u;
 
 export interface ParsedTranscriptDocument {
   readonly byteCount: number;
@@ -29,11 +29,9 @@ export interface TranscriptDocumentParserOptions {
   readonly extractDocxText?: (bytes: Uint8Array) => Promise<string>;
 }
 
-function validateDate(value: string): void {
+function isValidDate(value: string): boolean {
   const parsed = new Date(`${value}T00:00:00.000Z`);
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
-    throw new KnowledgeSourceError("unexpected_source", "transcript file name has an invalid date");
-  }
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 function normalizeTranscriptText(value: string): string {
@@ -77,26 +75,28 @@ export async function parseTranscriptDocument(
       "uploaded file names must not contain paths",
     );
   }
+  if (file.fileName.length > 255 || /[\u0000-\u001f\u007f]/u.test(file.fileName)) {
+    throw new KnowledgeSourceError("unexpected_source", "uploaded file name is not safe");
+  }
   if (file.bytes.byteLength === 0) {
     throw new KnowledgeSourceError("invalid_source", `${file.fileName}: file is empty`);
   }
   if (file.bytes.byteLength > MAX_KNOWLEDGE_SUBMISSION_BYTES) {
     throw new KnowledgeSourceError("invalid_source", "transcript file exceeds 20 MB");
   }
-  const match = SOURCE_FILE_PATTERN.exec(file.fileName);
-  const date = match?.[1];
-  const title = match?.[2]?.trim();
-  const extension = match?.[3];
-  if (date === undefined || title === undefined || title === "" || extension === undefined) {
+  const extension = extname(file.fileName).toLowerCase();
+  if (extension !== ".md" && extension !== ".docx") {
     throw new KnowledgeSourceError(
       "unexpected_source",
-      "transcript file name must follow YYYY-MM-DD_title.md or YYYY-MM-DD_title.docx",
+      "transcript file must use the .md or .docx extension",
     );
   }
-  validateDate(date);
-  const sourceKey = `${date}_${title}`;
+  const fileNameStem = basename(file.fileName, extname(file.fileName)).trim();
+  if (fileNameStem === "") {
+    throw new KnowledgeSourceError("unexpected_source", "transcript file name is empty");
+  }
   const extracted =
-    extension === "md"
+    extension === ".md"
       ? decodeUtf8(file.bytes, file.fileName)
       : await (options.extractDocxText ?? extractDocx)(file.bytes);
   const text = normalizeTranscriptText(extracted);
@@ -109,13 +109,27 @@ export async function parseTranscriptDocument(
       `transcript text exceeds ${String(MAX_TRANSCRIPT_TEXT_CHARACTERS)} characters`,
     );
   }
+  const contentHash = contentSha256(file.bytes);
+  const strictName = SOURCE_FILE_PATTERN.exec(fileNameStem);
+  const strictDate = strictName?.[1];
+  const strictTitle = strictName?.[2]?.trim();
+  const hasCanonicalName =
+    strictDate !== undefined &&
+    strictTitle !== undefined &&
+    strictTitle !== "" &&
+    isValidDate(strictDate);
+  const title = hasCanonicalName ? strictTitle : fileNameStem;
+  const sourceKey = hasCanonicalName
+    ? `${strictDate}_${strictTitle}`
+    : `pending_${contentHash.slice(0, 32)}`;
+  const lectureId = hasCanonicalName ? knowledgeLectureId(sourceKey) : `lecture_${sourceKey}`;
   return {
     byteCount: file.bytes.byteLength,
-    contentHash: contentSha256(file.bytes),
+    contentHash,
     file,
-    lectureId: knowledgeLectureId(sourceKey),
+    lectureId,
     mimeType:
-      extension === "md"
+      extension === ".md"
         ? "text/markdown"
         : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     sourceKey,

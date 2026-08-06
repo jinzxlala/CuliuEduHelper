@@ -354,7 +354,7 @@ describe("knowledge submission publication", () => {
       bytes: encoder.encode(
         "这是一份虚构的集成测试逐字稿。联系邮箱 test@example.com，手机 13800138000。",
       ),
-      fileName: "2026-08-03_逐字稿工作流测试.md",
+      fileName: "0401_原文.md",
     });
     const prepared = await prepareKnowledgeTranscriptTask(
       databaseClient,
@@ -384,6 +384,8 @@ describe("knowledge submission publication", () => {
     );
     expect(view.status).toBe("draft_ready");
     expect(view.generatedAnalysisMarkdown).toContain("## 证据边界");
+    expect(view.lectureDate).toBe("2026-08-02");
+    expect(view.lectureTitle).toBe("虚构跨学科讲座");
     expect(view.logs.map((entry) => entry.code)).toEqual([
       "transcript_saved",
       "task_queued",
@@ -408,7 +410,8 @@ describe("knowledge submission publication", () => {
       role: "admin",
     });
     expect(submissionList[0]).toMatchObject({
-      originalFileName: "2026-08-03_逐字稿工作流测试.md",
+      originalFileName: "0401_原文.md",
+      sourceKey: "2026-08-02_虚构跨学科讲座",
       status: "draft_ready",
       submissionId: prepared.submissionId,
     });
@@ -438,6 +441,8 @@ describe("knowledge submission publication", () => {
       },
       {
         analysisMarkdown: view.generatedAnalysisMarkdown ?? "",
+        lectureDate: view.lectureDate ?? "",
+        lectureTitle: view.lectureTitle,
         submissionId: prepared.submissionId,
       },
     );

@@ -78,10 +78,18 @@ describe("knowledge transcript extraction", () => {
       cases: [],
       evidenceBoundary: "仅依据虚构逐字稿。",
       failures: [],
+      lecture: {
+        date: null,
+        dateConfidence: "未知",
+        dateEvidence: "文件名只有月日，正文未说明年份。",
+        title: "跨学科学习讲座",
+        titleConfidence: "中",
+        titleEvidence: "根据逐字稿持续讨论主题概括。",
+      },
       majors: [],
       organization: "未披露",
       quotes: [],
-      schemaVersion: "knowledge-analysis-markdown.v4",
+      schemaVersion: "knowledge-analysis-markdown.v5",
       schools: [],
       speakers: [],
       summary: "讲座讨论跨学科学习。",
@@ -91,6 +99,8 @@ describe("knowledge transcript extraction", () => {
     expect(markdown).toContain("先确认兴趣\n再完成小型项目");
     expect(markdown).toContain("## 案例卡片\n\n未披露");
     expect(markdown).toContain("## 关键原话\n\n- 未披露");
+    expect(markdown).toContain("- 讲座日期：待人工确认");
+    expect(markdown).toContain("# 跨学科学习讲座");
     const submission = buildKnowledgeSubmission({
       analysis: {
         bytes: Buffer.from(markdown, "utf8"),
@@ -112,10 +122,18 @@ describe("knowledge transcript extraction", () => {
       cases: [],
       evidenceBoundary: "仅依据虚构逐字稿。",
       failures: "未披露",
+      lecture: {
+        date: "2026-08-02",
+        dateConfidence: "高",
+        dateEvidence: "文件名和正文日期一致。",
+        title: "虚构讲座",
+        titleConfidence: "高",
+        titleEvidence: "正文开场明确主题。",
+      },
       majors: [],
       organization: "未披露",
       quotes,
-      schemaVersion: "knowledge-analysis-markdown.v4",
+      schemaVersion: "knowledge-analysis-markdown.v5",
       schools: [],
       speakers: [],
       summary: "虚构摘要。",

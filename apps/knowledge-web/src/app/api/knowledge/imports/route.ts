@@ -4,6 +4,7 @@ import {
   KnowledgeImportError,
   KnowledgeSourceError,
   KnowledgeTranscriptWorkflowError,
+  listKnowledgeTranscriptSubmissions,
   MAX_KNOWLEDGE_SUBMISSION_BYTES,
   markKnowledgeTranscriptEnqueueFailure,
   parseTranscriptDocument,
@@ -25,9 +26,22 @@ import { getTaskQueue } from "../../../../lib/task-queue";
 const PRIVATE_HEADERS = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" };
 const GitCommitShaSchema = z.string().regex(/^[0-9a-f]{40}$/u);
 const SubmissionIdSchema = z.uuid();
+
+function isSafeLectureTitle(value: string): boolean {
+  for (const character of value) {
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (character === "/" || character === "\\" || codePoint < 32 || codePoint === 127) {
+      return false;
+    }
+  }
+  return true;
+}
+
 const PublishInputSchema = z
   .object({
     analysisMarkdown: z.string().trim().min(1).max(500_000),
+    lectureDate: z.iso.date(),
+    lectureTitle: z.string().trim().min(1).max(200).refine(isSafeLectureTitle),
     submissionId: z.uuid(),
   })
   .strict();
@@ -73,7 +87,14 @@ export async function GET(request: Request): Promise<NextResponse> {
       { headers: PRIVATE_HEADERS, status: 401 },
     );
   }
-  const submissionId = SubmissionIdSchema.safeParse(new URL(request.url).searchParams.get("id"));
+  const requestedId = new URL(request.url).searchParams.get("id");
+  if (requestedId === null) {
+    return NextResponse.json(
+      await listKnowledgeTranscriptSubmissions(getDatabaseClient(), principal),
+      { headers: PRIVATE_HEADERS },
+    );
+  }
+  const submissionId = SubmissionIdSchema.safeParse(requestedId);
   if (!submissionId.success) {
     return NextResponse.json(
       { error: "invalid_submission_id" },

@@ -12,6 +12,7 @@ dist/
 coverage/
 *.tsbuildinfo
 .local-data/
+/tmp/runtime/
 
 # Local source corpus is imported through the versioned knowledge manifest.
 /data_origin/

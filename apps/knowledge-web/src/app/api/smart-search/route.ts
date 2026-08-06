@@ -1,6 +1,7 @@
 import { createKnowledgeAnalysisAuthorizationContext } from "@culiu/authorization";
 import {
   markKnowledgeSmartSearchEnqueueFailure,
+  listKnowledgeSmartSearches,
   prepareKnowledgeSmartSearch,
   readKnowledgeSmartSearch,
 } from "@culiu/knowledge-analysis";
@@ -24,14 +25,20 @@ export async function GET(request: Request): Promise<NextResponse> {
       { headers: PRIVATE_HEADERS, status: 401 },
     );
   }
-  const runId = RunIdSchema.safeParse(new URL(request.url).searchParams.get("id"));
-  if (!runId.success) {
-    return NextResponse.json(
-      { error: "invalid_run_id" },
-      { headers: PRIVATE_HEADERS, status: 422 },
-    );
-  }
+  const rawRunId = new URL(request.url).searchParams.get("id");
+  const runId = RunIdSchema.safeParse(rawRunId);
   try {
+    if (rawRunId === null) {
+      return NextResponse.json(
+        await listKnowledgeSmartSearches(getDatabaseClient().database, principal.id),
+        { headers: PRIVATE_HEADERS },
+      );
+    }
+    if (!runId.success)
+      return NextResponse.json(
+        { error: "invalid_run_id" },
+        { headers: PRIVATE_HEADERS, status: 422 },
+      );
     return NextResponse.json(
       await readKnowledgeSmartSearch(getDatabaseClient().database, principal.id, runId.data),
       { headers: PRIVATE_HEADERS },

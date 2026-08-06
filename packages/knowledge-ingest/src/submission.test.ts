@@ -112,7 +112,10 @@ describe("knowledge submissions", () => {
   });
 
   it("publishes an analysis with its single uploaded transcript document", () => {
-    const transcriptDocument = file(".docx", "synthetic-docx-bytes");
+    const transcriptDocument = {
+      bytes: encoder.encode("synthetic-docx-bytes"),
+      fileName: "0401_原文.docx",
+    };
     const loaded = buildKnowledgeSubmission({ analysis: analysis(), transcriptDocument });
 
     expect(loaded.sources.map((item) => item.descriptor.role)).toEqual([

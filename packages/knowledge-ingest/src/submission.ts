@@ -1,4 +1,4 @@
-import { basename } from "node:path";
+import { basename, extname } from "node:path";
 
 import { KnowledgeDocumentSetSchema } from "@culiu/search";
 
@@ -114,11 +114,11 @@ function descriptor(sourceKey: string, role: SourceRole, file: SubmittedKnowledg
 
 function transcriptDocumentDescriptor(sourceKey: string, file: SubmittedKnowledgeFile): SourceFile {
   const safe = safeFileName(file.fileName);
-  const extension = safe.endsWith(".docx") ? ".docx" : safe.endsWith(".md") ? ".md" : null;
-  if (extension === null || safe !== `${sourceKey}${extension}`) {
+  const extension = extname(safe).toLowerCase();
+  if (extension !== ".docx" && extension !== ".md") {
     throw new KnowledgeSourceError(
       "unexpected_source",
-      `transcript document must be named ${sourceKey}.md or ${sourceKey}.docx`,
+      "transcript document must use the .md or .docx extension",
     );
   }
   if (file.bytes.byteLength === 0) {

@@ -31,7 +31,7 @@ import { LocalImmutableObjectStore } from "@culiu/storage";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { executeKnowledgeSmartSearch } from "./smart-search.js";
+import { executeKnowledgeSmartSearch, listKnowledgeSmartSearches } from "./smart-search.js";
 import {
   executeKnowledgeAnalysisChat,
   prepareKnowledgeAnalysisMessage,
@@ -39,8 +39,11 @@ import {
 } from "./analysis-chat.js";
 import {
   executeKnowledgeAnalysisReport,
+  listKnowledgeAnalysisReports,
   prepareKnowledgeAnalysisReport,
+  readKnowledgeAnalysisReportCitationAudit,
   readKnowledgeAnalysisReportArtifact,
+  rerenderKnowledgeAnalysisReportPresentation,
 } from "./analysis-report.js";
 import {
   addKnowledgeWorkspaceSources,
@@ -407,8 +410,8 @@ describe("knowledge analysis database boundaries", () => {
       model: "deepseek-v4-flash",
       prompt,
       promptHash: createHash("sha256").update(prompt, "utf8").digest("hex"),
-      promptVersion: "knowledge-smart-search.v1",
-      retrievalVersion: "knowledge-hybrid.v1",
+      promptVersion: "knowledge-smart-search.v2",
+      retrievalVersion: "knowledge-hybrid.v2",
       schemaVersion: "knowledge-smart-search-output.v1",
     });
     const modelOutputs: unknown[] = [
@@ -453,6 +456,18 @@ describe("knowledge analysis database boundaries", () => {
           },
         ],
         round: 2,
+      },
+      {
+        limitations: [],
+        results: [
+          {
+            matchedTerms: ["跨学科"],
+            rationale: "Synthetic invalid model-created reference.",
+            sourceId: "lecture:model-invented-id",
+            sourceType: "lecture",
+          },
+        ],
+        summary: "Synthetic invalid result.",
       },
       {
         limitations: [],
@@ -526,8 +541,8 @@ describe("knowledge analysis database boundaries", () => {
         correlationId: randomUUID(),
         gitCommitSha: "e".repeat(40),
         model: "deepseek-v4-flash",
-        promptVersion: "knowledge-smart-search.v1",
-        retrievalVersion: "knowledge-hybrid.v1",
+        promptVersion: "knowledge-smart-search.v2",
+        retrievalVersion: "knowledge-hybrid.v2",
         runId,
         schemaVersion: "knowledge-smart-search-output.v1",
       },
@@ -550,6 +565,10 @@ describe("knowledge analysis database boundaries", () => {
     expect(JSON.stringify(persisted[0]?.resultReferences)).not.toContain(
       "Synthetic lecture summary",
     );
+    expect(JSON.stringify(persisted[0]?.resultReferences)).not.toContain("model-invented-id");
+    const history = await listKnowledgeSmartSearches(database, ownerId);
+    expect(history[0]).toMatchObject({ id: runId, resultCount: 1, status: "succeeded" });
+    expect(await listKnowledgeSmartSearches(database, editorId)).toEqual([]);
   });
 
   it("keeps analysis chat scoped to the current conversation and validates frozen citations", async () => {
@@ -567,9 +586,7 @@ describe("knowledge analysis database boundaries", () => {
         },
       ],
     });
-    const current = await createKnowledgeConversation(database, ownerId, created.id, {
-      title: "Current conversation",
-    });
+    const current = await createKnowledgeConversation(database, ownerId, created.id, {});
     const other = await createKnowledgeConversation(database, ownerId, created.id, {
       title: "Other conversation",
     });
@@ -612,6 +629,7 @@ describe("knowledge analysis database boundaries", () => {
                 },
               },
             ],
+            conversationTopic: "跨学科项目分析",
             suggestedFollowUps: ["是否需要比较案例？"],
             uncertainties: ["未披露项目规模。"],
           },
@@ -655,6 +673,7 @@ describe("knowledge analysis database boundaries", () => {
     });
     expect(capturedPrompt).not.toContain("OTHER_CONVERSATION_SECRET");
     const read = await readKnowledgeConversation(database, ownerId, created.id, current.id);
+    expect(read.conversation.title).toBe("跨学科项目分析");
     expect(read.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
     expect(read.messages[1]?.citations).toEqual([
       expect.objectContaining({ claim: "讲座强调跨学科项目" }),
@@ -699,9 +718,11 @@ describe("knowledge analysis database boundaries", () => {
       { requirements: "突出资料边界。" },
       "e".repeat(40),
     );
+    let capturedReportPrompt = "";
     const provider: JsonModelProvider = {
-      async generateJson() {
+      async generateJson(request) {
         await Promise.resolve();
+        capturedReportPrompt = request.userPrompt;
         return {
           json: {
             executiveSummary: "合成资料显示一项跨学科趋势。",
@@ -742,6 +763,8 @@ describe("knowledge analysis database boundaries", () => {
     try {
       const store = new LocalImmutableObjectStore(root);
       await executeKnowledgeAnalysisReport(database, prepared.task, provider, store);
+      expect(capturedReportPrompt).toContain('"source":{"batchId"');
+      expect(capturedReportPrompt).not.toContain('"source":"exact frozen reference"');
       const [interactive, staticHtml] = await Promise.all([
         readKnowledgeAnalysisReportArtifact(
           database,
@@ -764,7 +787,28 @@ describe("knowledge analysis database boundaries", () => {
       const staticText = Buffer.from(staticHtml).toString("utf8");
       expect(interactiveText).toContain('data-action="zoom-in"');
       expect(interactiveText).toContain("script-src 'sha256-");
+      expect(interactiveText).toContain("讲座资料 01");
+      expect(interactiveText).toContain("Synthetic stage 3 lecture");
+      expect(interactiveText).not.toContain(lectureId);
+      expect(interactiveText).not.toContain("c".repeat(12));
       expect(staticText).not.toContain("<script");
+      expect(staticText).toContain("讲座资料 01");
+      expect(staticText).not.toContain(lectureId);
+      const citationAudit = await readKnowledgeAnalysisReportCitationAudit(
+        database,
+        ownerId,
+        created.id,
+        prepared.reportId,
+      );
+      expect(citationAudit).toEqual([
+        {
+          contentHash: "c".repeat(64),
+          publicDescription: "Synthetic stage 3 lecture",
+          publicLabel: "讲座资料 01",
+          sourceId: lectureId,
+          sourceType: "lecture",
+        },
+      ]);
       const report = await database
         .select()
         .from(knowledgeAnalysisReports)
@@ -775,6 +819,89 @@ describe("knowledge analysis database boundaries", () => {
         version: 1,
       });
       expect(report[0]?.interactiveStorageKey).toMatch(/^knowledge\/reports\//u);
+      const generated = report[0];
+      if (
+        generated === undefined ||
+        generated.structuredReport === null ||
+        generated.interactiveStorageKey === null ||
+        generated.interactiveContentHash === null ||
+        generated.interactiveByteCount === null ||
+        generated.interactiveScriptHash === null ||
+        generated.staticStorageKey === null ||
+        generated.staticContentHash === null ||
+        generated.staticByteCount === null
+      )
+        throw new Error("generated report fixture incomplete");
+      const completedAt = new Date();
+      const legacyRunId = randomUUID();
+      const legacyReportId = randomUUID();
+      await database.insert(knowledgeAgentRuns).values({
+        authorizationContextId,
+        completedAt,
+        completionTokens: 0,
+        contextVersion: "knowledge-analysis-report-context.v1",
+        conversationId: conversation.id,
+        costMicrounits: 0,
+        gitCommitSha: "e".repeat(40),
+        id: legacyRunId,
+        inputSnapshotHash: generated.conversationSnapshotHash,
+        kind: "analysis_report",
+        model: "deepseek-v4-flash",
+        pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
+        promptTokens: 0,
+        promptVersion: "knowledge-analysis-report.v2",
+        schemaVersion: "knowledge-analysis-report-output.v1",
+        startedAt: completedAt,
+        status: "succeeded",
+        totalTokens: 0,
+        workspaceId: created.id,
+      });
+      await database.insert(knowledgeAnalysisReports).values({
+        agentRunId: legacyRunId,
+        completedAt,
+        conversationId: conversation.id,
+        conversationSnapshotHash: generated.conversationSnapshotHash,
+        conversationThroughSequence: generated.conversationThroughSequence,
+        createdByUserId: ownerId,
+        id: legacyReportId,
+        interactiveByteCount: generated.interactiveByteCount,
+        interactiveContentHash: generated.interactiveContentHash,
+        interactiveScriptHash: generated.interactiveScriptHash,
+        interactiveStorageKey: generated.interactiveStorageKey,
+        requirements: generated.requirements,
+        sourceSnapshot: generated.sourceSnapshot,
+        staticByteCount: generated.staticByteCount,
+        staticContentHash: generated.staticContentHash,
+        staticStorageKey: generated.staticStorageKey,
+        status: "succeeded",
+        structuredReport: generated.structuredReport,
+        templateVersion: "knowledge-analysis-report-html.v2",
+        updatedAt: completedAt,
+        workspaceId: created.id,
+      });
+      const presentationCopy = await rerenderKnowledgeAnalysisReportPresentation(
+        database,
+        store,
+        authorization,
+        created.id,
+        legacyReportId,
+        "e".repeat(40),
+      );
+      expect(presentationCopy.version).toBe(2);
+      const reports = await listKnowledgeAnalysisReports(
+        database,
+        ownerId,
+        created.id,
+        conversation.id,
+      );
+      expect(reports.find((item) => item.id === presentationCopy.reportId)).toMatchObject({
+        publicSafe: true,
+        version: 2,
+      });
+      expect(reports.find((item) => item.id === legacyReportId)).toMatchObject({
+        canCreatePresentationCopy: false,
+        publicSafe: false,
+      });
     } finally {
       await rm(root, { force: true, recursive: true });
     }
@@ -795,8 +922,8 @@ describe("knowledge analysis database boundaries", () => {
       model: "deepseek-v4-flash",
       prompt: "Find synthetic evidence.",
       promptHash: "f".repeat(64),
-      promptVersion: "knowledge-smart-search.v1",
-      retrievalVersion: "knowledge-hybrid.v1",
+      promptVersion: "knowledge-smart-search.v2",
+      retrievalVersion: "knowledge-hybrid.v2",
       schemaVersion: "knowledge-smart-search-output.v1",
     });
     await database
@@ -828,7 +955,7 @@ describe("knowledge analysis database boundaries", () => {
       kind: "analysis_report",
       model: "deepseek-v4-flash",
       pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
-      promptVersion: "knowledge-analysis-report.v1",
+      promptVersion: "knowledge-analysis-report.v2",
       schemaVersion: "knowledge-analysis-report-output.v1",
       workspaceId,
     });

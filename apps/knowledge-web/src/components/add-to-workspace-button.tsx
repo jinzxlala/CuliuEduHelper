@@ -62,7 +62,12 @@ export function AddToWorkspaceButton({
   if (workspaces === null)
     return (
       <span className="workspace-add-control">
-        <button disabled={busy} onClick={() => void load()} type="button">
+        <button
+          className="secondary-button compact-button"
+          disabled={busy}
+          onClick={() => void load()}
+          type="button"
+        >
           添加到工作区
         </button>
         {message === null ? null : <small>{message}</small>}
@@ -87,7 +92,12 @@ export function AddToWorkspaceButton({
               </option>
             ))}
           </select>
-          <button disabled={busy} onClick={() => void add()} type="button">
+          <button
+            className="primary-button compact-button"
+            disabled={busy}
+            onClick={() => void add()}
+            type="button"
+          >
             加入
           </button>
         </>

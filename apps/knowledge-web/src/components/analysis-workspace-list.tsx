@@ -69,7 +69,7 @@ export function AnalysisWorkspaceList({
             value={description}
           />
         </label>
-        <button disabled={busy} type="submit">
+        <button className="primary-button" disabled={busy} type="submit">
           {busy ? "正在创建……" : "创建工作区"}
         </button>
         {error === null ? null : <p className="error-text">{error}</p>}

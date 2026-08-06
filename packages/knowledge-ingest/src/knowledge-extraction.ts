@@ -4,8 +4,8 @@ import { DEEPSEEK_PROFILE_MODEL, type JsonModelProvider, type JsonModelResult } 
 import { z } from "zod";
 
 export const KNOWLEDGE_EXTRACTION_MODEL = DEEPSEEK_PROFILE_MODEL;
-export const KNOWLEDGE_EXTRACTION_PROMPT_VERSION = "knowledge-transcript-extraction.v4";
-export const KNOWLEDGE_EXTRACTION_SCHEMA_VERSION = "knowledge-analysis-markdown.v4";
+export const KNOWLEDGE_EXTRACTION_PROMPT_VERSION = "knowledge-transcript-extraction.v5";
+export const KNOWLEDGE_EXTRACTION_SCHEMA_VERSION = "knowledge-analysis-markdown.v5";
 export const KNOWLEDGE_EXTRACTION_REDACTION_VERSION = "knowledge-transcript-outbound.v1";
 
 function normalizeText(value: unknown): unknown {
@@ -76,6 +76,24 @@ function quoteListSchema(maxItems: number, maxItemLength = 4_000): z.ZodType<str
 
 const NonEmptyTextSchema = normalizedTextSchema(20_000);
 const OptionalKnowledgeTextSchema = normalizedTextSchema(4_000);
+
+function normalizeLectureDate(value: unknown): unknown {
+  if (value === null) return null;
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" || /^(?:未披露|未知|无法确定|不确定)$/u.test(trimmed) ? null : trimmed;
+}
+
+export const ExtractedLectureMetadataSchema = z
+  .object({
+    date: z.preprocess(normalizeLectureDate, z.iso.date().nullable()),
+    dateConfidence: z.enum(["高", "中", "低", "未知"]),
+    dateEvidence: normalizedTextSchema(1_000),
+    title: normalizedTextSchema(512),
+    titleConfidence: z.enum(["高", "中", "低", "未知"]),
+    titleEvidence: normalizedTextSchema(1_000),
+  })
+  .strict();
 
 const ExtractedProjectSchema = z
   .object({
@@ -167,6 +185,7 @@ export const KnowledgeExtractionOutputSchema = z
     cases: z.array(ExtractedCaseSchema).max(30),
     evidenceBoundary: NonEmptyTextSchema,
     failures: NonEmptyTextSchema,
+    lecture: ExtractedLectureMetadataSchema,
     majors: knowledgeListSchema(50),
     organization: OptionalKnowledgeTextSchema,
     quotes: quoteListSchema(30),
@@ -306,6 +325,8 @@ const KNOWLEDGE_EXTRACTION_SCHEMA_DESCRIPTOR = {
     cases: "case[]",
     evidenceBoundary: "string",
     failures: "string",
+    lecture:
+      "{date:YYYY-MM-DD|null,dateConfidence:高|中|低|未知,dateEvidence:string,title:string,titleConfidence:高|中|低|未知,titleEvidence:string}",
     majors: "string[]",
     organization: "string",
     quotes: "string[]",
@@ -318,6 +339,13 @@ const KNOWLEDGE_EXTRACTION_SCHEMA_DESCRIPTOR = {
 };
 
 export const KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT = `你是一名严谨的教育研究资料分析员。只依据逐字稿生成结构化JSON，不得补充外部知识、猜测事实、编造数字、编造学生身份或编造时间戳。
+
+讲座元数据识别规则：
+1. lecture.title和lecture.date必须综合原始文件名与逐字稿正文判断。文件名只是线索，不是已确认事实；“原文”“逐字稿”“0401”这类名称不能直接作为正式主题或完整日期。
+2. 标题应概括讲座的主要主题。文件名和正文一致时可提高置信度；冲突时以正文中明确的讲座标题、开场介绍和持续讨论主题为主要依据，并在titleEvidence说明。
+3. 日期必须输出YYYY-MM-DD或null。正文明确年月日时优先采用；文件名只有月日时，只有正文能够确定年份才可组合；文件名含完整日期但正文冲突时不得静默采用文件名。
+4. 无法从文件名和正文可靠确定完整年月日时，date必须为null、dateConfidence必须为“未知”或“低”，dateEvidence说明缺少什么；绝对不得用上传日期、当前日期或常识补齐年份。
+5. titleEvidence和dateEvidence只能写简短依据，不复制敏感正文。置信度必须反映证据充分程度。
 
 案例提取标准：
 1. cases只收录逐字稿中具有连贯个人经历链的匿名学生案例，至少包含同一人的两个可定位证据点。学校介绍、项目榜单、泛化建议、单个零散例子、机构录取统计和无法确认属于同一人的拼接信息都不得生成案例。
@@ -369,11 +397,11 @@ export function sanitizeKnowledgeTranscriptForModel(value: string): string {
 }
 
 export function buildKnowledgeExtractionUserPrompt(input: {
-  readonly sourceKey: string;
-  readonly title: string;
+  readonly originalFileName: string;
+  readonly titleHint: string;
   readonly transcriptText: string;
 }): string {
-  return `讲座来源键：${input.sourceKey}\n讲座标题：${input.title}\n\n仅依据以下逐字稿生成JSON：\n<transcript>\n${input.transcriptText}\n</transcript>`;
+  return `原始文件名（仅作线索）：${input.originalFileName}\n文件名主题线索（未经确认）：${input.titleHint}\n\n请综合文件名线索和逐字稿正文识别讲座日期与主题，并仅依据以下逐字稿生成JSON：\n<transcript>\n${input.transcriptText}\n</transcript>`;
 }
 
 function displayList(values: readonly string[]): string {
@@ -472,10 +500,15 @@ ${safeMarkdownText(item.evidenceBoundary)}`,
 
 export function renderKnowledgeAnalysisMarkdown(title: string, untrustedOutput: unknown): string {
   const output = KnowledgeExtractionOutputSchema.parse(untrustedOutput);
-  return `# ${safeMarkdownText(title)}
+  return `# ${safeMarkdownText(output.lecture.title || title)}
 
 ## 基础信息
 
+- 讲座日期：${output.lecture.date ?? "待人工确认"}
+- 日期识别置信度：${output.lecture.dateConfidence}
+- 日期识别依据：${safeMarkdownText(output.lecture.dateEvidence)}
+- 主题识别置信度：${output.lecture.titleConfidence}
+- 主题识别依据：${safeMarkdownText(output.lecture.titleEvidence)}
 - 主办机构：${safeMarkdownText(output.organization)}
 - 主讲人：${displayList(output.speakers)}
 - 学校：${displayList(output.schools)}
@@ -573,6 +606,14 @@ export function createDeterministicMockKnowledgeExtractionProvider(): JsonModelP
         ],
         evidenceBoundary: "全部内容均为虚构自动化测试结果。",
         failures: "没有可验证的失败信息。",
+        lecture: {
+          date: "2026-08-02",
+          dateConfidence: "高",
+          dateEvidence: "文件名与逐字稿开场均明确日期。",
+          title: "虚构跨学科讲座",
+          titleConfidence: "高",
+          titleEvidence: "逐字稿开场明确说明讲座主题。",
+        },
         majors: [],
         organization: "虚构机构",
         quotes: ["虚构测试原话。"],

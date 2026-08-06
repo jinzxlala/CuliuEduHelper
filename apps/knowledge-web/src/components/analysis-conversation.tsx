@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type JSX, type SyntheticEvent } from "react";
 
 interface Citation {
@@ -35,6 +36,7 @@ export function AnalysisConversation({
   workspaceId: string;
   conversationId: string;
 }>): JSX.Element {
+  const router = useRouter();
   const [state, setState] = useState(initial);
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,11 @@ export function AnalysisConversation({
           if (!response.ok) throw new Error("无法读取对话状态。");
           return (await response.json()) as ConversationState;
         })
-        .then(setState)
+        .then((next) => {
+          setState(next);
+          if (!next.runs.some((run) => run.status === "queued" || run.status === "running"))
+            router.refresh();
+        })
         .catch((cause: unknown) => {
           setError(cause instanceof Error ? cause.message : "状态读取失败。");
         });
@@ -58,7 +64,7 @@ export function AnalysisConversation({
     return () => {
       window.clearInterval(timer);
     };
-  }, [active, endpoint]);
+  }, [active, endpoint, router]);
 
   async function send(event: SyntheticEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -128,7 +134,11 @@ export function AnalysisConversation({
             rows={5}
             value={content}
           />
-          <button disabled={active || content.trim() === ""} type="submit">
+          <button
+            className="primary-button"
+            disabled={active || content.trim() === ""}
+            type="submit"
+          >
             发送并分析
           </button>
           {error === null ? null : <p className="error-text">{error}</p>}

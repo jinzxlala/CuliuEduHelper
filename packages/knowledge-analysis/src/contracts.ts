@@ -162,7 +162,7 @@ export const AddKnowledgeWorkspaceSourcesInputSchema = z
   });
 
 export const CreateKnowledgeConversationInputSchema = z
-  .object({ title: z.string().trim().min(1).max(200) })
+  .object({ title: z.string().trim().min(1).max(200).default("新对话") })
   .strict();
 
 export const SetKnowledgeWorkspaceMemberInputSchema = z
@@ -192,6 +192,7 @@ export const KnowledgeAssistantMessageSchema = z
   .object({
     answerMarkdown: z.string().trim().min(1).max(60_000),
     citations: z.array(KnowledgeCitationSchema).max(100),
+    conversationTopic: z.string().trim().min(1).max(80),
     suggestedFollowUps: z.array(z.string().trim().min(1).max(500)).max(8),
     uncertainties: z.array(z.string().trim().min(1).max(1_000)).max(20),
   })

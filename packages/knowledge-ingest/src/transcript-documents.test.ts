@@ -37,6 +37,18 @@ describe("transcript document parsing", () => {
     expect(parsed.text).toBe("Word 中的逐字稿正文。\n第二段。");
   });
 
+  it("accepts a legacy file name and keeps it as a model hint instead of trusted metadata", async () => {
+    const extractDocxText = vi.fn().mockResolvedValue("讲座正文提到活动日期为2025年4月1日。");
+    const parsed = await parseTranscriptDocument(
+      { bytes: encoder.encode("synthetic-docx-container"), fileName: "0401_原文.docx" },
+      { extractDocxText },
+    );
+
+    expect(parsed.title).toBe("0401_原文");
+    expect(parsed.sourceKey).toMatch(/^pending_[0-9a-f]{32}$/u);
+    expect(parsed.lectureId).toMatch(/^lecture_pending_[0-9a-f]{32}$/u);
+  });
+
   it("extracts text from a real minimal docx container", async () => {
     const zip = new JSZip();
     zip.file(
@@ -71,15 +83,22 @@ describe("transcript document parsing", () => {
     expect(parsed.text).toBe("真实 DOCX 解析测试。");
   });
 
-  it.each([
-    "2026-08-02_旧Word.doc",
-    "2026-02-30_无效日期.md",
-    "../2026-08-02_路径.md",
-    "未按要求命名.md",
-  ])("rejects an unsupported or unsafe file name: %s", async (fileName) => {
-    await expect(
-      parseTranscriptDocument({ bytes: encoder.encode("正文"), fileName }),
-    ).rejects.toThrow();
+  it.each(["2026-08-02_旧Word.doc", "../2026-08-02_路径.md", "没有扩展名"])(
+    "rejects an unsupported or unsafe file name: %s",
+    async (fileName) => {
+      await expect(
+        parseTranscriptDocument({ bytes: encoder.encode("正文"), fileName }),
+      ).rejects.toThrow();
+    },
+  );
+
+  it("treats an invalid date prefix as an untrusted filename hint", async () => {
+    const parsed = await parseTranscriptDocument({
+      bytes: encoder.encode("正文"),
+      fileName: "2026-02-30_无效日期.md",
+    });
+    expect(parsed.sourceKey).toMatch(/^pending_/u);
+    expect(parsed.title).toBe("2026-02-30_无效日期");
   });
 
   it("rejects empty extracted content", async () => {
