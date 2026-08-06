@@ -894,6 +894,7 @@ export async function listKnowledgeAnalysisReports(
   );
   return rows.map(
     ({ structuredReport, supersedesReportId: _supersedesReportId, templateVersion, ...row }) => {
+      void _supersedesReportId;
       const publicSafe = templateVersion === ANALYSIS_REPORT_TEMPLATE_VERSION;
       return {
         ...row,

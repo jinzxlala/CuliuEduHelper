@@ -75,6 +75,7 @@ export async function parseTranscriptDocument(
       "uploaded file names must not contain paths",
     );
   }
+  // eslint-disable-next-line no-control-regex -- Uploaded names must reject ASCII controls.
   if (file.fileName.length > 255 || /[\u0000-\u001f\u007f]/u.test(file.fileName)) {
     throw new KnowledgeSourceError("unexpected_source", "uploaded file name is not safe");
   }

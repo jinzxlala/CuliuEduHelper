@@ -157,6 +157,7 @@ const CanonicalLectureMetadataSchema = z
       .trim()
       .min(1)
       .max(200)
+      // eslint-disable-next-line no-control-regex -- Canonical titles must reject ASCII controls.
       .refine((value) => !/[\\/\u0000-\u001f\u007f]/u.test(value), {
         message: "lecture title contains unsafe path characters",
       }),
@@ -175,6 +176,7 @@ function canonicalLectureSourceKey(input: {
 
 function safeModelLectureTitle(value: string): string {
   const normalized = value
+    // eslint-disable-next-line no-control-regex -- Model titles replace ASCII controls defensively.
     .replace(/[\\/\u0000-\u001f\u007f]/gu, "-")
     .replace(/\s+/gu, " ")
     .trim()
