@@ -1,12 +1,19 @@
 import { createHash } from "node:crypto";
 
-import { DEEPSEEK_PROFILE_MODEL, type JsonModelProvider, type JsonModelResult } from "@culiu/ai";
+import {
+  DEEPSEEK_PROFILE_MODEL,
+  ModelGatewayError,
+  type JsonModelProvider,
+  type JsonModelRequest,
+  type JsonModelResult,
+} from "@culiu/ai";
 import { z } from "zod";
 
 export const KNOWLEDGE_EXTRACTION_MODEL = DEEPSEEK_PROFILE_MODEL;
-export const KNOWLEDGE_EXTRACTION_PROMPT_VERSION = "knowledge-transcript-extraction.v5";
-export const KNOWLEDGE_EXTRACTION_SCHEMA_VERSION = "knowledge-analysis-markdown.v5";
+export const KNOWLEDGE_EXTRACTION_PROMPT_VERSION = "knowledge-transcript-extraction.v6";
+export const KNOWLEDGE_EXTRACTION_SCHEMA_VERSION = "knowledge-analysis-markdown.v6";
 export const KNOWLEDGE_EXTRACTION_REDACTION_VERSION = "knowledge-transcript-outbound.v1";
+export const KNOWLEDGE_EXTRACTION_MAX_MODEL_ATTEMPTS = 3;
 
 function normalizeText(value: unknown): unknown {
   if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
@@ -240,6 +247,7 @@ export function knowledgeExtractionSha256(value: string): string {
 const KNOWLEDGE_EXTRACTION_SCHEMA_DESCRIPTOR = {
   exactTopLevelKeys: [
     "schemaVersion",
+    "lecture",
     "organization",
     "speakers",
     "schools",
@@ -366,6 +374,79 @@ export const KNOWLEDGE_EXTRACTION_PROMPT_HASH = knowledgeExtractionSha256(
 export const KNOWLEDGE_EXTRACTION_SCHEMA_HASH = knowledgeExtractionSha256(
   stableJson(KNOWLEDGE_EXTRACTION_SCHEMA_DESCRIPTOR),
 );
+
+function safeSchemaIssuePaths(error: z.ZodError): readonly string[] {
+  return [
+    ...new Set(
+      error.issues
+        .map((issue) => issue.path.join("."))
+        .filter((path) => path !== "")
+        .slice(0, 8),
+    ),
+  ];
+}
+
+function canRepairKnowledgeExtraction(error: unknown): boolean {
+  return (
+    error instanceof z.ZodError ||
+    (error instanceof ModelGatewayError &&
+      ["content_invalid_json", "content_missing", "output_truncated"].includes(error.detailCode))
+  );
+}
+
+function knowledgeExtractionRepairInstruction(error: unknown, nextAttempt: number): string {
+  const compactLimits =
+    nextAttempt >= KNOWLEDGE_EXTRACTION_MAX_MODEL_ATTEMPTS
+      ? "最多保留4张证据最强的案例；每张最多2个核心项目、4个证据点，其他案例数组最多4项；quotes和trends各最多6项。"
+      : "最多保留8张证据最强的案例；每张最多3个核心项目、6个证据点，其他案例数组最多6项；quotes和trends各最多12项。";
+  const schemaCorrection =
+    error instanceof z.ZodError
+      ? `上一份JSON未通过字段校验。需要修正的字段路径：${safeSchemaIssuePaths(error).join("、") || "根对象"}。根对象必须完整包含exactTopLevelKeys，尤其是lecture对象。`
+      : "上一份JSON未完整返回。";
+
+  return `${schemaCorrection}
+这是第${String(nextAttempt)}次生成。请从头重新生成一个完整、可解析的JSON对象，不要续写上一份内容，不要输出Markdown或解释。${compactLimits}
+优先保证JSON闭合、schemaVersion准确、lecture对象完整以及每张案例至少2个证据点；材料不足时减少案例数量，绝不能截断JSON或用不完整对象凑数。`;
+}
+
+export interface GeneratedKnowledgeExtraction {
+  readonly output: KnowledgeExtractionOutput;
+  readonly result: JsonModelResult;
+}
+
+export async function generateKnowledgeExtractionWithRepair(
+  provider: JsonModelProvider,
+  request: JsonModelRequest,
+): Promise<GeneratedKnowledgeExtraction> {
+  let repairInstruction = "";
+  for (let attempt = 1; attempt <= KNOWLEDGE_EXTRACTION_MAX_MODEL_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await provider.generateJson({
+        systemPrompt: request.systemPrompt,
+        userPrompt:
+          repairInstruction === ""
+            ? request.userPrompt
+            : `${request.userPrompt}\n\n<repair-instruction>\n${repairInstruction}\n</repair-instruction>`,
+      });
+      if (result.model !== KNOWLEDGE_EXTRACTION_MODEL) {
+        throw new Error("Model provider returned an unexpected model identity.");
+      }
+      return {
+        output: KnowledgeExtractionOutputSchema.parse(result.json),
+        result,
+      };
+    } catch (error) {
+      if (
+        attempt >= KNOWLEDGE_EXTRACTION_MAX_MODEL_ATTEMPTS ||
+        !canRepairKnowledgeExtraction(error)
+      ) {
+        throw error;
+      }
+      repairInstruction = knowledgeExtractionRepairInstruction(error, attempt + 1);
+    }
+  }
+  throw new Error("Knowledge extraction repair attempts were exhausted.");
+}
 
 export const KNOWLEDGE_CASE_REBUILD_SYSTEM_PROMPT = `你是一名严谨的教育研究资料分析员。你的唯一任务是从带时间戳的讲座逐字稿证据窗口中提取高信息强度的匿名学生案例。
 

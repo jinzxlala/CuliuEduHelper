@@ -1,9 +1,13 @@
+import { ModelGatewayError, type JsonModelProvider, type JsonModelResult } from "@culiu/ai";
 import { describe, expect, it } from "vitest";
 
 import { buildKnowledgeSubmission } from "./submission.js";
 import {
   createDeterministicMockKnowledgeExtractionProvider,
   ExtractedCaseTypeSchema,
+  generateKnowledgeExtractionWithRepair,
+  KNOWLEDGE_EXTRACTION_MAX_MODEL_ATTEMPTS,
+  KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
   renderKnowledgeAnalysisMarkdown,
   sanitizeKnowledgeTranscriptForModel,
 } from "./knowledge-extraction.js";
@@ -89,7 +93,7 @@ describe("knowledge transcript extraction", () => {
       majors: [],
       organization: "未披露",
       quotes: [],
-      schemaVersion: "knowledge-analysis-markdown.v5",
+      schemaVersion: "knowledge-analysis-markdown.v6",
       schools: [],
       speakers: [],
       summary: "讲座讨论跨学科学习。",
@@ -133,7 +137,7 @@ describe("knowledge transcript extraction", () => {
       majors: [],
       organization: "未披露",
       quotes,
-      schemaVersion: "knowledge-analysis-markdown.v5",
+      schemaVersion: "knowledge-analysis-markdown.v6",
       schools: [],
       speakers: [],
       summary: "虚构摘要。",
@@ -144,5 +148,94 @@ describe("knowledge transcript extraction", () => {
     expect(markdown).not.toContain("不应进入原话");
     expect(markdown).toContain("虚构原话 30");
     expect(markdown).not.toContain("虚构原话 31");
+  });
+
+  it("declares lecture as an exact required top-level field", () => {
+    expect(KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT).toContain('"exactTopLevelKeys"');
+    expect(KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT).toMatch(/"exactTopLevelKeys":\[[^\]]*"lecture"/u);
+  });
+
+  it("repairs a schema-invalid lecture response without exposing model content", async () => {
+    const validProvider = createDeterministicMockKnowledgeExtractionProvider();
+    const valid = await validProvider.generateJson({ systemPrompt: "test", userPrompt: "test" });
+    const requests: string[] = [];
+    const responses: JsonModelResult[] = [
+      { ...valid, json: { ...(valid.json as Record<string, unknown>), lecture: "错误类型" } },
+      valid,
+    ];
+    const provider: JsonModelProvider = {
+      generateJson(request) {
+        requests.push(request.userPrompt);
+        const response = responses.shift();
+        if (response === undefined) throw new Error("Unexpected model call.");
+        return Promise.resolve(response);
+      },
+    };
+
+    const generated = await generateKnowledgeExtractionWithRepair(provider, {
+      systemPrompt: KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
+      userPrompt: "虚构逐字稿",
+    });
+
+    expect(generated.output.lecture.title).toBe("虚构跨学科讲座");
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toContain("lecture");
+    expect(requests[1]).toContain("根对象必须完整包含exactTopLevelKeys");
+    expect(requests[1]).not.toContain("错误类型");
+  });
+
+  it("retries truncated output with deterministic compact limits", async () => {
+    const validProvider = createDeterministicMockKnowledgeExtractionProvider();
+    const valid = await validProvider.generateJson({ systemPrompt: "test", userPrompt: "test" });
+    const requests: string[] = [];
+    let call = 0;
+    const provider: JsonModelProvider = {
+      generateJson(request) {
+        requests.push(request.userPrompt);
+        call += 1;
+        if (call === 1) {
+          return Promise.reject(
+            new ModelGatewayError("invalid_output", "Synthetic truncation.", {
+              detailCode: "output_truncated",
+              retryable: true,
+            }),
+          );
+        }
+        return Promise.resolve(valid);
+      },
+    };
+
+    await expect(
+      generateKnowledgeExtractionWithRepair(provider, {
+        systemPrompt: KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
+        userPrompt: "虚构逐字稿",
+      }),
+    ).resolves.toMatchObject({ output: { schemaVersion: "knowledge-analysis-markdown.v6" } });
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toContain("最多保留8张证据最强的案例");
+    expect(requests[1]).toContain("绝不能截断JSON");
+  });
+
+  it("stops after the bounded number of compact retries", async () => {
+    let calls = 0;
+    const provider: JsonModelProvider = {
+      generateJson() {
+        calls += 1;
+        return Promise.reject(
+          new ModelGatewayError("invalid_output", "Synthetic truncation.", {
+            detailCode: "output_truncated",
+            retryable: true,
+          }),
+        );
+      },
+    };
+
+    await expect(
+      generateKnowledgeExtractionWithRepair(provider, {
+        systemPrompt: KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
+        userPrompt: "虚构逐字稿",
+      }),
+    ).rejects.toMatchObject({ detailCode: "output_truncated" });
+    expect(calls).toBe(KNOWLEDGE_EXTRACTION_MAX_MODEL_ATTEMPTS);
   });
 });

@@ -195,7 +195,7 @@ beforeAll(async () => {
   objectStore = new LocalImmutableObjectStore(temporaryRoot);
   importer = new KnowledgeImporter({
     databaseClient,
-    indexPublisher: new KnowledgeIndexManager({ client, indexNames }),
+    indexPublisher: new KnowledgeIndexManager({ client, enableEmbedders: false, indexNames }),
     manifestPath: "unused.json",
     objectStore,
     sourceRoots: {},

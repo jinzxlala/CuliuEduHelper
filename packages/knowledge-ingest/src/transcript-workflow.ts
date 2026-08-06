@@ -12,6 +12,7 @@ import { KnowledgeImportError } from "./import-errors.js";
 import type { KnowledgeImporter, KnowledgeImportResult } from "./importer.js";
 import {
   buildKnowledgeExtractionUserPrompt,
+  generateKnowledgeExtractionWithRepair,
   KNOWLEDGE_EXTRACTION_MODEL,
   KNOWLEDGE_EXTRACTION_PROMPT_HASH,
   KNOWLEDGE_EXTRACTION_PROMPT_VERSION,
@@ -19,7 +20,6 @@ import {
   KNOWLEDGE_EXTRACTION_SCHEMA_HASH,
   KNOWLEDGE_EXTRACTION_SCHEMA_VERSION,
   KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
-  KnowledgeExtractionOutputSchema,
   knowledgeExtractionSha256,
   renderKnowledgeAnalysisMarkdown,
   sanitizeKnowledgeTranscriptForModel,
@@ -521,7 +521,7 @@ function safeFailure(error: unknown): { readonly code: string; readonly summary:
       content_missing: "DeepSeek 未返回 JSON 正文。请重新提交。",
       network_error: "Worker 无法连接 DeepSeek 服务，请检查网络后重试。",
       output_truncated:
-        "DeepSeek 输出达到 max_tokens 上限，JSON 被中途截断。系统已提高后续任务的输出上限，请重新提交。",
+        "DeepSeek 输出达到 max_tokens 上限；系统已自动精简内容并重试，但仍未得到完整 JSON。请重新提交。",
       provider_http_error: "DeepSeek API 返回 HTTP 错误，请稍后重试。",
       provider_resource_interrupted: "DeepSeek 因服务端资源不足中断生成，请稍后重试。",
       request_timeout: "DeepSeek 请求超过本地等待时间，请稍后重试。",
@@ -692,7 +692,7 @@ export async function executeKnowledgeTranscriptExtraction(
     if (knowledgeExtractionSha256(modelInput) !== parsedTask.payload.modelInputHash) {
       throw new Error("Stored model input failed hash verification.");
     }
-    const result = await provider.generateJson({
+    const generated = await generateKnowledgeExtractionWithRepair(provider, {
       systemPrompt: KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT,
       userPrompt: buildKnowledgeExtractionUserPrompt({
         originalFileName: row.original_file_name,
@@ -700,10 +700,10 @@ export async function executeKnowledgeTranscriptExtraction(
         transcriptText: modelInput,
       }),
     });
+    const { output: extracted, result } = generated;
     if (result.model !== parsedTask.payload.model) {
       throw new Error("Model provider returned an unexpected model identity.");
     }
-    const extracted = KnowledgeExtractionOutputSchema.parse(result.json);
     const safeTitle = safeModelLectureTitle(extracted.lecture.title);
     const normalizedOutput = {
       ...extracted,

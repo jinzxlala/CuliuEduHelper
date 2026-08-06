@@ -59,10 +59,10 @@ export const KnowledgeExtractTaskSchema = z.object({
       model: z.literal("deepseek-v4-flash"),
       modelInputHash: z.string().regex(/^[0-9a-f]{64}$/u),
       promptHash: z.string().regex(/^[0-9a-f]{64}$/u),
-      promptVersion: z.literal("knowledge-transcript-extraction.v5"),
+      promptVersion: z.literal("knowledge-transcript-extraction.v6"),
       redactionVersion: z.literal("knowledge-transcript-outbound.v1"),
       schemaHash: z.string().regex(/^[0-9a-f]{64}$/u),
-      schemaVersion: z.literal("knowledge-analysis-markdown.v5"),
+      schemaVersion: z.literal("knowledge-analysis-markdown.v6"),
       submissionId: z.uuid(),
       transcriptTextHash: z.string().regex(/^[0-9a-f]{64}$/u),
     })
