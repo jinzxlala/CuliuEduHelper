@@ -108,9 +108,15 @@ infra/deploy/scripts/restart.sh worker
 infra/deploy/scripts/compose.sh config --quiet
 infra/deploy/scripts/compose.sh pull
 infra/deploy/scripts/compose.sh up -d
+
+# 从当前检出的完整 Git SHA 拉取应用镜像、执行迁移并重建生产服务
+# 脚本会临时覆盖环境文件中的旧标签，不需要手工修改 IMAGE_TAG
+infra/deploy/scripts/deploy-current-sha.sh
 ```
 
 `stop.sh` 不执行 `down` 或 `down -v`。任何删除数据卷的操作仍受第 8 节破坏性操作门禁约束。
+
+`deploy-current-sha.sh` 要求当前检出的跟踪文件无未提交修改，并把`CULIU_IMAGE_TAG`和`CULIU_GIT_COMMIT_SHA`同时设置为`git rev-parse HEAD`得到的40位完整提交SHA。它只拉取本次发布涉及的应用镜像，避免因Docker Hub网络问题重复拉取已经固定并存在于服务器上的PostgreSQL、Redis和Nginx镜像；Meilisearch继续由现有TCR覆盖文件和固定模型镜像管理。脚本不会删除数据卷或宿主机数据。
 
 ### 4.2 直接使用 Docker Compose
 

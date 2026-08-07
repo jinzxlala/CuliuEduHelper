@@ -321,6 +321,7 @@ function startWorker() {
       ...process.env,
       CULIU_TASK_QUEUE_NAME: queueName,
       DATABASE_URL: temporaryDatabaseUrl.toString(),
+      KNOWLEDGE_STARTUP_RECONCILE_ENABLED: "false",
       LOCAL_STORAGE_ROOT: temporaryStorageRoot,
       NODE_ENV: "test",
       PROFILE_MODEL_PROVIDER: "mock",

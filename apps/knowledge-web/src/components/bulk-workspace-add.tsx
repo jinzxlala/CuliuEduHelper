@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type JSX, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type JSX,
+  type ReactNode,
+} from "react";
 
 import {
   uniqueWorkspaceSources,
@@ -57,6 +65,10 @@ export function BulkWorkspaceAdd({
   const [workspaceId, setWorkspaceId] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelected(new Set());
+  }, [available]);
 
   async function loadWorkspaces(): Promise<void> {
     if (workspaces !== null) return;
@@ -159,7 +171,7 @@ export function BulkWorkspaceAdd({
                 }}
                 type="button"
               >
-                全选当前结果
+                全选当前页
               </button>
               <button
                 className="text-button"

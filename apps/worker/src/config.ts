@@ -17,6 +17,7 @@ const WorkerEnvironmentSchema = z.object({
   LOCAL_STORAGE_ROOT: AbsolutePathSchema,
   KNOWLEDGE_EXTRACTION_MODEL_PROVIDER: z.enum(["deepseek", "mock"]).default("deepseek"),
   KNOWLEDGE_EMBEDDERS_ENABLED: BooleanEnvironmentSchema.default(true),
+  KNOWLEDGE_STARTUP_RECONCILE_ENABLED: BooleanEnvironmentSchema.default(true),
   MEILI_TASK_POLL_INTERVAL_MS: z.coerce.number().int().min(100).max(5_000).default(500),
   MEILI_TASK_TIMEOUT_MS: z.coerce.number().int().min(60_000).max(3_600_000).default(600_000),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -27,6 +28,7 @@ const WorkerEnvironmentSchema = z.object({
 export interface WorkerRuntimeConfig {
   readonly concurrency: number;
   readonly knowledgeEmbeddersEnabled: boolean;
+  readonly knowledgeStartupReconcileEnabled: boolean;
   readonly localStorageRoot: string;
   readonly knowledgeExtractionModelProvider: "deepseek" | "mock";
   readonly manifestPath: string;
@@ -41,6 +43,9 @@ export function parseWorkerRuntimeConfig(
   environment: NodeJS.ProcessEnv = process.env,
 ): WorkerRuntimeConfig {
   const parsed = WorkerEnvironmentSchema.parse(environment);
+  if (parsed.NODE_ENV !== "test" && !parsed.KNOWLEDGE_STARTUP_RECONCILE_ENABLED) {
+    throw new Error("Knowledge startup reconciliation can only be disabled in test mode.");
+  }
   if (
     parsed.NODE_ENV === "production" &&
     (parsed.PROFILE_MODEL_PROVIDER === "mock" ||
@@ -51,6 +56,7 @@ export function parseWorkerRuntimeConfig(
   return {
     concurrency: parsed.WORKER_CONCURRENCY,
     knowledgeEmbeddersEnabled: parsed.KNOWLEDGE_EMBEDDERS_ENABLED,
+    knowledgeStartupReconcileEnabled: parsed.KNOWLEDGE_STARTUP_RECONCILE_ENABLED,
     knowledgeExtractionModelProvider: parsed.KNOWLEDGE_EXTRACTION_MODEL_PROVIDER,
     localStorageRoot: parsed.LOCAL_STORAGE_ROOT,
     manifestPath: parsed.KNOWLEDGE_MANIFEST_PATH,

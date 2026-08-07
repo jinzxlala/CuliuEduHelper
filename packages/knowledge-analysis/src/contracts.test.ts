@@ -42,13 +42,12 @@ describe("knowledge analysis contracts", () => {
   it("accepts a bounded smart-search plan and rejects excessive plans", () => {
     const item = {
       filters: {
-        caseTypes: [],
-        confidences: [],
+        dateBefore: null,
         dateFrom: null,
-        dateTo: null,
         majors: [],
         organizations: [],
         schools: [],
+        speakers: [],
       },
       keywords: ["跨学科", "项目"],
       matchingStrategy: "last" as const,
@@ -57,16 +56,20 @@ describe("knowledge analysis contracts", () => {
     };
     expect(
       SmartSearchQueryPlanSchema.parse({
+        intent: "semantic_search",
         interpretation: "Find synthetic cross-disciplinary evidence.",
         queries: [item],
         round: 1,
+        targets: ["lectures"],
       }).queries,
     ).toHaveLength(1);
     expect(() =>
       SmartSearchQueryPlanSchema.parse({
+        intent: "semantic_search",
         interpretation: "Too many plans.",
         queries: Array.from({ length: 7 }, () => item),
         round: 1,
+        targets: ["lectures"],
       }),
     ).toThrow();
   });
@@ -77,6 +80,11 @@ describe("knowledge analysis contracts", () => {
     ).toThrow();
     expect(() =>
       SmartSearchResultSchema.parse({
+        appliedConditions: [],
+        caseCount: 0,
+        exactTotal: null,
+        intent: "semantic_search",
+        lectureCount: 1,
         limitations: [],
         results: [
           {
@@ -142,11 +150,15 @@ describe("knowledge analysis contracts", () => {
           filters: {
             caseTypes: ["学生案例", "科研竞赛案例", "不存在的类型"],
             confidences: [],
-            dateFrom: null,
-            dateTo: null,
+            activityTypes: [],
+            aiDepth: [],
+            aiDomains: [],
+            curriculumSystems: [],
             majors: [],
-            organizations: [],
+            researchMethods: [],
             schools: [],
+            sourceDateBefore: null,
+            sourceDateFrom: null,
           },
           keywords: ["AI", "人工智能", "项目"],
           matchingStrategy: "last",
@@ -157,10 +169,59 @@ describe("knowledge analysis contracts", () => {
       round: 1,
     });
     const plan = SmartSearchQueryPlanSchema.parse(normalized.json);
-    expect(plan.queries[0]?.filters.caseTypes).toEqual(["科研与竞赛案例"]);
+    const query = plan.queries[0];
+    expect(query?.target).toBe("cases");
+    if (query?.target !== "cases") throw new Error("Expected a case query.");
+    expect(query.filters.caseTypes).toEqual(["科研与竞赛案例"]);
     expect(normalized.warnings).toEqual([
       "检索规划中的“学生案例”是泛称，已取消该案例类型限制。",
       "检索规划中的未知案例类型“不存在的类型”已被忽略。",
     ]);
+  });
+
+  it("routes the five stage-four acceptance prompts and derives safe year filters", () => {
+    const cases = [
+      ["帮我检索所有2025年内的讲座", "catalog_browse", ["lectures"]],
+      ["帮我检索所有2025年内的讲座和学生案例", "catalog_browse", ["lectures", "cases"]],
+      ["查找AI与医疗相关的讲座和案例", "semantic_search", ["lectures", "cases"]],
+      ["2025年共有多少场讲座", "count", ["lectures"]],
+      ["AI案例占全部案例的比例", "analysis_required", ["cases"]],
+    ] as const;
+    for (const [prompt, intent, targets] of cases) {
+      const normalized = normalizeSmartSearchPlannerOutput(
+        {
+          intent: "semantic_search",
+          interpretation: prompt,
+          queries: [],
+          round: 9,
+          targets: [],
+        },
+        prompt,
+        1,
+      );
+      const parsed = SmartSearchQueryPlanSchema.parse(normalized.json);
+      expect(parsed.intent).toBe(intent);
+      expect(parsed.targets).toEqual(targets);
+      expect(parsed.round).toBe(1);
+      if (intent === "analysis_required") {
+        expect(parsed.queries).toEqual([]);
+      } else {
+        expect(parsed.queries).toHaveLength(targets.length);
+      }
+      for (const query of parsed.queries) {
+        if (prompt.includes("2025") && query.target === "lectures") {
+          expect(query.filters).toMatchObject({
+            dateBefore: "2026-01-01",
+            dateFrom: "2025-01-01",
+          });
+        }
+        if (prompt.includes("2025") && query.target === "cases") {
+          expect(query.filters).toMatchObject({
+            sourceDateBefore: "2026-01-01",
+            sourceDateFrom: "2025-01-01",
+          });
+        }
+      }
+    }
   });
 });

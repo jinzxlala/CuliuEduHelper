@@ -183,10 +183,13 @@ export const KnowledgeSmartSearchTaskSchema = z.object({
       correlationId: z.uuid(),
       gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
       model: z.literal("deepseek-v4-flash"),
-      promptVersion: z.literal("knowledge-smart-search.v2"),
-      retrievalVersion: z.literal("knowledge-hybrid.v2"),
+      promptVersion: z.enum(["knowledge-smart-search.v2", "knowledge-smart-search.v3"]),
+      retrievalVersion: z.enum(["knowledge-hybrid.v2", "knowledge-intent-search.v1"]),
       runId: z.uuid(),
-      schemaVersion: z.literal("knowledge-smart-search-output.v1"),
+      schemaVersion: z.enum([
+        "knowledge-smart-search-output.v1",
+        "knowledge-smart-search-output.v2",
+      ]),
     })
     .strict(),
   taskId: z.uuid(),

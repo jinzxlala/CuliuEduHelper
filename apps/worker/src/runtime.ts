@@ -77,9 +77,13 @@ export async function runWorker(): Promise<void> {
   try {
     await checkDatabaseConnection(databaseClient);
     await checkRedisConnection(redis);
-    await indexManager.ensureKnowledgeIndexes();
+    if (runtime.knowledgeStartupReconcileEnabled) {
+      await indexManager.ensureKnowledgeIndexes();
+    }
     await checkHighsRuntime();
-    await importer.reconcileCurrentPublication();
+    if (runtime.knowledgeStartupReconcileEnabled) {
+      await importer.reconcileCurrentPublication();
+    }
 
     const worker = createTaskWorker({
       concurrency: runtime.concurrency,

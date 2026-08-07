@@ -43,6 +43,7 @@ const documents: KnowledgeDocumentSet = {
       profile_summary: "一名匿名学生使用NLP分析公共文本。",
       research_methods: ["文本分析"],
       schools: ["布朗大学"],
+      source_date: "2026-07-01",
       timestamp_refs: [
         {
           end_seconds: 20,
@@ -215,6 +216,23 @@ describe("knowledge search service", () => {
     });
 
     expect(matching.hits.map((hit) => hit.document.case_id)).toEqual(["case_demo_001"]);
+    expect(excluded.estimatedTotalHits).toBe(0);
+  });
+
+  it("filters and sorts cases by the bound source lecture date", async () => {
+    const matching = await service.searchCases({
+      filters: { sourceDateBefore: "2027-01-01", sourceDateFrom: "2026-01-01" },
+      sort: "source_date:desc",
+    });
+    const excluded = await service.searchCases({
+      filters: { sourceDateBefore: "2026-01-01", sourceDateFrom: "2025-01-01" },
+      sort: "source_date:asc",
+    });
+
+    expect(matching.hits[0]?.document).toMatchObject({
+      case_id: "case_demo_001",
+      source_date: "2026-07-01",
+    });
     expect(excluded.estimatedTotalHits).toBe(0);
   });
 

@@ -2073,6 +2073,13 @@ export const knowledgeSmartSearchRuns = pgTable(
     status: knowledgeAgentRunStatusEnum("status").notNull().default("queued"),
     progressStage: varchar("progress_stage", { length: 32 }).notNull().default("queued"),
     queryPlan: jsonb("query_plan").$type<Record<string, unknown> | null>(),
+    intent: varchar("intent", { length: 32 }),
+    appliedConditions: jsonb("applied_conditions").$type<string[]>().notNull().default([]),
+    limitations: jsonb("limitations").$type<string[]>().notNull().default([]),
+    exactTotal: integer("exact_total"),
+    lectureCount: integer("lecture_count"),
+    caseCount: integer("case_count"),
+    safeErrorStage: varchar("safe_error_stage", { length: 32 }),
     candidateReferences: jsonb("candidate_references").$type<unknown[]>().notNull().default([]),
     resultReferences: jsonb("result_references").$type<unknown[]>().notNull().default([]),
     summary: text("summary"),
@@ -2097,6 +2104,18 @@ export const knowledgeSmartSearchRuns = pgTable(
     check("knowledge_smart_search_prompt_hash_check", sql`${table.promptHash} ~ '^[0-9a-f]{64}$'`),
     check("knowledge_smart_search_git_sha_check", sql`${table.gitCommitSha} ~ '^[0-9a-f]{40}$'`),
     check(
+      "knowledge_smart_search_intent_check",
+      sql`${table.intent} is null or ${table.intent} in ('semantic_search', 'catalog_browse', 'count', 'analysis_required')`,
+    ),
+    check(
+      "knowledge_smart_search_counts_check",
+      sql`(${table.exactTotal} is null or ${table.exactTotal} >= 0) and (${table.lectureCount} is null or ${table.lectureCount} >= 0) and (${table.caseCount} is null or ${table.caseCount} >= 0)`,
+    ),
+    check(
+      "knowledge_smart_search_error_stage_check",
+      sql`${table.safeErrorStage} is null or ${table.safeErrorStage} in ('planning', 'retrieval', 'rerank', 'pagination', 'workspace_handoff')`,
+    ),
+    check(
       "knowledge_smart_search_progress_check",
       sql`${table.progressStage} in ('queued', 'planning', 'retrieving', 'reranking', 'succeeded', 'failed')`,
     ),
@@ -2111,6 +2130,48 @@ export const knowledgeSmartSearchRuns = pgTable(
     check(
       "knowledge_smart_search_state_check",
       sql`(${table.status} = 'queued' and ${table.progressStage} = 'queued' and ${table.startedAt} is null and ${table.completedAt} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'running' and ${table.progressStage} in ('planning', 'retrieving', 'reranking') and ${table.startedAt} is not null and ${table.completedAt} is null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'succeeded' and ${table.progressStage} = 'succeeded' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.queryPlan} is not null and ${table.summary} is not null and ${table.safeErrorCode} is null and ${table.safeErrorSummary} is null) or (${table.status} = 'failed' and ${table.progressStage} = 'failed' and ${table.startedAt} is not null and ${table.completedAt} is not null and ${table.safeErrorCode} is not null and ${table.safeErrorSummary} is not null)`,
+    ),
+  ],
+);
+
+export const knowledgeSmartSearchResults = pgTable(
+  "knowledge_smart_search_result",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => knowledgeSmartSearchRuns.id, { onDelete: "restrict" }),
+    knowledgeBatchId: uuid("knowledge_batch_id")
+      .notNull()
+      .references(() => knowledgeImportBatches.id, { onDelete: "restrict" }),
+    ordinal: integer("ordinal").notNull(),
+    sourceType: knowledgeAnalysisSourceTypeEnum("source_type").notNull(),
+    sourceId: varchar("source_id", { length: 511 }).notNull(),
+    contentHash: varchar("content_hash", { length: 64 }).notNull(),
+    displayTitle: varchar("display_title", { length: 1000 }).notNull(),
+    displaySummary: text("display_summary").notNull(),
+    sourceDate: date("source_date", { mode: "string" }),
+    matchedTerms: jsonb("matched_terms").$type<string[]>().notNull().default([]),
+    rationale: text("rationale").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("knowledge_smart_search_result_run_ordinal_unique").on(table.runId, table.ordinal),
+    uniqueIndex("knowledge_smart_search_result_run_source_unique").on(
+      table.runId,
+      table.sourceType,
+      table.sourceId,
+    ),
+    index("knowledge_smart_search_result_run_idx").on(table.runId, table.ordinal),
+    check("knowledge_smart_search_result_ordinal_check", sql`${table.ordinal} >= 0`),
+    check("knowledge_smart_search_result_hash_check", sql`${table.contentHash} ~ '^[0-9a-f]{64}$'`),
+    check(
+      "knowledge_smart_search_result_title_check",
+      sql`char_length(trim(${table.displayTitle})) between 1 and 1000`,
+    ),
+    check(
+      "knowledge_smart_search_result_rationale_check",
+      sql`char_length(trim(${table.rationale})) between 1 and 4000`,
     ),
   ],
 );

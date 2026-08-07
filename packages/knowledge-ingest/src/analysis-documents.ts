@@ -346,7 +346,7 @@ function caseId(lectureId: string, ordinal: number): string {
   return `case_${lectureId.replace(/^lecture_/u, "")}_${String(ordinal).padStart(3, "0")}`;
 }
 
-function parseCase(lectureId: string, card: MarkdownCard): CaseDocument {
+function parseCase(lectureId: string, sourceDate: string | null, card: MarkdownCard): CaseDocument {
   const fields = parseFields(card.bodyLines);
   const academicLabel =
     firstKnownField(fields, /^(一句话学术标签|学术标签|学术主线|核心问题|价值)$/u) ?? card.heading;
@@ -382,6 +382,7 @@ function parseCase(lectureId: string, card: MarkdownCard): CaseDocument {
     profile_summary: firstKnownField(fields, /^案例概览$/u) ?? "",
     research_methods: [...new Set(researchMethods)],
     schools: caseSchools(fields, card.heading),
+    source_date: sourceDate,
     timestamp_refs: [],
     verified_facts: subsectionList(card.bodyLines, "核实事实"),
   });
@@ -433,7 +434,7 @@ export function parseAnalysisDocuments(
   const lecture = lectureDocument(markdown, bundle, bundle.analysis_sections, label);
   const cards = parseCards(findH2Section(markdown, bundle.analysis_sections.cases, label), label);
   return {
-    cases: cards.map((card) => parseCase(bundle.lecture_id, card)),
+    cases: cards.map((card) => parseCase(bundle.lecture_id, lecture.date, card)),
     lecture,
   };
 }

@@ -54,6 +54,7 @@ function buildImporter(options: {
               major: "计算机科学",
               research_methods: ["访谈"],
               schools: ["示例大学"],
+              source_date: new Date("2026-07-01T00:00:00.000Z"),
               timestamp_refs: [],
             },
           ],
@@ -103,7 +104,7 @@ describe("KnowledgeImporter publication reconciliation", () => {
 
     expect(publish).toHaveBeenCalledOnce();
     expect(publish.mock.calls[0]?.[0]).toMatchObject({
-      cases: [{ case_id: "case_001", lecture_id: "lecture_001" }],
+      cases: [{ case_id: "case_001", lecture_id: "lecture_001", source_date: "2026-07-01" }],
       lectures: [{ date: "2026-07-01", lecture_id: "lecture_001", title: "示例讲座" }],
       transcriptSegments: [],
     });

@@ -187,10 +187,10 @@ describe("TaskEnvelopeSchema", () => {
         correlationId: validTask.payload.correlationId,
         gitCommitSha: "b".repeat(40),
         model: "deepseek-v4-flash",
-        promptVersion: "knowledge-smart-search.v2",
-        retrievalVersion: "knowledge-hybrid.v2",
+        promptVersion: "knowledge-smart-search.v3",
+        retrievalVersion: "knowledge-intent-search.v1",
         runId: "00000000-0000-4000-8000-000000000051",
-        schemaVersion: "knowledge-smart-search-output.v1",
+        schemaVersion: "knowledge-smart-search-output.v2",
       },
       taskName: "knowledge.smart-search",
     } as const;

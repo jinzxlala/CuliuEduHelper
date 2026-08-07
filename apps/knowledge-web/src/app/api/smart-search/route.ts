@@ -15,6 +15,8 @@ import { getTaskQueue } from "../../../lib/task-queue";
 
 const PRIVATE_HEADERS = { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" };
 const RunIdSchema = z.uuid();
+const PageSchema = z.coerce.number().int().min(1).max(10_000).default(1);
+const PageSizeSchema = z.coerce.number().int().min(1).max(50).default(20);
 const GitCommitShaSchema = z.string().regex(/^[0-9a-f]{40}$/u);
 
 export async function GET(request: Request): Promise<NextResponse> {
@@ -25,7 +27,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       { headers: PRIVATE_HEADERS, status: 401 },
     );
   }
-  const rawRunId = new URL(request.url).searchParams.get("id");
+  const searchParams = new URL(request.url).searchParams;
+  const rawRunId = searchParams.get("id");
   const runId = RunIdSchema.safeParse(rawRunId);
   try {
     if (rawRunId === null) {
@@ -39,8 +42,22 @@ export async function GET(request: Request): Promise<NextResponse> {
         { error: "invalid_run_id" },
         { headers: PRIVATE_HEADERS, status: 422 },
       );
+    const page = PageSchema.safeParse(searchParams.get("page") ?? undefined);
+    const pageSize = PageSizeSchema.safeParse(searchParams.get("pageSize") ?? undefined);
+    if (!page.success || !pageSize.success) {
+      return NextResponse.json(
+        { error: "invalid_pagination" },
+        { headers: PRIVATE_HEADERS, status: 422 },
+      );
+    }
     return NextResponse.json(
-      await readKnowledgeSmartSearch(getDatabaseClient().database, principal.id, runId.data),
+      await readKnowledgeSmartSearch(
+        getDatabaseClient().database,
+        principal.id,
+        runId.data,
+        page.data,
+        pageSize.data,
+      ),
       { headers: PRIVATE_HEADERS },
     );
   } catch {

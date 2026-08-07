@@ -22,6 +22,7 @@ export const LectureSearchInputSchema = z
     facets: z.array(LectureFacetSchema).max(5).default([]),
     filters: z
       .object({
+        dateBefore: z.iso.date().optional(),
         dateFrom: z.iso.date().optional(),
         dateTo: z.iso.date().optional(),
         majors: OptionalFacetFilterSchema,
@@ -41,14 +42,16 @@ export const LectureSearchInputSchema = z
   .refine(
     (value) =>
       value.filters.dateFrom === undefined ||
-      value.filters.dateTo === undefined ||
-      value.filters.dateFrom <= value.filters.dateTo,
+      ((value.filters.dateTo === undefined || value.filters.dateFrom <= value.filters.dateTo) &&
+        (value.filters.dateBefore === undefined ||
+          value.filters.dateFrom < value.filters.dateBefore)),
     { message: "dateFrom must not be later than dateTo", path: ["filters", "dateFrom"] },
   );
 
 export type LectureSearchInput = z.input<typeof LectureSearchInputSchema>;
 
 export const CaseFacetSchema = z.enum([
+  "source_date",
   "lecture_id",
   "case_type",
   "curriculum_system",
@@ -79,6 +82,8 @@ export const CaseSearchInputSchema = z
         majors: OptionalFacetFilterSchema,
         researchMethods: OptionalFacetFilterSchema,
         schools: OptionalFacetFilterSchema,
+        sourceDateBefore: z.iso.date().optional(),
+        sourceDateFrom: z.iso.date().optional(),
       })
       .strict()
       .default({}),
@@ -86,8 +91,19 @@ export const CaseSearchInputSchema = z
     hybrid: KnowledgeHybridSearchSchema.optional(),
     matchingStrategy: SearchMatchingStrategySchema.default("last"),
     query: QuerySchema,
+    sort: z.enum(["source_date:asc", "source_date:desc"]).optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) =>
+      value.filters.sourceDateFrom === undefined ||
+      value.filters.sourceDateBefore === undefined ||
+      value.filters.sourceDateFrom < value.filters.sourceDateBefore,
+    {
+      message: "sourceDateFrom must be earlier than sourceDateBefore",
+      path: ["filters", "sourceDateFrom"],
+    },
+  );
 
 export type CaseSearchInput = z.input<typeof CaseSearchInputSchema>;
 

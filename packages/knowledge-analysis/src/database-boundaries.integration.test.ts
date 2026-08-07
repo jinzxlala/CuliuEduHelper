@@ -20,6 +20,7 @@ import {
   knowledgeImportBatches,
   knowledgeLectureVersions,
   knowledgeSmartSearchRuns,
+  knowledgeSmartSearchResults,
   parseDatabaseConfig,
   runMigrations,
   sourceDocuments,
@@ -31,7 +32,11 @@ import { LocalImmutableObjectStore } from "@culiu/storage";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { executeKnowledgeSmartSearch, listKnowledgeSmartSearches } from "./smart-search.js";
+import {
+  executeKnowledgeSmartSearch,
+  listKnowledgeSmartSearches,
+  readKnowledgeSmartSearch,
+} from "./smart-search.js";
 import {
   executeKnowledgeAnalysisChat,
   prepareKnowledgeAnalysisMessage,
@@ -419,9 +424,9 @@ describe("knowledge analysis database boundaries", () => {
       model: "deepseek-v4-flash",
       prompt,
       promptHash: createHash("sha256").update(prompt, "utf8").digest("hex"),
-      promptVersion: "knowledge-smart-search.v2",
-      retrievalVersion: "knowledge-hybrid.v2",
-      schemaVersion: "knowledge-smart-search-output.v1",
+      promptVersion: "knowledge-smart-search.v3",
+      retrievalVersion: "knowledge-intent-search.v1",
+      schemaVersion: "knowledge-smart-search-output.v2",
     });
     const modelOutputs: unknown[] = [
       {
@@ -550,10 +555,10 @@ describe("knowledge analysis database boundaries", () => {
         correlationId: randomUUID(),
         gitCommitSha: "e".repeat(40),
         model: "deepseek-v4-flash",
-        promptVersion: "knowledge-smart-search.v2",
-        retrievalVersion: "knowledge-hybrid.v2",
+        promptVersion: "knowledge-smart-search.v3",
+        retrievalVersion: "knowledge-intent-search.v1",
         runId,
-        schemaVersion: "knowledge-smart-search-output.v1",
+        schemaVersion: "knowledge-smart-search-output.v2",
       },
       taskId: randomUUID(),
       taskName: "knowledge.smart-search",
@@ -578,6 +583,218 @@ describe("knowledge analysis database boundaries", () => {
     const history = await listKnowledgeSmartSearches(database, ownerId);
     expect(history[0]).toMatchObject({ id: runId, resultCount: 1, status: "succeeded" });
     expect(await listKnowledgeSmartSearches(database, editorId)).toEqual([]);
+  });
+
+  it("freezes paginated catalog results and preserves legacy single-page history", async () => {
+    const database = activeClient().database;
+    const now = new Date();
+    const runId = randomUUID();
+    const prompt = "Synthetic 2025 catalog";
+    await database.insert(knowledgeSmartSearchRuns).values({
+      appliedConditions: ["dateFrom=2025-01-01", "dateBefore=2026-01-01"],
+      authorizationContextId,
+      caseCount: 0,
+      completedAt: now,
+      createdByUserId: ownerId,
+      exactTotal: 25,
+      gitCommitSha: "f".repeat(40),
+      id: runId,
+      intent: "catalog_browse",
+      knowledgeBatchId: publishedBatchId,
+      lectureCount: 25,
+      model: "deepseek-v4-flash",
+      progressStage: "succeeded",
+      prompt,
+      promptHash: createHash("sha256").update(prompt, "utf8").digest("hex"),
+      promptVersion: "knowledge-smart-search.v3",
+      queryPlan: { rounds: [] },
+      retrievalVersion: "knowledge-intent-search.v1",
+      schemaVersion: "knowledge-smart-search-output.v2",
+      startedAt: now,
+      status: "succeeded",
+      summary: "Synthetic deterministic catalog summary.",
+    });
+    await database.insert(knowledgeSmartSearchResults).values(
+      Array.from({ length: 25 }, (_, ordinal) => ({
+        contentHash: createHash("sha256")
+          .update(`catalog-${String(ordinal)}`)
+          .digest("hex"),
+        displaySummary: `Synthetic summary ${String(ordinal)}`,
+        displayTitle: `Synthetic title ${String(ordinal).padStart(2, "0")}`,
+        knowledgeBatchId: publishedBatchId,
+        matchedTerms: [],
+        ordinal,
+        rationale: "Deterministic catalog match.",
+        runId,
+        sourceDate: "2025-06-01",
+        sourceId: `lecture:catalog-${String(ordinal).padStart(2, "0")}`,
+        sourceType: "lecture" as const,
+      })),
+    );
+
+    const secondPage = await readKnowledgeSmartSearch(database, ownerId, runId, 2, 20);
+    expect(secondPage).toMatchObject({
+      exactTotal: 25,
+      legacyResult: false,
+      page: 2,
+      pageSize: 20,
+      totalPages: 2,
+    });
+    expect(secondPage.resultReferences).toHaveLength(5);
+    expect(secondPage.resultReferences[0]).toMatchObject({
+      displayTitle: "Synthetic title 20",
+      sourceDate: "2025-06-01",
+    });
+    await expect(
+      database
+        .update(knowledgeSmartSearchResults)
+        .set({ displayTitle: "Mutated title" })
+        .where(eq(knowledgeSmartSearchResults.runId, runId)),
+    ).rejects.toThrow();
+
+    const legacyRunId = randomUUID();
+    const legacyPrompt = "Synthetic legacy search";
+    await database.insert(knowledgeSmartSearchRuns).values({
+      authorizationContextId,
+      completedAt: now,
+      createdByUserId: ownerId,
+      gitCommitSha: "d".repeat(40),
+      id: legacyRunId,
+      knowledgeBatchId: publishedBatchId,
+      model: "deepseek-v4-flash",
+      progressStage: "succeeded",
+      prompt: legacyPrompt,
+      promptHash: createHash("sha256").update(legacyPrompt, "utf8").digest("hex"),
+      promptVersion: "knowledge-smart-search.v2",
+      queryPlan: { rounds: [] },
+      resultReferences: [
+        {
+          batchId: publishedBatchId,
+          contentHash: "c".repeat(64),
+          matchedTerms: [],
+          rationale: "Legacy result.",
+          sourceId: lectureId,
+          sourceType: "lecture",
+        },
+      ],
+      retrievalVersion: "knowledge-hybrid.v2",
+      schemaVersion: "knowledge-smart-search-output.v1",
+      startedAt: now,
+      status: "succeeded",
+      summary: "Synthetic legacy summary.",
+    });
+    const legacy = await readKnowledgeSmartSearch(database, ownerId, legacyRunId);
+    expect(legacy).toMatchObject({ exactTotal: null, legacyResult: true, totalPages: 1 });
+    expect(legacy.resultReferences).toHaveLength(1);
+  });
+
+  it("computes count intent deterministically without asking the model to estimate totals", async () => {
+    const database = activeClient().database;
+    const runId = randomUUID();
+    const prompt = "2025年共有多少场讲座";
+    await database.insert(knowledgeSmartSearchRuns).values({
+      authorizationContextId,
+      createdByUserId: ownerId,
+      gitCommitSha: "a".repeat(40),
+      id: runId,
+      knowledgeBatchId: publishedBatchId,
+      model: "deepseek-v4-flash",
+      prompt,
+      promptHash: createHash("sha256").update(prompt, "utf8").digest("hex"),
+      promptVersion: "knowledge-smart-search.v3",
+      retrievalVersion: "knowledge-intent-search.v1",
+      schemaVersion: "knowledge-smart-search-output.v2",
+    });
+    let modelCalls = 0;
+    const provider: JsonModelProvider = {
+      async generateJson() {
+        modelCalls += 1;
+        await Promise.resolve();
+        return {
+          json: {
+            intent: "semantic_search",
+            interpretation: "Count lectures published in 2025.",
+            queries: [],
+            round: 1,
+            targets: [],
+          },
+          model: "deepseek-v4-flash",
+          providerRequestId: randomUUID(),
+          usage: {
+            completionTokens: 5,
+            promptCacheHitTokens: 0,
+            promptCacheMissTokens: 10,
+            promptTokens: 10,
+            totalTokens: 15,
+          },
+        };
+      },
+    };
+    const lecture: LectureDocument = {
+      ai_cross_disciplinary_text: "Synthetic AI evidence.",
+      date: "2025-05-01",
+      failure_text: "Synthetic limitation.",
+      lecture_id: lectureId,
+      majors: ["Synthetic major"],
+      organization: "Synthetic organization",
+      schools: ["Synthetic school"],
+      source_path: "knowledge/analysis/synthetic-stage3.md",
+      speakers: ["Synthetic speaker"],
+      summary: "Synthetic lecture summary.",
+      title: "Synthetic stage 3 lecture",
+      trend_text: "Synthetic trend.",
+    };
+    const search = {
+      searchCases: async (): Promise<SearchPage<never>> => {
+        await Promise.resolve();
+        return {
+          estimatedTotalHits: 0,
+          facetDistribution: {},
+          hits: [],
+          limit: 50,
+          offset: 0,
+          processingTimeMs: 1,
+          query: "",
+        };
+      },
+      searchLectures: async (): Promise<SearchPage<LectureDocument>> => {
+        await Promise.resolve();
+        return {
+          estimatedTotalHits: 1,
+          facetDistribution: {},
+          hits: [{ document: lecture, formatted: {} }],
+          limit: 50,
+          offset: 0,
+          processingTimeMs: 1,
+          query: "",
+        };
+      },
+    };
+    const task: KnowledgeSmartSearchTask = {
+      authorization: { contextHash: authorizationContextHash, contextId: authorizationContextId },
+      idempotencyKey: `smart_search_${"b".repeat(64)}`,
+      payload: {
+        correlationId: randomUUID(),
+        gitCommitSha: "a".repeat(40),
+        model: "deepseek-v4-flash",
+        promptVersion: "knowledge-smart-search.v3",
+        retrievalVersion: "knowledge-intent-search.v1",
+        runId,
+        schemaVersion: "knowledge-smart-search-output.v2",
+      },
+      taskId: randomUUID(),
+      taskName: "knowledge.smart-search",
+    };
+
+    const result = await executeKnowledgeSmartSearch(database, task, provider, search);
+    expect(result).toMatchObject({
+      caseCount: 0,
+      exactTotal: 1,
+      intent: "count",
+      lectureCount: 1,
+      results: [],
+    });
+    expect(modelCalls).toBe(1);
   });
 
   it("keeps analysis chat scoped to the current conversation and validates frozen citations", async () => {

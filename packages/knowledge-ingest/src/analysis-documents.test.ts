@@ -156,6 +156,7 @@ describe("analysis document parser", () => {
       case_type: "学生录取案例",
       confidence: "unknown",
       schools: ["UChicago"],
+      source_date: "2026-03-14",
       timestamp_refs: [],
     });
     expect(parsed.cases[1]).toMatchObject({

@@ -18,11 +18,36 @@ describe("worker profile model configuration", () => {
     ).toMatchObject({
       knowledgeEmbeddersEnabled: true,
       knowledgeExtractionModelProvider: "deepseek",
+      knowledgeStartupReconcileEnabled: true,
       meilisearchTaskPollingIntervalMs: 500,
       meilisearchTaskTimeoutMs: 600_000,
       profileModelProvider: "deepseek",
       queueName: "synthetic-queue",
     });
+  });
+
+  it("allows isolated test workers to skip shared knowledge index reconciliation", () => {
+    expect(
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_STARTUP_RECONCILE_ENABLED: "false",
+        NODE_ENV: "test",
+      }).knowledgeStartupReconcileEnabled,
+    ).toBe(false);
+    expect(() =>
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_STARTUP_RECONCILE_ENABLED: "no",
+        NODE_ENV: "test",
+      }),
+    ).toThrow();
+    expect(() =>
+      parseWorkerRuntimeConfig({
+        ...baseEnvironment,
+        KNOWLEDGE_STARTUP_RECONCILE_ENABLED: "false",
+        NODE_ENV: "production",
+      }),
+    ).toThrow(/only be disabled in test mode/u);
   });
 
   it("supports a keyword-only production deployment and bounded Meilisearch waits", () => {

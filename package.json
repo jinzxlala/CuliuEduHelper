@@ -41,6 +41,7 @@
     "test": "turbo run test",
     "test:functional:stage2": "pnpm build && node --env-file-if-exists=infra/.env scripts/test-stage2-functional.mjs",
     "test:functional:stage3": "pnpm --filter @culiu/knowledge-analysis test && pnpm --filter @culiu/knowledge-analysis test:integration && pnpm --filter @culiu/search test && pnpm --filter @culiu/search test:integration && pnpm search:gold:evaluate && pnpm search:smart-gold:evaluate && pnpm --filter @culiu/knowledge-web test && pnpm --filter @culiu/knowledge-web build && pnpm smoke:knowledge-web",
+    "test:deepseek:stage4": "pnpm --filter @culiu/authorization build && pnpm --filter @culiu/ai build && pnpm --filter @culiu/database build && pnpm --filter @culiu/search build && pnpm --filter @culiu/knowledge-analysis build && node --env-file-if-exists=infra/.env scripts/test-stage4-deepseek.mjs",
     "test:integration": "turbo run test:integration --concurrency=1",
     "typecheck": "turbo run typecheck"
   },

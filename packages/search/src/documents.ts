@@ -124,6 +124,7 @@ export const CaseDocumentSchema = z
     profile_summary: OptionalTextSchema.default(""),
     research_methods: FacetValuesSchema,
     schools: FacetValuesSchema,
+    source_date: IsoDateSchema.nullable(),
     timestamp_refs: z.array(TimestampReferenceSchema).max(256),
     verified_facts: z.array(OptionalTextSchema).max(30).default([]),
   })

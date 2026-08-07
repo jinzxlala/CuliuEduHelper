@@ -140,6 +140,7 @@ interface PublishedCaseRow {
   readonly profile_summary: string;
   readonly research_methods: string[];
   readonly schools: string[];
+  readonly source_date: Date | string | null;
   readonly timestamp_refs: CaseDocument["timestamp_refs"];
   readonly verified_facts: CaseDocument["verified_facts"];
 }
@@ -182,15 +183,18 @@ async function loadCurrentPublishedDocuments(
     [batchId],
   );
   const caseResult = await connection.query<PublishedCaseRow>(
-    `select case_id, lecture_id, case_type, curriculum_system, academic_label,
-            background, admission_result, schools, major, research_methods,
-            activity_types, ai_domains, ai_depth, confidence, evidence_boundary,
-            profile_summary, development_path, core_projects, core_strengths,
-            application_strategy, advisor_insights, verified_facts, interpretations,
-            missing_information, evidence_points, timestamp_refs
-       from knowledge_case_version
-      where batch_id = $1
-      order by case_id`,
+    `select cv.case_id, cv.lecture_id, cv.case_type, cv.curriculum_system, cv.academic_label,
+            cv.background, cv.admission_result, cv.schools, cv.major, cv.research_methods,
+            cv.activity_types, cv.ai_domains, cv.ai_depth, cv.confidence, cv.evidence_boundary,
+            cv.profile_summary, cv.development_path, cv.core_projects, cv.core_strengths,
+            cv.application_strategy, cv.advisor_insights, cv.verified_facts, cv.interpretations,
+            cv.missing_information, cv.evidence_points, cv.timestamp_refs,
+            lv.lecture_date as source_date
+       from knowledge_case_version cv
+       join knowledge_lecture_version lv
+         on lv.batch_id = cv.batch_id and lv.lecture_id = cv.lecture_id
+      where cv.batch_id = $1
+      order by cv.case_id`,
     [batchId],
   );
 
@@ -220,6 +224,7 @@ async function loadCurrentPublishedDocuments(
       profile_summary: row.profile_summary,
       research_methods: row.research_methods,
       schools: row.schools,
+      source_date: publishedDate(row.source_date),
       timestamp_refs: row.timestamp_refs,
       verified_facts: row.verified_facts,
     })),

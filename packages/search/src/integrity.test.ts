@@ -29,6 +29,7 @@ const documents = {
       profile_summary: "",
       research_methods: ["文本分析"],
       schools: ["布朗大学"],
+      source_date: "2026-07-01",
       timestamp_refs: [
         {
           end_seconds: 20,

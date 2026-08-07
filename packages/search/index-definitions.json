@@ -60,6 +60,7 @@
       "case_type"
     ],
     "filterableAttributes": [
+      "source_date",
       "lecture_id",
       "case_type",
       "curriculum_system",
@@ -71,7 +72,7 @@
       "ai_depth",
       "confidence"
     ],
-    "sortableAttributes": []
+    "sortableAttributes": ["source_date"]
   },
   {
     "uid": "transcript_segments",

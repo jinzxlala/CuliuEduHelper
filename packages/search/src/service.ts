@@ -153,6 +153,9 @@ export class KnowledgeSearchService {
     if (parsed.filters.dateTo !== undefined) {
       filter.push(`date <= ${quoteFilterValue(parsed.filters.dateTo)}`);
     }
+    if (parsed.filters.dateBefore !== undefined) {
+      filter.push(`date < ${quoteFilterValue(parsed.filters.dateBefore)}`);
+    }
 
     const response = await this.#client
       .index<LectureDocument>(this.#indexNames.lectures)
@@ -176,6 +179,12 @@ export class KnowledgeSearchService {
     addFacetFilter(filter, "ai_domains", parsed.filters.aiDomains);
     addFacetFilter(filter, "ai_depth", parsed.filters.aiDepth);
     addFacetFilter(filter, "confidence", parsed.filters.confidence);
+    if (parsed.filters.sourceDateFrom !== undefined) {
+      filter.push(`source_date >= ${quoteFilterValue(parsed.filters.sourceDateFrom)}`);
+    }
+    if (parsed.filters.sourceDateBefore !== undefined) {
+      filter.push(`source_date < ${quoteFilterValue(parsed.filters.sourceDateBefore)}`);
+    }
 
     const response = await this.#client
       .index<CaseDocument>(this.#indexNames.cases)
