@@ -11,6 +11,14 @@ const DeepSeekEnvironmentSchema = z
   })
   .loose();
 
+const DeepSeekReportEnvironmentSchema = z
+  .object({
+    DEEPSEEK_API_KEY: z.string().trim().min(20),
+    DEEPSEEK_REPORT_MAX_TOKENS: z.coerce.number().int().min(8_192).max(65_536).default(24_576),
+    DEEPSEEK_REPORT_TIMEOUT_MS: z.coerce.number().int().min(45_000).max(600_000).default(180_000),
+  })
+  .loose();
+
 const UsageSchema = z.looseObject({
   completion_tokens: z.number().int().nonnegative(),
   prompt_cache_hit_tokens: z.number().int().nonnegative().optional(),
@@ -112,6 +120,17 @@ export function parseDeepSeekGatewayConfig(
     apiKey: parsed.DEEPSEEK_API_KEY,
     maxTokens: parsed.DEEPSEEK_PROFILE_MAX_TOKENS,
     timeoutMs: parsed.DEEPSEEK_PROFILE_TIMEOUT_MS,
+  };
+}
+
+export function parseDeepSeekReportGatewayConfig(
+  environment: NodeJS.ProcessEnv = process.env,
+): DeepSeekGatewayConfig {
+  const parsed = DeepSeekReportEnvironmentSchema.parse(environment);
+  return {
+    apiKey: parsed.DEEPSEEK_API_KEY,
+    maxTokens: parsed.DEEPSEEK_REPORT_MAX_TOKENS,
+    timeoutMs: parsed.DEEPSEEK_REPORT_TIMEOUT_MS,
   };
 }
 

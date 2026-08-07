@@ -235,7 +235,7 @@ describe("TaskEnvelopeSchema", () => {
         inputSnapshotHash: "c".repeat(64),
         model: "deepseek-v4-flash",
         pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
-        promptVersion: "knowledge-analysis-report.v3",
+        promptVersion: "knowledge-analysis-report.v4",
         reportId: "00000000-0000-4000-8000-000000000072",
         schemaVersion: "knowledge-analysis-report-output.v1",
         templateVersion: "knowledge-analysis-report-html.v4",

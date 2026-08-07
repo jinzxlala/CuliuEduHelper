@@ -233,7 +233,11 @@ export const KnowledgeAnalysisReportTaskSchema = z.object({
       inputSnapshotHash: z.string().regex(/^[0-9a-f]{64}$/u),
       model: z.literal("deepseek-v4-flash"),
       pricingVersion: z.literal("deepseek-v4-flash-cny-2026-08-02"),
-      promptVersion: z.enum(["knowledge-analysis-report.v2", "knowledge-analysis-report.v3"]),
+      promptVersion: z.enum([
+        "knowledge-analysis-report.v2",
+        "knowledge-analysis-report.v3",
+        "knowledge-analysis-report.v4",
+      ]),
       reportId: z.uuid(),
       schemaVersion: z.literal("knowledge-analysis-report-output.v1"),
       templateVersion: z.literal("knowledge-analysis-report-html.v4"),

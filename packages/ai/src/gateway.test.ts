@@ -6,6 +6,7 @@ import {
   DeepSeekJsonModelProvider,
   ModelGatewayError,
   parseDeepSeekGatewayConfig,
+  parseDeepSeekReportGatewayConfig,
 } from "./gateway.js";
 
 const config = { apiKey: "synthetic_test_key_not_real", maxTokens: 2_048, timeoutMs: 2_000 };
@@ -160,5 +161,18 @@ describe("parseDeepSeekGatewayConfig", () => {
       parseDeepSeekGatewayConfig({ DEEPSEEK_API_KEY: "synthetic_test_key_not_real" }),
     ).toMatchObject({ maxTokens: 8_192, timeoutMs: 45_000 });
     expect(() => parseDeepSeekGatewayConfig({ DEEPSEEK_API_KEY: "short" })).toThrow();
+  });
+
+  it("uses an independent, longer report output and timeout budget", () => {
+    expect(
+      parseDeepSeekReportGatewayConfig({ DEEPSEEK_API_KEY: "synthetic_test_key_not_real" }),
+    ).toMatchObject({ maxTokens: 24_576, timeoutMs: 180_000 });
+    expect(
+      parseDeepSeekReportGatewayConfig({
+        DEEPSEEK_API_KEY: "synthetic_test_key_not_real",
+        DEEPSEEK_REPORT_MAX_TOKENS: "32768",
+        DEEPSEEK_REPORT_TIMEOUT_MS: "240000",
+      }),
+    ).toMatchObject({ maxTokens: 32_768, timeoutMs: 240_000 });
   });
 });

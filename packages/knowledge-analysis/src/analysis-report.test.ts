@@ -147,6 +147,73 @@ describe("analysis report model pipeline", () => {
     expect(generated.charts.source_type[1]?.sourceIds).toHaveLength(100);
   });
 
+  it("retries a truncated narrative once with a compact but still substantive report budget", async () => {
+    const item = source(1);
+    const systemPrompts: string[] = [];
+    const provider: JsonModelProvider = {
+      generateJson(request) {
+        systemPrompts.push(request.systemPrompt);
+        if (systemPrompts.length === 1) {
+          return Promise.reject(
+            new ModelGatewayError("invalid_output", "truncated", {
+              detailCode: "output_truncated",
+            }),
+          );
+        }
+        return Promise.resolve(result(narrative(item.reference)));
+      },
+    };
+
+    const generated = await generateAnalysisReportNarrative({
+      conversation: [{ citations: [], contentMarkdown: "请生成报告。", role: "user", sequence: 1 }],
+      model: "deepseek-v4-flash",
+      provider,
+      requirements: "保持充分细节。",
+      sources: [item],
+    });
+
+    expect(generated.modelCallCount).toBe(2);
+    expect(systemPrompts[0]).toContain("8—10章");
+    expect(systemPrompts[1]).toContain("6—8章");
+    expect(generated.narrative.title).toBe("合成分析报告");
+  });
+
+  it("retries an overlong narrative shape with the compact output contract", async () => {
+    const item = source(1);
+    let calls = 0;
+    const provider: JsonModelProvider = {
+      generateJson() {
+        calls += 1;
+        if (calls === 1) {
+          return Promise.resolve(
+            result({
+              ...narrative(item.reference),
+              sections: Array.from({ length: 11 }, (_, index) => ({
+                chartKey: null,
+                citations: [],
+                id: `section-${String(index)}`,
+                paragraphs: ["超出报告章节预算。"],
+                title: `章节 ${String(index)}`,
+              })),
+            }),
+          );
+        }
+        return Promise.resolve(result(narrative(item.reference)));
+      },
+    };
+
+    const generated = await generateAnalysisReportNarrative({
+      conversation: [{ citations: [], contentMarkdown: "请生成报告。", role: "user", sequence: 1 }],
+      model: "deepseek-v4-flash",
+      provider,
+      requirements: "保持充分细节。",
+      sources: [item],
+    });
+
+    expect(calls).toBe(2);
+    expect(generated.modelCallCount).toBe(2);
+  });
+
   it("classifies deterministic limits and model gateway failures safely", () => {
     expect(classifyAnalysisReportFailure(new Error("report_context_limit_exceeded"))).toEqual({
       code: "report_context_limit_exceeded",

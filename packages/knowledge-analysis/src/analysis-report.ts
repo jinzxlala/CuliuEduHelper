@@ -43,7 +43,7 @@ import {
   KnowledgeWorkspaceNotFoundError,
 } from "./workspace-service.js";
 
-export const ANALYSIS_REPORT_PROMPT_VERSION = "knowledge-analysis-report.v3" as const;
+export const ANALYSIS_REPORT_PROMPT_VERSION = "knowledge-analysis-report.v4" as const;
 export const ANALYSIS_REPORT_SCHEMA_VERSION = "knowledge-analysis-report-output.v1" as const;
 export const ANALYSIS_REPORT_CONTEXT_VERSION = "knowledge-analysis-report-context.v2" as const;
 export const ANALYSIS_REPORT_PRICING_VERSION = "deepseek-v4-flash-cny-2026-08-02" as const;
@@ -68,35 +68,39 @@ const ChartKeySchema = z.enum([
   "lecture_year",
 ]);
 
+const ReportCitationSchema = KnowledgeCitationSchema.extend({
+  claim: z.string().trim().min(1).max(250),
+}).strict();
+
 const NarrativeSchema = z
   .object({
-    executiveSummary: z.string().trim().min(1).max(8_000),
+    executiveSummary: z.string().trim().min(1).max(1_800),
     sections: z
       .array(
         z
           .object({
             chartKey: ChartKeySchema.nullable(),
-            citations: z.array(KnowledgeCitationSchema).max(100),
+            citations: z.array(ReportCitationSchema).max(5),
             id: z
               .string()
               .regex(/^[a-z][a-z0-9_-]*$/u)
               .max(80),
-            paragraphs: z.array(z.string().trim().min(1).max(4_000)).min(1).max(20),
+            paragraphs: z.array(z.string().trim().min(1).max(800)).min(1).max(4),
             title: z.string().trim().min(1).max(200),
           })
           .strict(),
       )
       .min(1)
-      .max(20),
+      .max(10),
     title: z.string().trim().min(1).max(240),
   })
   .strict();
 
 const EvidenceDigestSchema = z
   .object({
-    citations: z.array(KnowledgeCitationSchema).min(1).max(30),
-    limitations: z.array(z.string().trim().min(1).max(500)).max(10),
-    summary: z.string().trim().min(1).max(6_000),
+    citations: z.array(ReportCitationSchema).min(1).max(12),
+    limitations: z.array(z.string().trim().min(1).max(500)).max(6),
+    summary: z.string().trim().min(1).max(2_500),
   })
   .strict();
 
@@ -577,13 +581,13 @@ function modelSource(source: LoadedReportSource): Record<string, unknown> {
 
 function narrativeOutputShape(): Record<string, unknown> {
   return {
-    executiveSummary: "string",
+    executiveSummary: "800—1400字的执行摘要",
     sections: [
       {
         chartKey: "allowed chart key or null",
         citations: [
           {
-            claim: "string",
+            claim: "不超过250字的证据说明",
             source: {
               batchId: "逐字段复制可用证据引用中的 uuid",
               contentHash: "逐字段复制可用证据引用中的 sha256",
@@ -593,19 +597,29 @@ function narrativeOutputShape(): Record<string, unknown> {
           },
         ],
         id: "stable-id",
-        paragraphs: ["string"],
+        paragraphs: ["每段250—500字；每章2—4段"],
         title: "string",
       },
     ],
-    title: "string",
+    title: "string；广泛资料分析应组织为8—10章，每章选择3—5条代表性引用",
   };
+}
+
+const STANDARD_NARRATIVE_LENGTH_GUIDANCE =
+  "篇幅要求：这是需要充分展开、但应便于顾问阅读的中长报告。资料覆盖广泛时组织为8—10章，每章2—4段，每段约250—500个中文字符；执行摘要约800—1400字；每章只选择3—5条最有代表性的证据引用。综合归纳共性、差异和边界，不得按资料逐条罗列。完整资料清单由系统冻结快照和工作区保留。整个JSON目标控制在约10000—16000个输出token内。";
+
+const COMPACT_NARRATIVE_LENGTH_GUIDANCE =
+  "上一次生成过长或结构超限。请重新生成完整但更紧凑的报告：组织为6—8章，每章2—3段，每段约200—400个中文字符；执行摘要约600—900字；每章只保留2—3条代表性引用。必须综合归纳，严禁逐条枚举资料。整个JSON必须控制在12000个输出token以内，并正确闭合所有JSON结构。";
+
+function isOutputTruncated(error: unknown): boolean {
+  return error instanceof ModelGatewayError && error.detailCode === "output_truncated";
 }
 
 function digestOutputShape(): Record<string, unknown> {
   return {
     citations: [
       {
-        claim: "该批资料支持的具体发现",
+        claim: "该批资料支持的具体发现；整体选择6—12条最有代表性的引用",
         source: {
           batchId: "逐字段复制 sources[].reference.batchId",
           contentHash: "逐字段复制 sources[].reference.contentHash",
@@ -614,8 +628,8 @@ function digestOutputShape(): Record<string, unknown> {
         },
       },
     ],
-    limitations: ["证据边界或待核实事项"],
-    summary: "该批资料与本次分析目标相关的简洁归纳",
+    limitations: ["最多6条证据边界或待核实事项"],
+    summary: "不超过2500字的批次归纳；综合共性和差异，不逐条罗列",
   };
 }
 
@@ -772,11 +786,33 @@ export async function generateAnalysisReportNarrative(input: {
     const userPrompt = JSON.stringify(modelInput);
     if (userPrompt.length > ANALYSIS_REPORT_MODEL_INPUT_MAX_CHARS)
       throw new Error("report_context_limit_exceeded");
+    modelCallCount += 1;
     const response = await input.provider.generateJson({ systemPrompt, userPrompt });
     if (response.model !== input.model) throw new Error("report_model_mismatch");
     usage = addUsage(usage, response.usage);
-    modelCallCount += 1;
     return response.json;
+  };
+
+  const callNarrative = async (
+    baseSystemPrompt: string,
+    modelInput: Record<string, unknown>,
+  ): Promise<z.infer<typeof NarrativeSchema>> => {
+    try {
+      const json = await callModel(
+        `${baseSystemPrompt}${STANDARD_NARRATIVE_LENGTH_GUIDANCE}`,
+        modelInput,
+      );
+      const parsed = NarrativeSchema.safeParse(json);
+      if (parsed.success) return parsed.data;
+    } catch (error) {
+      if (!isOutputTruncated(error)) throw error;
+    }
+
+    const compactJson = await callModel(
+      `${baseSystemPrompt}${COMPACT_NARRATIVE_LENGTH_GUIDANCE}`,
+      modelInput,
+    );
+    return NarrativeSchema.parse(compactJson);
   };
 
   const directInput = directModelInput(
@@ -786,11 +822,10 @@ export async function generateAnalysisReportNarrative(input: {
     input.sources,
   );
   if (JSON.stringify(directInput).length <= ANALYSIS_REPORT_MODEL_INPUT_MAX_CHARS) {
-    const json = await callModel(
+    const narrative = await callNarrative(
       "你是醋溜教育内部分析报告撰稿器。只输出 JSON。所有数字和图表只能引用输入 charts 中的服务端确定性统计；不能重新计算、创造样本或编写 SQL、JavaScript、Python、HTML。每条 citations[].source 必须逐字段复制 sources[].reference；证据不足时明确写为分析判断或待核实。",
       directInput,
     );
-    const narrative = NarrativeSchema.parse(json);
     validateCitations(
       narrative.sections.flatMap((section) => section.citations),
       input.sources,
@@ -838,11 +873,10 @@ export async function generateAnalysisReportNarrative(input: {
   }
 
   const finalInput = batchedModelInput(charts, input.conversation, input.requirements, digests);
-  const json = await callModel(
+  const narrative = await callNarrative(
     "你是醋溜教育内部分析报告撰稿器。只输出 JSON。输入 evidenceDigests 是分批归纳后的证据，不是新的事实来源。所有数字和图表只能引用 charts 中的服务端确定性统计；不能重新计算、创造样本或编写 SQL、JavaScript、Python、HTML。citations[].source 只能逐字段复制 evidenceDigests[].citations[].source；证据不足时明确写为分析判断或待核实。",
     finalInput,
   );
-  const narrative = NarrativeSchema.parse(json);
   validateCitations(
     narrative.sections.flatMap((section) => section.citations),
     input.sources,

@@ -3,7 +3,11 @@ import {
   createDatabaseClient,
   parseDatabaseConfig,
 } from "@culiu/database";
-import { DeepSeekJsonModelProvider, parseDeepSeekGatewayConfig } from "@culiu/ai";
+import {
+  DeepSeekJsonModelProvider,
+  parseDeepSeekGatewayConfig,
+  parseDeepSeekReportGatewayConfig,
+} from "@culiu/ai";
 import {
   checkHighsRuntime,
   executeCourseRecommendationTask,
@@ -123,7 +127,7 @@ export async function runWorker(): Promise<void> {
           return executeKnowledgeAnalysisReport(
             databaseClient.database,
             task,
-            new DeepSeekJsonModelProvider(parseDeepSeekGatewayConfig()),
+            new DeepSeekJsonModelProvider(parseDeepSeekReportGatewayConfig()),
             objectStore,
           );
         },

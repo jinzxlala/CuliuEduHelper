@@ -123,6 +123,8 @@ function Write-EnvValues {
         "KNOWLEDGE_EXTRACTION_MODEL_PROVIDER",
         "CULIU_GIT_COMMIT_SHA",
         "DEEPSEEK_PROFILE_MAX_TOKENS",
+        "DEEPSEEK_REPORT_MAX_TOKENS",
+        "DEEPSEEK_REPORT_TIMEOUT_MS",
         "DEEPSEEK_API_KEY"
     )
     $lines = foreach ($key in $orderedKeys) {
@@ -213,6 +215,12 @@ function Ensure-LocalEnv {
     }
     if (Test-MissingOrPlaceholder -Values $values -Key "DEEPSEEK_PROFILE_MAX_TOKENS") {
         $values["DEEPSEEK_PROFILE_MAX_TOKENS"] = "8192"
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "DEEPSEEK_REPORT_MAX_TOKENS") {
+        $values["DEEPSEEK_REPORT_MAX_TOKENS"] = "24576"
+    }
+    if (Test-MissingOrPlaceholder -Values $values -Key "DEEPSEEK_REPORT_TIMEOUT_MS") {
+        $values["DEEPSEEK_REPORT_TIMEOUT_MS"] = "180000"
     }
 
     # Local development records the repository revision that launched the task.
