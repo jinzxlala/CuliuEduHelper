@@ -50,6 +50,16 @@ server {
         include /etc/nginx/proxy_params;
     }
 
+    # Reviewed knowledge publication rebuilds the complete atomic search indexes.
+    # Keep this synchronous compatibility route above the generic API location.
+    location = /api/knowledge/imports {
+        limit_req zone=api_limit burst=40 nodelay;
+        proxy_pass http://culiu_knowledge_web;
+        include /etc/nginx/proxy_params;
+        proxy_read_timeout 660s;
+        proxy_send_timeout 660s;
+    }
+
     location ^~ /api/ {
         limit_req zone=api_limit burst=40 nodelay;
         proxy_pass http://culiu_knowledge_web;

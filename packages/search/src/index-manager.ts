@@ -106,7 +106,7 @@ export class KnowledgeIndexManager {
       options.indexNames ?? DEFAULT_KNOWLEDGE_INDEX_NAMES,
     );
     this.#taskPollingIntervalMs = options.taskPollingIntervalMs ?? 500;
-    this.#taskTimeoutMs = options.taskTimeoutMs ?? 60_000;
+    this.#taskTimeoutMs = options.taskTimeoutMs ?? 600_000;
     if (!Number.isInteger(this.#taskPollingIntervalMs) || this.#taskPollingIntervalMs <= 0) {
       throw new RangeError("taskPollingIntervalMs must be a positive integer.");
     }

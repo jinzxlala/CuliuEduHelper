@@ -63,6 +63,7 @@ WORKDIR /app
 
 COPY --from=build --chown=node:node /app/apps/knowledge-web/.next/standalone ./
 COPY --from=build --chown=node:node /app/apps/knowledge-web/.next/static ./apps/knowledge-web/.next/static
+COPY --from=build --chown=node:node /app/apps/knowledge-web/public ./apps/knowledge-web/public
 COPY --from=deployment-assets --chown=node:node /out/knowledge-web/node_modules ./node_modules
 
 USER node
@@ -79,6 +80,7 @@ WORKDIR /app
 
 COPY --from=build --chown=node:node /app/apps/operations-web/.next/standalone ./
 COPY --from=build --chown=node:node /app/apps/operations-web/.next/static ./apps/operations-web/.next/static
+COPY --from=build --chown=node:node /app/apps/operations-web/public ./apps/operations-web/public
 COPY --from=deployment-assets --chown=node:node /out/operations-web/node_modules ./node_modules
 
 USER node

@@ -46,7 +46,7 @@ async function waitForFailedJob(
   queue: ReturnType<typeof createTaskQueue>,
   jobId: string,
 ): Promise<void> {
-  const deadline = Date.now() + 15_000;
+  const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     const job = await queue.getJob(jobId);
     if ((await job?.getState()) === "failed") return;
@@ -224,13 +224,13 @@ async function runFailureScenario(initialAttempts: 0 | 1 | 3): Promise<void> {
 describe("knowledge import worker failure audit", () => {
   it("records three safe failed attempts and no business documents", async () => {
     await runFailureScenario(0);
-  }, 30_000);
+  }, 45_000);
 
   it("reclaims a running database job after a simulated worker crash", async () => {
     await runFailureScenario(1);
-  }, 30_000);
+  }, 45_000);
 
   it("terminalizes an expired final-attempt lease with an audit event", async () => {
     await runFailureScenario(3);
-  }, 30_000);
+  }, 45_000);
 });

@@ -14,6 +14,7 @@ import {
 } from "@culiu/search";
 
 import { getDatabaseClient } from "./database";
+import { parseKnowledgePublicationSearchTaskConfig } from "./meilisearch-task-config";
 import { getKnowledgeObjectStore } from "./object-store";
 
 const globalImport = globalThis as typeof globalThis & {
@@ -21,10 +22,13 @@ const globalImport = globalThis as typeof globalThis & {
 };
 
 export function getKnowledgeImporter(): KnowledgeImporter {
+  const taskConfig = parseKnowledgePublicationSearchTaskConfig();
   globalImport.culiuKnowledgeImporter ??= new KnowledgeImporter({
     databaseClient: getDatabaseClient(),
     indexPublisher: new KnowledgeIndexManager({
       client: createMeilisearchClient(parseMeilisearchAdminConfig()),
+      taskPollingIntervalMs: taskConfig.pollingIntervalMs,
+      taskTimeoutMs: taskConfig.timeoutMs,
     }),
     manifestPath: process.env.KNOWLEDGE_MANIFEST_PATH ?? "unused-by-web-submission",
     objectStore: getKnowledgeObjectStore(),

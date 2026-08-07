@@ -49,7 +49,7 @@ chmod 600 infra/deploy/.env.production
 - `false`：不配置本地向量模型。智能搜索仍执行 DeepSeek 查询规划、Meilisearch 关键词召回和 DeepSeek 候选筛选，但暂时不执行语义向量召回；
 - 中国大陆服务器无法稳定访问模型源时，应先使用 `false` 完成可用部署，再通过受控模型缓存或自建镜像恢复混合召回，不应让 Worker 因下载失败持续重启。
 
-`MEILI_TASK_TIMEOUT_MS` 默认 600000（10 分钟），`MEILI_TASK_POLL_INTERVAL_MS` 默认 500。两者只控制 Worker 等待 Meilisearch 异步任务的时间与轮询频率，不会绕过任务失败。
+`MEILI_TASK_TIMEOUT_MS` 默认 600000（10 分钟），`MEILI_TASK_POLL_INTERVAL_MS` 默认 500。两者同时用于 Knowledge Web 的人工审核发布和 Worker 的后台索引任务，只控制等待 Meilisearch 异步任务的时间与轮询频率，不会绕过任务失败。Nginx 对人工审核发布接口保留 660 秒上游等待时间，略高于应用层超时，以便应用能够返回明确失败原因，而不是由网关提前返回 504。
 
 将证书和私钥放入配置指定位置，权限只授予服务器管理员和 Docker。
 
