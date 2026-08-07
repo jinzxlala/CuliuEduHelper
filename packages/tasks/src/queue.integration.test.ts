@@ -70,5 +70,31 @@ describe("BullMQ foundation", () => {
 
     expect(secondJobId).toBe(firstJobId);
     expect(processed).toBe(1);
+
+    const analysisTask: TaskEnvelope = {
+      authorization: {
+        contextHash: "b".repeat(64),
+        contextId: "00000000-0000-4000-8000-000000000014",
+      },
+      idempotencyKey: `analysis_chat_${"c".repeat(64)}`,
+      payload: {
+        contextVersion: "knowledge-analysis-context.v2",
+        conversationId: "00000000-0000-4000-8000-000000000015",
+        correlationId: "00000000-0000-4000-8000-000000000016",
+        gitCommitSha: "d".repeat(40),
+        inputSnapshotHash: "e".repeat(64),
+        model: "deepseek-v4-flash",
+        pricingVersion: "deepseek-v4-flash-cny-2026-08-02",
+        promptVersion: "knowledge-analysis-chat.v3",
+        runId: "00000000-0000-4000-8000-000000000017",
+        schemaVersion: "knowledge-analysis-chat-output.v2",
+        workspaceId: "00000000-0000-4000-8000-000000000018",
+      },
+      taskId: "00000000-0000-4000-8000-000000000019",
+      taskName: "knowledge.analysis-chat",
+    };
+    const analysisJobId = await enqueueTask(queue, analysisTask);
+    const analysisJob = await queue.getJob(analysisJobId);
+    expect(analysisJob?.opts.attempts).toBe(1);
   });
 });

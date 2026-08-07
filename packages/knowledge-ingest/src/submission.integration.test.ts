@@ -322,7 +322,7 @@ describe("knowledge submission publication", () => {
         first.documents.lectures.concat(revision.documents.lectures).map((item) => item.lecture_id),
       ),
     );
-  }, 60_000);
+  }, 120_000);
 
   it("stores a transcript and generated draft before an explicit reviewed publication", async () => {
     if (

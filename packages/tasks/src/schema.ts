@@ -201,16 +201,16 @@ export const KnowledgeAnalysisChatTaskSchema = z.object({
   idempotencyKey: TaskIdempotencyKeySchema,
   payload: z
     .object({
-      contextVersion: z.literal("knowledge-analysis-context.v1"),
+      contextVersion: z.literal("knowledge-analysis-context.v2"),
       conversationId: z.uuid(),
       correlationId: z.uuid(),
       gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
       inputSnapshotHash: z.string().regex(/^[0-9a-f]{64}$/u),
       model: z.literal("deepseek-v4-flash"),
       pricingVersion: z.literal("deepseek-v4-flash-cny-2026-08-02"),
-      promptVersion: z.literal("knowledge-analysis-chat.v2"),
+      promptVersion: z.literal("knowledge-analysis-chat.v3"),
       runId: z.uuid(),
-      schemaVersion: z.literal("knowledge-analysis-chat-output.v1"),
+      schemaVersion: z.literal("knowledge-analysis-chat-output.v2"),
       workspaceId: z.uuid(),
     })
     .strict(),

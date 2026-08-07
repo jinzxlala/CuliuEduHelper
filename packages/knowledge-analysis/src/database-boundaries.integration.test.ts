@@ -836,23 +836,18 @@ describe("knowledge analysis database boundaries", () => {
       { content: "这场讲座有哪些跨学科启示？" },
       "e".repeat(40),
     );
-    let capturedPrompt = "";
+    const capturedPrompts: string[] = [];
     const provider: JsonModelProvider = {
       async generateJson(request) {
         await Promise.resolve();
-        capturedPrompt = request.userPrompt;
+        capturedPrompts.push(request.userPrompt);
         return {
           json: {
             answerMarkdown: "该讲座强调跨学科项目。",
             citations: [
               {
                 claim: "讲座强调跨学科项目",
-                source: {
-                  batchId: publishedBatchId,
-                  contentHash: "c".repeat(64),
-                  sourceId: lectureId,
-                  sourceType: "lecture",
-                },
+                sourceKeys: ["L001"],
               },
             ],
             conversationTopic: "跨学科项目分析",
@@ -897,12 +892,148 @@ describe("knowledge analysis database boundaries", () => {
         };
       },
     });
-    expect(capturedPrompt).not.toContain("OTHER_CONVERSATION_SECRET");
+    expect(capturedPrompts[0]).not.toContain("OTHER_CONVERSATION_SECRET");
+    const followUp = await prepareKnowledgeAnalysisMessage(
+      database,
+      authorization,
+      created.id,
+      current.id,
+      { content: "请把你刚才总结的类别更加详细阐述。" },
+      "e".repeat(40),
+    );
+    await executeKnowledgeAnalysisChat(database, followUp.task, provider, {
+      searchCases: async () => {
+        await Promise.resolve();
+        return {
+          estimatedTotalHits: 0,
+          facetDistribution: {},
+          hits: [],
+          limit: 20,
+          offset: 0,
+          processingTimeMs: 1,
+          query: "",
+        };
+      },
+      searchLectures: async () => {
+        await Promise.resolve();
+        return {
+          estimatedTotalHits: 0,
+          facetDistribution: {},
+          hits: [],
+          limit: 20,
+          offset: 0,
+          processingTimeMs: 1,
+          query: "",
+        };
+      },
+    });
+    expect(capturedPrompts[1]).toContain('"citationSourceKeys":["L001"]');
+    expect(capturedPrompts[1]).toContain('"prioritySourceKeys":["L001"]');
+    expect(capturedPrompts[1]).toContain("请把你刚才总结的类别更加详细阐述。");
     const read = await readKnowledgeConversation(database, ownerId, created.id, current.id);
     expect(read.conversation.title).toBe("跨学科项目分析");
-    expect(read.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+    expect(read.messages.map((message) => message.role)).toEqual([
+      "user",
+      "assistant",
+      "user",
+      "assistant",
+    ]);
     expect(read.messages[1]?.citations).toEqual([
       expect.objectContaining({ claim: "讲座强调跨学科项目" }),
+    ]);
+    expect(read.messages[3]?.citations).toEqual([
+      {
+        claim: "讲座强调跨学科项目",
+        source: {
+          batchId: publishedBatchId,
+          contentHash: "c".repeat(64),
+          sourceId: lectureId,
+          sourceType: "lecture",
+        },
+      },
+    ]);
+  });
+
+  it("repairs an unknown citation alias once and stores only immutable source references", async () => {
+    const database = activeClient().database;
+    const created = await createKnowledgeWorkspace(database, ownerId, {
+      name: "Synthetic citation repair workspace",
+    });
+    await addKnowledgeWorkspaceSources(database, ownerId, created.id, {
+      sources: [
+        {
+          batchId: publishedBatchId,
+          contentHash: "c".repeat(64),
+          sourceId: lectureId,
+          sourceType: "lecture",
+        },
+      ],
+    });
+    const conversation = await createKnowledgeConversation(database, ownerId, created.id, {});
+    const authorization = await loadAuthorizationContext(database, {
+      contextHash: authorizationContextHash,
+      id: authorizationContextId,
+    });
+    const prepared = await prepareKnowledgeAnalysisMessage(
+      database,
+      authorization,
+      created.id,
+      conversation.id,
+      { content: "请分析这场讲座。" },
+      "e".repeat(40),
+    );
+    let calls = 0;
+    const provider: JsonModelProvider = {
+      async generateJson() {
+        await Promise.resolve();
+        calls += 1;
+        return {
+          json: {
+            answerMarkdown: "讲座分析结论。",
+            citations: [
+              {
+                claim: "讲座分析结论",
+                sourceKeys: [calls === 1 ? "L999" : "L001"],
+              },
+            ],
+            conversationTopic: "讲座分析",
+            suggestedFollowUps: [],
+            uncertainties: [],
+          },
+          model: "deepseek-v4-flash",
+          providerRequestId: randomUUID(),
+          usage: {
+            completionTokens: 20,
+            promptCacheHitTokens: 0,
+            promptCacheMissTokens: 50,
+            promptTokens: 50,
+            totalTokens: 70,
+          },
+        };
+      },
+    };
+    await executeKnowledgeAnalysisChat(database, prepared.task, provider, {
+      searchCases: async () => {
+        await Promise.resolve();
+        throw new Error("Search should not be needed for a one-source workspace.");
+      },
+      searchLectures: async () => {
+        await Promise.resolve();
+        throw new Error("Search should not be needed for a one-source workspace.");
+      },
+    });
+    expect(calls).toBe(2);
+    const read = await readKnowledgeConversation(database, ownerId, created.id, conversation.id);
+    expect(read.messages[1]?.citations).toEqual([
+      {
+        claim: "讲座分析结论",
+        source: {
+          batchId: publishedBatchId,
+          contentHash: "c".repeat(64),
+          sourceId: lectureId,
+          sourceType: "lecture",
+        },
+      },
     ]);
   });
 
