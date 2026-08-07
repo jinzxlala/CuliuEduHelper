@@ -968,3 +968,13 @@ pnpm check
 - 正式修复将连接／读／写默认超时从共享 `proxy_params` 移到知识系统和教务系统各自的 `server` 层，普通路由继续继承 5／65／65 秒；知识发布接口在更内层安全覆盖为 660／660 秒，因此不再出现同层重复指令。CVM 紧急恢复可临时从共享 include 删除两条 65 秒读写超时并重建 Nginx；拉取正式修复前应恢复该临时工作区修改，避免阻塞 Git 快进更新。
 - 新增 `scripts/check-nginx-timeouts.mjs` 并纳入根 `pnpm check`：共享 include 再次出现超时指令、两个 server 缺少默认值或发布 location 缺少 660 秒覆盖都会直接失败。另使用一次性自签名证书、与 Compose 一致的上游主机名和官方 `nginx:1.28.0-alpine` 镜像实际执行 `nginx -t`，结果为 syntax ok／test successful；一次性证书和测试目录已删除。
 - 修复后的根 `pnpm check` 完整通过，包括格式、479 个文本文件密钥扫描、Lint、类型、迁移、全部单元测试、Web 边界、新增 Nginx 布局检查、17 包构建和双 Web HTTP 冒烟。该回归不影响 PostgreSQL、Redis、Meilisearch、知识数据或逐字稿提取结果，也不需要数据库迁移。
+
+## 43. 讲座提取稿批量审核与原子发布（2026-08-07）
+
+- 顾问知识导入页的“逐字稿与提取稿记录”支持勾选待审核草稿、全选最多 20 份、清除选择，并在一次人工确认后整批校验发布；仍保留逐份打开、修改日期、主题和 Markdown 正文后单独发布的原流程。
+- 批量发布不会并发执行多个单条索引交换。服务端先在同一事务中确认权限、状态和唯一 submission ID，再统一把所选记录标记为 `processing`；任一记录已发布、正在发布或不属于当前顾问时整批拒绝。
+- `buildKnowledgeSubmissionBatch` 会按规范化来源键确定性合并最多 20 份分析稿与原始逐字稿，拒绝批内重复日期加主题、重复讲座 ID 或重复逻辑来源路径。批量接口只接受严格的日期、主题、正文和 submission ID 数组，浏览器仍不持有搜索密钥。
+- 服务端对整批内容只调用一次 `KnowledgeImporter.importLoaded`。现有 PostgreSQL 全局发布锁继续保证当前正式语料合并、三个 Meilisearch 临时索引构建和原子交换串行执行；不得通过提高 `WORKER_CONCURRENCY` 或移除锁来并行交换正式索引。
+- 成功后所有选中 submission 共同指向同一个 `published_batch_id`，每条保留独立审核稿哈希与审计事件；批内校验或索引发布失败时，所有已占用记录统一恢复为 `draft_ready`，当前正式知识批次保持不变。
+- 新增单元与真实 PostgreSQL／Meilisearch 集成覆盖：多稿确定性合并、重复讲座拒绝、两稿共享一个正式发布批次、一次重建后精确检索，以及批内元数据冲突时整批回滚。该能力减少的是重复人工点击和重复全量索引重建，不会绕过人工核对或逐字稿隐私门禁。
+- 根 `pnpm check` 完整通过：格式、密钥扫描、Lint、严格类型、迁移一致性、全仓单元测试、Web 边界、Nginx 布局检查、17 包生产构建和双 Web HTTP 冒烟均成功；全量 `pnpm test:integration` 为 25/25 个任务包通过，其中知识导入真实集成 6/6。`git diff --check` 通过。当前开发机 Node.js 24 的 engine 警告和 BullMQ 可选 `@valkey/valkey-glide` 构建警告仍是既有非阻断项，正式镜像继续使用 Node.js 22。

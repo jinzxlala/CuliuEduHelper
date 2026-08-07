@@ -1770,6 +1770,60 @@ mark {
   font-size: 0.78rem;
 }
 
+.batch-publication-toolbar {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid #d8e3dd;
+  border-radius: 10px;
+  background: #f6faf7;
+}
+
+.batch-publication-toolbar > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.batch-publication-toolbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.editor-panel .batch-publication-toolbar button {
+  width: auto;
+  min-height: 36px;
+  padding: 0.45rem 0.75rem;
+  border-color: #abc0b5;
+  background: white;
+  color: var(--green-dark);
+  font-size: 0.78rem;
+}
+
+.editor-panel .batch-publication-toolbar button.primary-action {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
+
+.batch-review-confirmation {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.batch-review-confirmation input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--green);
+}
+
 .transcript-submission-history ul {
   display: grid;
   gap: 0.5rem;
@@ -1780,7 +1834,37 @@ mark {
   list-style: none;
 }
 
-.transcript-submission-history button {
+.submission-history-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.submission-selection-control {
+  display: grid;
+  min-width: 4.2rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.25rem;
+  padding: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.submission-selection-control input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.transcript-submission-history .submission-open-button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.35rem 0.75rem;
@@ -1793,12 +1877,12 @@ mark {
   text-align: left;
 }
 
-.transcript-submission-history button[aria-pressed="true"] {
+.transcript-submission-history .submission-open-button[aria-pressed="true"] {
   border-color: var(--accent);
   background: #eef7f2;
 }
 
-.transcript-submission-history button:disabled {
+.transcript-submission-history .submission-open-button:disabled {
   cursor: wait;
   opacity: 0.72;
 }
@@ -2344,7 +2428,7 @@ mark {
   background: var(--navy);
 }
 
-.transcript-submission-history button[aria-pressed="true"] {
+.transcript-submission-history .submission-open-button[aria-pressed="true"] {
   border-color: var(--orange);
   background: var(--orange-soft);
 }

@@ -24,7 +24,11 @@ import {
   renderKnowledgeAnalysisMarkdown,
   sanitizeKnowledgeTranscriptForModel,
 } from "./knowledge-extraction.js";
-import { buildKnowledgeSubmission } from "./submission.js";
+import {
+  buildKnowledgeSubmission,
+  buildKnowledgeSubmissionBatch,
+  MAX_KNOWLEDGE_SUBMISSION_BATCH,
+} from "./submission.js";
 import { knowledgeLectureId } from "./manifest.js";
 import type { ParsedTranscriptDocument } from "./transcript-documents.js";
 
@@ -923,70 +927,118 @@ function objectReference(row: WorkflowRow): StoredObjectReference {
   };
 }
 
-export async function publishKnowledgeTranscriptDraft(
+export interface KnowledgeTranscriptDraftPublicationInput {
+  readonly analysisMarkdown: string;
+  readonly lectureDate: string;
+  readonly lectureTitle: string;
+  readonly submissionId: string;
+}
+
+export type KnowledgeTranscriptBatchPublicationResult = KnowledgeImportResult & {
+  readonly publishedSubmissionIds: readonly string[];
+};
+
+export async function publishKnowledgeTranscriptDraftBatch(
   databaseClient: DatabaseClient,
   objectStore: ImmutableObjectStore,
   importer: KnowledgeImporter,
   principal: SessionPrincipal,
-  input: {
-    readonly analysisMarkdown: string;
-    readonly lectureDate: string;
-    readonly lectureTitle: string;
-    readonly submissionId: string;
-  },
-): Promise<KnowledgeImportResult> {
+  inputs: readonly KnowledgeTranscriptDraftPublicationInput[],
+): Promise<KnowledgeTranscriptBatchPublicationResult> {
+  if (inputs.length === 0 || inputs.length > MAX_KNOWLEDGE_SUBMISSION_BATCH) {
+    throw new KnowledgeTranscriptWorkflowError(
+      "invalid_draft",
+      `A publication batch must contain between 1 and ${String(MAX_KNOWLEDGE_SUBMISSION_BATCH)} drafts.`,
+    );
+  }
+  const submissionIds = inputs.map((input) => input.submissionId);
+  if (new Set(submissionIds).size !== submissionIds.length) {
+    throw new KnowledgeTranscriptWorkflowError(
+      "invalid_draft",
+      "A publication batch must not contain duplicate transcript submissions.",
+    );
+  }
+
   const connection = await databaseClient.pool.connect();
-  let row: WorkflowRow;
+  let rows: readonly WorkflowRow[];
   try {
-    row = await transaction(connection, async () => {
-      const current = await requireSubmissionViewer(connection, principal, input.submissionId);
-      if (current.status !== "draft_ready") {
-        throw new KnowledgeTranscriptWorkflowError(
-          "conflict",
-          "Only a generated draft that has not yet been published can be confirmed.",
-        );
+    rows = await transaction(connection, async () => {
+      const currentRows: WorkflowRow[] = [];
+      for (const submissionId of submissionIds) {
+        const current = await requireSubmissionViewer(connection, principal, submissionId);
+        if (current.status !== "draft_ready") {
+          throw new KnowledgeTranscriptWorkflowError(
+            "conflict",
+            "Every selected item must be a generated draft that has not yet been published.",
+          );
+        }
+        currentRows.push(current);
       }
       const claimed = await connection.query(
         `update knowledge_transcript_submission
             set status = 'processing', completed_at = null, updated_at = now()
-          where id = $1 and status = 'draft_ready'`,
-        [input.submissionId],
+          where id = any($1::uuid[]) and status = 'draft_ready'`,
+        [submissionIds],
       );
-      if (claimed.rowCount !== 1) {
+      if (claimed.rowCount !== submissionIds.length) {
         throw new KnowledgeTranscriptWorkflowError(
           "conflict",
-          "Draft publication is already running.",
+          "One or more selected draft publications are already running.",
         );
       }
-      return current;
+      return currentRows;
     });
   } finally {
     connection.release();
   }
 
   try {
-    const transcriptBytes = await objectStore.read(objectReference(row));
-    const lecture = canonicalLectureSourceKey({
-      lectureDate: input.lectureDate,
-      lectureTitle: input.lectureTitle,
-    });
-    const analysisMarkdown = applyReviewedLectureMetadata(input.analysisMarkdown.trim(), {
-      lectureDate: input.lectureDate,
-      lectureTitle: lecture.title,
-    });
-    if (analysisMarkdown.length === 0 || analysisMarkdown.length > 500_000) {
+    const rowsById = new Map(rows.map((row, index) => [submissionIds[index], row]));
+    const prepared = await Promise.all(
+      inputs.map(async (input) => {
+        const row = rowsById.get(input.submissionId);
+        if (row === undefined) {
+          throw new KnowledgeTranscriptWorkflowError(
+            "not_found",
+            "Transcript submission was not found.",
+          );
+        }
+        const transcriptBytes = await objectStore.read(objectReference(row));
+        const lecture = canonicalLectureSourceKey({
+          lectureDate: input.lectureDate,
+          lectureTitle: input.lectureTitle,
+        });
+        const analysisMarkdown = applyReviewedLectureMetadata(input.analysisMarkdown.trim(), {
+          lectureDate: input.lectureDate,
+          lectureTitle: lecture.title,
+        });
+        if (analysisMarkdown.length === 0 || analysisMarkdown.length > 500_000) {
+          throw new KnowledgeTranscriptWorkflowError(
+            "invalid_draft",
+            "Reviewed analysis Markdown must contain between 1 and 500000 characters.",
+          );
+        }
+        return { analysisMarkdown, input, lecture, row, transcriptBytes };
+      }),
+    );
+    const duplicateSourceKeys = prepared
+      .map((item) => item.lecture.sourceKey)
+      .filter((sourceKey, index, values) => values.indexOf(sourceKey) !== index);
+    if (duplicateSourceKeys.length > 0) {
       throw new KnowledgeTranscriptWorkflowError(
         "invalid_draft",
-        "Reviewed analysis Markdown must contain between 1 and 500000 characters.",
+        "The selected drafts contain duplicate lecture dates and titles. Please correct them before publishing.",
       );
     }
-    const loaded = buildKnowledgeSubmission({
-      analysis: {
-        bytes: Buffer.from(analysisMarkdown, "utf8"),
-        fileName: `${lecture.sourceKey}.md`,
-      },
-      transcriptDocument: { bytes: transcriptBytes, fileName: row.original_file_name },
-    });
+    const loaded = buildKnowledgeSubmissionBatch(
+      prepared.map(({ analysisMarkdown, lecture, row, transcriptBytes }) => ({
+        analysis: {
+          bytes: Buffer.from(analysisMarkdown, "utf8"),
+          fileName: `${lecture.sourceKey}.md`,
+        },
+        transcriptDocument: { bytes: transcriptBytes, fileName: row.original_file_name },
+      })),
+    );
     const current = await databaseClient.pool.query<{ corpus_hash: string }>(
       "select corpus_hash from knowledge_import_batch where is_current = true and status = 'published' limit 1",
     );
@@ -1001,48 +1053,74 @@ export async function publishKnowledgeTranscriptDraft(
         actorUserId: principal.id,
         corpusHash: publicationHash,
         corpusId: "culiu_knowledge_publication_v1",
-        expectedLectureCount: 1,
+        expectedLectureCount: prepared.length,
         manifestVersion: loaded.manifest.manifest_version,
         mappingVersion: loaded.manifest.mapping_version,
         publicationMode: "upsert",
       },
       loaded,
     );
-    const reviewedHash = knowledgeExtractionSha256(analysisMarkdown);
-    await databaseClient.pool.query(
-      `update knowledge_transcript_submission
-          set status = 'published', reviewed_analysis_markdown = $2,
-              reviewed_analysis_hash = $3, published_batch_id = $4,
-              source_key = $5, lecture_id = $6,
-              updated_at = now(), completed_at = now()
-        where id = $1 and status = 'processing'`,
-      [
-        input.submissionId,
-        analysisMarkdown,
-        reviewedHash,
-        result.batchId,
-        lecture.sourceKey,
-        lecture.lectureId,
-      ],
-    );
-    await databaseClient.pool.query(
-      `insert into audit_event
-        (actor_type, actor_user_id, action, object_type, object_id, result,
-         request_correlation_id, details)
-       values ('user', $1, 'knowledge.transcript.published',
-               'knowledge_transcript_submission', $2, 'allowed', $3,
-               jsonb_build_object('batchId', $4::text))`,
-      [principal.id, input.submissionId, randomUUID(), result.batchId],
-    );
-    return result;
+    const finalizeConnection = await databaseClient.pool.connect();
+    try {
+      await transaction(finalizeConnection, async () => {
+        for (const item of prepared) {
+          const updated = await finalizeConnection.query(
+            `update knowledge_transcript_submission
+                set status = 'published', reviewed_analysis_markdown = $2,
+                    reviewed_analysis_hash = $3, published_batch_id = $4,
+                    source_key = $5, lecture_id = $6,
+                    updated_at = now(), completed_at = now()
+              where id = $1 and status = 'processing'`,
+            [
+              item.input.submissionId,
+              item.analysisMarkdown,
+              knowledgeExtractionSha256(item.analysisMarkdown),
+              result.batchId,
+              item.lecture.sourceKey,
+              item.lecture.lectureId,
+            ],
+          );
+          if (updated.rowCount !== 1) {
+            throw new KnowledgeTranscriptWorkflowError(
+              "conflict",
+              "A selected draft changed while the publication was being finalized.",
+            );
+          }
+          await finalizeConnection.query(
+            `insert into audit_event
+              (actor_type, actor_user_id, action, object_type, object_id, result,
+               request_correlation_id, details)
+             values ('user', $1, 'knowledge.transcript.published',
+                     'knowledge_transcript_submission', $2, 'allowed', $3,
+                     jsonb_build_object('batchId', $4::text, 'batchSize', $5::int))`,
+            [principal.id, item.input.submissionId, randomUUID(), result.batchId, prepared.length],
+          );
+        }
+      });
+    } finally {
+      finalizeConnection.release();
+    }
+    return { ...result, publishedSubmissionIds: submissionIds };
   } catch (error) {
     await databaseClient.pool.query(
       `update knowledge_transcript_submission
           set status = 'draft_ready', completed_at = now(), updated_at = now()
-        where id = $1 and status = 'processing'`,
-      [input.submissionId],
+        where id = any($1::uuid[]) and status = 'processing'`,
+      [submissionIds],
     );
     if (error instanceof KnowledgeImportError) throw error;
     throw error;
   }
+}
+
+export async function publishKnowledgeTranscriptDraft(
+  databaseClient: DatabaseClient,
+  objectStore: ImmutableObjectStore,
+  importer: KnowledgeImporter,
+  principal: SessionPrincipal,
+  input: KnowledgeTranscriptDraftPublicationInput,
+): Promise<KnowledgeImportResult> {
+  return publishKnowledgeTranscriptDraftBatch(databaseClient, objectStore, importer, principal, [
+    input,
+  ]);
 }

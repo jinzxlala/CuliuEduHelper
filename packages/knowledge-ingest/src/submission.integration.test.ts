@@ -20,6 +20,7 @@ import { LocalImmutableObjectStore } from "@culiu/storage";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { KnowledgeImporter } from "./importer.js";
+import { knowledgeLectureId } from "./manifest.js";
 import type { LoadedKnowledgeImport } from "./source-loader.js";
 import { buildKnowledgeSubmission, type SubmittedKnowledgeFile } from "./submission.js";
 
@@ -461,6 +462,197 @@ describe("knowledge submission publication", () => {
     expect(publishedRow.rows[0]?.status).toBe("published");
     expect(publishedRow.rows[0]?.published_batch_id).not.toBeNull();
     expect(publishedRow.rows[0]?.reviewed_analysis_markdown).toContain("## 证据边界");
+  }, 60_000);
+
+  it("publishes multiple reviewed transcript drafts with one atomic index rebuild", async () => {
+    if (
+      databaseClient === undefined ||
+      client === undefined ||
+      importer === undefined ||
+      objectStore === undefined
+    ) {
+      throw new Error("Integration test runtime is unavailable.");
+    }
+    const activeDatabaseClient = databaseClient;
+    const activeImporter = importer;
+    const activeObjectStore = objectStore;
+    const { createDeterministicMockKnowledgeExtractionProvider } = await import(
+      "./knowledge-extraction.js"
+    );
+    const { parseTranscriptDocument } = await import("./transcript-documents.js");
+    const {
+      executeKnowledgeTranscriptExtraction,
+      prepareKnowledgeTranscriptTask,
+      publishKnowledgeTranscriptDraftBatch,
+      readKnowledgeTranscriptSubmission,
+    } = await import("./transcript-workflow.js");
+    const principal = {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin" as const,
+    };
+    const context = await createKnowledgeImportAuthorizationContext(
+      activeDatabaseClient.database,
+      principal,
+    );
+    const prepared = await Promise.all(
+      ["batch-a.md", "batch-b.md"].map(async (fileName, index) => {
+        const document = await parseTranscriptDocument({
+          bytes: encoder.encode(`这是第 ${String(index + 1)} 份虚构批量发布逐字稿。`),
+          fileName,
+        });
+        const task = await prepareKnowledgeTranscriptTask(
+          activeDatabaseClient,
+          activeObjectStore,
+          context,
+          document,
+          { gitCommitSha: "c".repeat(40), outboundConfirmed: true },
+        );
+        await executeKnowledgeTranscriptExtraction(
+          activeDatabaseClient,
+          task.task,
+          createDeterministicMockKnowledgeExtractionProvider(),
+        );
+        return task;
+      }),
+    );
+    const views = await Promise.all(
+      prepared.map(async (item) =>
+        readKnowledgeTranscriptSubmission(activeDatabaseClient, principal, item.submissionId),
+      ),
+    );
+
+    const published = await publishKnowledgeTranscriptDraftBatch(
+      activeDatabaseClient,
+      activeObjectStore,
+      activeImporter,
+      principal,
+      views.map((view, index) => ({
+        analysisMarkdown: view.generatedAnalysisMarkdown ?? "",
+        lectureDate: `2026-08-${String(index + 10).padStart(2, "0")}`,
+        lectureTitle: `虚构批量发布讲座 ${String(index + 1)}`,
+        submissionId: view.submissionId,
+      })),
+    );
+
+    expect(published.status).toBe("published");
+    expect(published.publishedSubmissionIds).toEqual(prepared.map((item) => item.submissionId));
+    const rows = await activeDatabaseClient.pool.query<{
+      published_batch_id: string | null;
+      status: string;
+    }>(
+      `select published_batch_id, status
+         from knowledge_transcript_submission
+        where id = any($1::uuid[])
+        order by id`,
+      [prepared.map((item) => item.submissionId)],
+    );
+    expect(rows.rows).toHaveLength(2);
+    expect(new Set(rows.rows.map((row) => row.published_batch_id))).toEqual(
+      new Set([published.batchId]),
+    );
+    expect(rows.rows.every((row) => row.status === "published")).toBe(true);
+    const search = await client
+      .index(indexNames.lectures)
+      .search("虚构批量发布讲座", { limit: 10 });
+    expect(
+      new Set(
+        search.hits
+          .filter((hit) => String(hit.title).startsWith("虚构批量发布讲座"))
+          .map((hit) => String(hit.lecture_id)),
+      ),
+    ).toEqual(
+      new Set([
+        knowledgeLectureId("2026-08-10_虚构批量发布讲座 1"),
+        knowledgeLectureId("2026-08-11_虚构批量发布讲座 2"),
+      ]),
+    );
+  }, 60_000);
+
+  it("restores every claimed draft when batch validation fails", async () => {
+    if (databaseClient === undefined || importer === undefined || objectStore === undefined) {
+      throw new Error("Integration test runtime is unavailable.");
+    }
+    const activeDatabaseClient = databaseClient;
+    const activeImporter = importer;
+    const activeObjectStore = objectStore;
+    const { createDeterministicMockKnowledgeExtractionProvider } = await import(
+      "./knowledge-extraction.js"
+    );
+    const { parseTranscriptDocument } = await import("./transcript-documents.js");
+    const {
+      executeKnowledgeTranscriptExtraction,
+      prepareKnowledgeTranscriptTask,
+      publishKnowledgeTranscriptDraftBatch,
+      readKnowledgeTranscriptSubmission,
+    } = await import("./transcript-workflow.js");
+    const principal = {
+      displayName: "Synthetic Import Admin",
+      email: `${actorUserId}@example.invalid`,
+      id: actorUserId,
+      role: "admin" as const,
+    };
+    const context = await createKnowledgeImportAuthorizationContext(
+      activeDatabaseClient.database,
+      principal,
+    );
+    const prepared = await Promise.all(
+      ["duplicate-a.md", "duplicate-b.md"].map(async (fileName, index) => {
+        const document = await parseTranscriptDocument({
+          bytes: encoder.encode(`这是第 ${String(index + 1)} 份虚构重复元数据逐字稿。`),
+          fileName,
+        });
+        const task = await prepareKnowledgeTranscriptTask(
+          activeDatabaseClient,
+          activeObjectStore,
+          context,
+          document,
+          { gitCommitSha: "d".repeat(40), outboundConfirmed: true },
+        );
+        await executeKnowledgeTranscriptExtraction(
+          activeDatabaseClient,
+          task.task,
+          createDeterministicMockKnowledgeExtractionProvider(),
+        );
+        return task;
+      }),
+    );
+    const views = await Promise.all(
+      prepared.map(async (item) =>
+        readKnowledgeTranscriptSubmission(activeDatabaseClient, principal, item.submissionId),
+      ),
+    );
+    const before = await activeDatabaseClient.pool.query<{ id: string }>(
+      "select id from knowledge_import_batch where is_current = true and status = 'published'",
+    );
+
+    await expect(
+      publishKnowledgeTranscriptDraftBatch(
+        activeDatabaseClient,
+        activeObjectStore,
+        activeImporter,
+        principal,
+        views.map((view) => ({
+          analysisMarkdown: view.generatedAnalysisMarkdown ?? "",
+          lectureDate: "2026-08-12",
+          lectureTitle: "重复日期主题",
+          submissionId: view.submissionId,
+        })),
+      ),
+    ).rejects.toMatchObject({ code: "invalid_draft" });
+
+    const after = await activeDatabaseClient.pool.query<{ id: string }>(
+      "select id from knowledge_import_batch where is_current = true and status = 'published'",
+    );
+    expect(after.rows).toEqual(before.rows);
+    const restored = await activeDatabaseClient.pool.query<{ status: string }>(
+      `select status from knowledge_transcript_submission
+        where id = any($1::uuid[])
+        order by id`,
+      [prepared.map((item) => item.submissionId)],
+    );
+    expect(restored.rows).toEqual([{ status: "draft_ready" }, { status: "draft_ready" }]);
   }, 60_000);
 
   it("keeps a retryable failed attempt visible as processing", async () => {

@@ -43,6 +43,8 @@ export interface KnowledgeSubmissionInput {
   readonly transcriptText?: SubmittedKnowledgeFile;
 }
 
+export const MAX_KNOWLEDGE_SUBMISSION_BATCH = 20;
+
 function safeFileName(fileName: string): string {
   if (basename(fileName) !== fileName || fileName.includes("\\") || fileName.includes("/")) {
     throw new KnowledgeSourceError(
@@ -286,5 +288,70 @@ export function buildKnowledgeSubmission(input: KnowledgeSubmissionInput): Loade
     }),
     manifest,
     sources: loadedSources,
+  };
+}
+
+export function buildKnowledgeSubmissionBatch(
+  inputs: readonly KnowledgeSubmissionInput[],
+): LoadedKnowledgeImport {
+  if (inputs.length === 0 || inputs.length > MAX_KNOWLEDGE_SUBMISSION_BATCH) {
+    throw new KnowledgeSourceError(
+      "invalid_source",
+      `knowledge publication batch must contain between 1 and ${String(MAX_KNOWLEDGE_SUBMISSION_BATCH)} submissions`,
+    );
+  }
+
+  const loaded = inputs.map((input) => buildKnowledgeSubmission(input));
+  const ordered = [...loaded].sort((left, right) =>
+    (left.manifest.lectures[0]?.source_key ?? "").localeCompare(
+      right.manifest.lectures[0]?.source_key ?? "",
+      "zh-CN",
+    ),
+  );
+  const lectures = ordered.flatMap((item) => item.manifest.lectures);
+  const first = ordered[0];
+  if (first === undefined) {
+    throw new KnowledgeSourceError("invalid_source", "knowledge publication batch is empty");
+  }
+
+  const sourceRoots = new Map<
+    string,
+    { lecture_year: number | null; root_id: string; source_roles: SourceRole[] }
+  >();
+  for (const item of ordered) {
+    for (const root of item.manifest.source_roots) {
+      const current = sourceRoots.get(root.root_id);
+      if (current === undefined) {
+        sourceRoots.set(root.root_id, {
+          lecture_year: root.lecture_year,
+          root_id: root.root_id,
+          source_roles: [...root.source_roles],
+        });
+        continue;
+      }
+      current.lecture_year =
+        current.lecture_year === root.lecture_year ? current.lecture_year : null;
+      current.source_roles = [...new Set([...current.source_roles, ...root.source_roles])];
+    }
+  }
+
+  const manifest = KnowledgeSourceManifestSchema.parse({
+    ...first.manifest,
+    corpus_hash: computeKnowledgeCorpusHash(lectures),
+    corpus_id: "culiu_knowledge_submission_batch_v1",
+    expected_lecture_count: lectures.length,
+    lecture_count: lectures.length,
+    lectures,
+    source_roots: [...sourceRoots.values()],
+  });
+
+  return {
+    documents: KnowledgeDocumentSetSchema.parse({
+      cases: ordered.flatMap((item) => item.documents.cases),
+      lectures: ordered.flatMap((item) => item.documents.lectures),
+      transcriptSegments: [],
+    }),
+    manifest,
+    sources: ordered.flatMap((item) => item.sources),
   };
 }

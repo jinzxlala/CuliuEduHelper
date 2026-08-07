@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildKnowledgeSubmission, type SubmittedKnowledgeFile } from "./submission.js";
+import {
+  buildKnowledgeSubmission,
+  buildKnowledgeSubmissionBatch,
+  type SubmittedKnowledgeFile,
+} from "./submission.js";
 
 const encoder = new TextEncoder();
 const sourceKey = "2026-08-02_synthetic_lecture";
@@ -126,6 +130,37 @@ describe("knowledge submissions", () => {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     );
     expect(loaded.documents.transcriptSegments).toEqual([]);
+  });
+
+  it("combines multiple reviewed submissions into one deterministic import", () => {
+    const secondAnalysis = analysis();
+    const loaded = buildKnowledgeSubmissionBatch([
+      {
+        analysis: {
+          bytes: encoder.encode(
+            new TextDecoder().decode(secondAnalysis.bytes).replace("虚构讲座", "第二场虚构讲座"),
+          ),
+          fileName: "2026-08-03_second_synthetic_lecture.md",
+        },
+      },
+      { analysis: analysis() },
+    ]);
+
+    expect(loaded.manifest.lecture_count).toBe(2);
+    expect(loaded.manifest.expected_lecture_count).toBe(2);
+    expect(loaded.manifest.lectures.map((item) => item.source_key)).toEqual([
+      "2026-08-02_synthetic_lecture",
+      "2026-08-03_second_synthetic_lecture",
+    ]);
+    expect(loaded.documents.lectures).toHaveLength(2);
+    expect(loaded.documents.cases).toHaveLength(2);
+    expect(loaded.sources).toHaveLength(2);
+  });
+
+  it("rejects duplicate lectures inside one publication batch", () => {
+    expect(() =>
+      buildKnowledgeSubmissionBatch([{ analysis: analysis() }, { analysis: analysis() }]),
+    ).toThrow(/must be unique/u);
   });
 
   it("rejects mixing a single transcript document with the legacy evidence package", () => {

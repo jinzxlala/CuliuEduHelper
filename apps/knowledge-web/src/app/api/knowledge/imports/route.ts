@@ -5,11 +5,13 @@ import {
   KnowledgeSourceError,
   KnowledgeTranscriptWorkflowError,
   listKnowledgeTranscriptSubmissions,
+  MAX_KNOWLEDGE_SUBMISSION_BATCH,
   MAX_KNOWLEDGE_SUBMISSION_BYTES,
   markKnowledgeTranscriptEnqueueFailure,
   parseTranscriptDocument,
   prepareKnowledgeTranscriptTask,
   publishKnowledgeTranscriptDraft,
+  publishKnowledgeTranscriptDraftBatch,
   readKnowledgeTranscriptSubmission,
   type SubmittedKnowledgeFile,
 } from "@culiu/knowledge-ingest";
@@ -45,6 +47,24 @@ const PublishInputSchema = z
     submissionId: z.uuid(),
   })
   .strict();
+
+const BatchPublishInputSchema = z
+  .object({
+    drafts: z.array(PublishInputSchema).min(1).max(MAX_KNOWLEDGE_SUBMISSION_BATCH),
+  })
+  .strict()
+  .superRefine((value, context) => {
+    const submissionIds = value.drafts.map((draft) => draft.submissionId);
+    if (new Set(submissionIds).size !== submissionIds.length) {
+      context.addIssue({
+        code: "custom",
+        message: "batch submissions must be unique",
+        path: ["drafts"],
+      });
+    }
+  });
+
+const PublishRequestSchema = z.union([PublishInputSchema, BatchPublishInputSchema]);
 
 async function submittedFile(
   form: FormData,
@@ -224,18 +244,27 @@ export async function PATCH(request: Request): Promise<NextResponse> {
   if (principal.role !== "admin" && principal.role !== "advisor") {
     return NextResponse.json({ error: "not_found" }, { headers: PRIVATE_HEADERS, status: 404 });
   }
-  const input = PublishInputSchema.safeParse(await request.json().catch(() => null));
+  const input = PublishRequestSchema.safeParse(await request.json().catch(() => null));
   if (!input.success) {
     return NextResponse.json({ error: "invalid_draft" }, { headers: PRIVATE_HEADERS, status: 422 });
   }
   try {
-    const result = await publishKnowledgeTranscriptDraft(
-      getDatabaseClient(),
-      getKnowledgeObjectStore(),
-      getKnowledgeImporter(),
-      principal,
-      input.data,
-    );
+    const result =
+      "drafts" in input.data
+        ? await publishKnowledgeTranscriptDraftBatch(
+            getDatabaseClient(),
+            getKnowledgeObjectStore(),
+            getKnowledgeImporter(),
+            principal,
+            input.data.drafts,
+          )
+        : await publishKnowledgeTranscriptDraft(
+            getDatabaseClient(),
+            getKnowledgeObjectStore(),
+            getKnowledgeImporter(),
+            principal,
+            input.data,
+          );
     return NextResponse.json(result, { headers: PRIVATE_HEADERS, status: 201 });
   } catch (error) {
     const response = workflowErrorResponse(error);
