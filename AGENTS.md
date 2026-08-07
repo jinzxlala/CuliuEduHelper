@@ -961,3 +961,10 @@ pnpm check
 - 根 `pnpm check` 完整通过：格式、478 个仓库文本文件密钥扫描、Lint、严格类型、迁移一致性、全仓单元测试、双 Web 边界、17 包生产构建和双 Web HTTP 冒烟均成功。生产 Compose 渲染校验通过，并确认 Knowledge Web 最终获得 600000/500 毫秒任务参数，Nginx 发布路由为 660 秒；当前开发机 Node.js 24 的 engine 警告仍是既有非阻断项，正式镜像使用 Node.js 22.23.2。
 - 左上角 Logo 的源文件和页面路径均正确，两个应用的 `public/brand/culiu-tech-logo.png` 大小均为 45104 字节且 SHA-256 都是 `5618766605d2ca387bad9a7eb08de23fbbf7bef56a7941f38e8cc1b7580fba4f`；实际缺陷是 Docker standalone 运行阶段没有复制 `public/`。Dockerfile 现已分别复制知识 Web 与教务 Web 的公开静态目录；两个临时 Node.js 22 镜像内文件哈希一致，一次性容器实际请求 Logo 均返回 HTTP 200 和 45104 字节，容器随后已删除。
 - 本轮没有数据库迁移，也没有重新提取逐字稿或修改任何正式知识内容。部署新版本后可直接对现有 `review_ready` 提取稿重新点击一次发布；若仍失败，应先读取新的发布尝试和 Meilisearch 任务错误，不要反复重新提取或降低原子发布校验。
+
+## 42. Nginx 发布超时指令部署回归修复（2026-08-07）
+
+- 首次部署提交 `8a6d531` 后，两个 Web 和 Worker 均正常健康，但 Nginx 进入重启循环。生产日志明确报错：`proxy_read_timeout directive is duplicate`。原因是发布接口 `location` 新增 660 秒读写超时的同时仍包含 `proxy_params`，而该共享 include 在同一 location 层已经定义 65 秒读写超时；`docker compose config --quiet` 只能验证 Compose 插值，不能发现 Nginx 指令上下文冲突。
+- 正式修复将连接／读／写默认超时从共享 `proxy_params` 移到知识系统和教务系统各自的 `server` 层，普通路由继续继承 5／65／65 秒；知识发布接口在更内层安全覆盖为 660／660 秒，因此不再出现同层重复指令。CVM 紧急恢复可临时从共享 include 删除两条 65 秒读写超时并重建 Nginx；拉取正式修复前应恢复该临时工作区修改，避免阻塞 Git 快进更新。
+- 新增 `scripts/check-nginx-timeouts.mjs` 并纳入根 `pnpm check`：共享 include 再次出现超时指令、两个 server 缺少默认值或发布 location 缺少 660 秒覆盖都会直接失败。另使用一次性自签名证书、与 Compose 一致的上游主机名和官方 `nginx:1.28.0-alpine` 镜像实际执行 `nginx -t`，结果为 syntax ok／test successful；一次性证书和测试目录已删除。
+- 修复后的根 `pnpm check` 完整通过，包括格式、479 个文本文件密钥扫描、Lint、类型、迁移、全部单元测试、Web 边界、新增 Nginx 布局检查、17 包构建和双 Web HTTP 冒烟。该回归不影响 PostgreSQL、Redis、Meilisearch、知识数据或逐字稿提取结果，也不需要数据库迁移。
