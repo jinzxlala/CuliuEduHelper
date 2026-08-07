@@ -21,6 +21,32 @@ describe("bulk workspace source selection", () => {
     expect(sources.map(workspaceSourceKey)).toEqual(["lecture:shared-id", "case:shared-id"]);
   });
 
+  it("strips smart-search display fields before building the API payload", () => {
+    const smartSearchResults = [
+      {
+        displaySummary: "A summary used only by the result card.",
+        displayTitle: "A display title",
+        matchedTerms: ["AI"],
+        rationale: "A model-generated explanation.",
+        sourceDate: "2026-08-07",
+        sourceId: "case-1",
+        sourceType: "case" as const,
+      },
+      {
+        displaySummary: "A duplicate result from another retrieval plan.",
+        displayTitle: "Another display title",
+        matchedTerms: ["artificial intelligence"],
+        rationale: "Another explanation.",
+        sourceId: "case-1",
+        sourceType: "case" as const,
+      },
+    ];
+
+    expect(uniqueWorkspaceSources(smartSearchResults)).toEqual([
+      { sourceId: "case-1", sourceType: "case" },
+    ]);
+  });
+
   it("selects all eligible catalog results but skips sources already in the workspace", () => {
     expect(
       selectableWorkspaceSourceIds([

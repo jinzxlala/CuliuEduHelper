@@ -10,7 +10,14 @@ export function workspaceSourceKey(source: WorkspaceSourceChoice): string {
 export function uniqueWorkspaceSources(
   sources: readonly WorkspaceSourceChoice[],
 ): WorkspaceSourceChoice[] {
-  return [...new Map(sources.map((source) => [workspaceSourceKey(source), source])).values()];
+  return [
+    ...new Map(
+      sources.map((source) => [
+        workspaceSourceKey(source),
+        { sourceId: source.sourceId, sourceType: source.sourceType },
+      ]),
+    ).values(),
+  ];
 }
 
 export function selectableWorkspaceSourceIds(
