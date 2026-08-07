@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-export const KNOWLEDGE_ANALYSIS_MAX_SOURCES = 100;
+// The workspace library can contain the complete current lecture/case catalog.
+// Model context remains independently bounded by the deterministic compression
+// rules in analysis-chat.ts and analysis-report.ts.
+export const KNOWLEDGE_ANALYSIS_MAX_SOURCES = 500;
 export const KNOWLEDGE_ANALYSIS_MAX_CONVERSATIONS = 50;
 export const KNOWLEDGE_SMART_SEARCH_MAX_PLANS = 6;
 export const KNOWLEDGE_SMART_SEARCH_MAX_CANDIDATES = 60;

@@ -1,8 +1,9 @@
 import {
   addKnowledgeWorkspaceSources,
+  listKnowledgeSourceCatalog,
   listKnowledgeWorkspaceSourceUpdates,
   removeKnowledgeWorkspaceSource,
-  resolveCurrentKnowledgeSourceReference,
+  resolveCurrentKnowledgeSourceReferences,
   updateKnowledgeWorkspaceSourceVersion,
 } from "@culiu/knowledge-analysis";
 import { NextResponse } from "next/server";
@@ -27,7 +28,7 @@ const AddSchema = z
           .strict(),
       )
       .min(1)
-      .max(100),
+      .max(500),
   })
   .strict();
 const UpdateSchema = z.object({ sourceRecordId: z.uuid() }).strict();
@@ -45,11 +46,7 @@ export async function POST(
   try {
     const input = AddSchema.parse(await request.json());
     const database = getDatabaseClient().database;
-    const references = await Promise.all(
-      input.sources.map((source) =>
-        resolveCurrentKnowledgeSourceReference(database, source.sourceType, source.sourceId),
-      ),
-    );
+    const references = await resolveCurrentKnowledgeSourceReferences(database, input.sources);
     return NextResponse.json(
       await addKnowledgeWorkspaceSources(
         database,
@@ -57,6 +54,36 @@ export async function POST(
         (await context.params).workspaceId,
         { sources: references },
       ),
+      { headers: ANALYSIS_PRIVATE_HEADERS },
+    );
+  } catch (error) {
+    return analysisErrorResponse(error);
+  }
+}
+
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ workspaceId: string }> },
+): Promise<NextResponse> {
+  const principal = await getActiveSessionPrincipal();
+  if (principal === null)
+    return NextResponse.json(
+      { error: "authentication_required" },
+      { headers: ANALYSIS_PRIVATE_HEADERS, status: 401 },
+    );
+  try {
+    const sourceType = z
+      .enum(["lecture", "case"])
+      .parse(new URL(request.url).searchParams.get("type"));
+    return NextResponse.json(
+      {
+        items: await listKnowledgeSourceCatalog(
+          getDatabaseClient().database,
+          principal.id,
+          (await context.params).workspaceId,
+          sourceType,
+        ),
+      },
       { headers: ANALYSIS_PRIVATE_HEADERS },
     );
   } catch (error) {

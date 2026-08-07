@@ -12,12 +12,13 @@ import {
   sourceDocuments,
   type Database,
 } from "@culiu/database/runtime";
-import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import {
   AddKnowledgeWorkspaceSourcesInputSchema,
   CreateKnowledgeConversationInputSchema,
   CreateKnowledgeWorkspaceInputSchema,
+  KNOWLEDGE_ANALYSIS_MAX_SOURCES,
   KnowledgeAnalysisSourceIdSchema,
   KnowledgeWorkspaceIdSchema,
   SetKnowledgeWorkspaceMemberInputSchema,
@@ -47,6 +48,14 @@ export class KnowledgeWorkspaceConflictError extends Error {
 interface Membership {
   role: KnowledgeWorkspaceRole;
   workspaceStatus: "active" | "archived";
+}
+
+export interface KnowledgeSourceCatalogItem {
+  alreadyAdded: boolean;
+  sourceId: string;
+  sourceType: "lecture" | "case";
+  summary: string;
+  title: string;
 }
 
 async function requireMembership(
@@ -344,6 +353,23 @@ export async function addKnowledgeWorkspaceSources(
         ),
       );
     const existingKeys = new Set(existingRows.map((row) => `${row.sourceType}:${row.sourceId}`));
+    const activeCountRows = await transaction
+      .select({ count: sql<number>`count(*)::integer` })
+      .from(knowledgeAnalysisSources)
+      .where(
+        and(
+          eq(knowledgeAnalysisSources.workspaceId, workspaceId),
+          isNull(knowledgeAnalysisSources.removedAt),
+        ),
+      );
+    const newCount = input.sources.filter(
+      (source) => !existingKeys.has(`${source.sourceType}:${source.sourceId}`),
+    ).length;
+    if ((activeCountRows[0]?.count ?? 0) + newCount > KNOWLEDGE_ANALYSIS_MAX_SOURCES) {
+      throw new KnowledgeWorkspaceConflictError(
+        `工作区最多可保存 ${String(KNOWLEDGE_ANALYSIS_MAX_SOURCES)} 项背景资料。`,
+      );
+    }
     const created: string[] = [];
     const existing: string[] = [];
     for (const source of input.sources) {
@@ -472,13 +498,91 @@ async function latestReferencesForSources(
   return output;
 }
 
+export async function listKnowledgeSourceCatalog(
+  database: Database,
+  actorUserId: string,
+  workspaceId: string,
+  sourceType: "lecture" | "case",
+): Promise<KnowledgeSourceCatalogItem[]> {
+  await requireMembership(database, actorUserId, workspaceId, "add_sources");
+  const batchRows = await database
+    .select({ id: knowledgeImportBatches.id })
+    .from(knowledgeImportBatches)
+    .where(eq(knowledgeImportBatches.status, "published"))
+    .orderBy(desc(knowledgeImportBatches.publishedAt))
+    .limit(1);
+  const batchId = batchRows[0]?.id;
+  if (batchId === undefined) return [];
+
+  const existingRows = await database
+    .select({ sourceId: knowledgeAnalysisSources.sourceId })
+    .from(knowledgeAnalysisSources)
+    .where(
+      and(
+        eq(knowledgeAnalysisSources.workspaceId, workspaceId),
+        eq(knowledgeAnalysisSources.sourceType, sourceType),
+        isNull(knowledgeAnalysisSources.removedAt),
+      ),
+    );
+  const existingIds = new Set(existingRows.map((row) => row.sourceId));
+
+  if (sourceType === "lecture") {
+    const rows = await database
+      .select({
+        sourceId: knowledgeLectureVersions.lectureId,
+        summary: knowledgeLectureVersions.summary,
+        title: knowledgeLectureVersions.title,
+      })
+      .from(knowledgeLectureVersions)
+      .where(eq(knowledgeLectureVersions.batchId, batchId))
+      .orderBy(asc(knowledgeLectureVersions.title), asc(knowledgeLectureVersions.lectureId));
+    return rows.map((row) => ({
+      alreadyAdded: existingIds.has(row.sourceId),
+      sourceId: row.sourceId,
+      sourceType,
+      summary: row.summary,
+      title: row.title,
+    }));
+  }
+
+  const rows = await database
+    .select({
+      sourceId: knowledgeCaseVersions.caseId,
+      summary: knowledgeCaseVersions.profileSummary,
+      title: knowledgeCaseVersions.academicLabel,
+    })
+    .from(knowledgeCaseVersions)
+    .where(eq(knowledgeCaseVersions.batchId, batchId))
+    .orderBy(asc(knowledgeCaseVersions.academicLabel), asc(knowledgeCaseVersions.caseId));
+  return rows.map((row) => ({
+    alreadyAdded: existingIds.has(row.sourceId),
+    sourceId: row.sourceId,
+    sourceType,
+    summary: row.summary || "该案例暂无摘要。",
+    title: row.title || "匿名案例",
+  }));
+}
+
+export async function resolveCurrentKnowledgeSourceReferences(
+  database: Database,
+  sources: Array<{ sourceId: string; sourceType: "lecture" | "case" }>,
+): Promise<KnowledgeSourceReference[]> {
+  const references = await latestReferencesForSources(database, sources);
+  return sources.map((source) => {
+    const reference = references.get(`${source.sourceType}:${source.sourceId}`);
+    if (reference === undefined) throw new KnowledgeWorkspaceNotFoundError();
+    return reference;
+  });
+}
+
 export async function resolveCurrentKnowledgeSourceReference(
   database: Database,
   sourceType: "lecture" | "case",
   sourceId: string,
 ): Promise<KnowledgeSourceReference> {
-  const references = await latestReferencesForSources(database, [{ sourceId, sourceType }]);
-  const reference = references.get(`${sourceType}:${sourceId}`);
+  const reference = (
+    await resolveCurrentKnowledgeSourceReferences(database, [{ sourceId, sourceType }])
+  )[0];
   if (reference === undefined) throw new KnowledgeWorkspaceNotFoundError();
   return reference;
 }

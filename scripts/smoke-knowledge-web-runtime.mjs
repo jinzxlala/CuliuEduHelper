@@ -83,7 +83,12 @@ try {
     throw new Error("Knowledge Web login page smoke failed.");
   }
 
-  for (const path of ["/search", "/smart-search", "/analysis"]) {
+  for (const path of [
+    "/search",
+    "/smart-search",
+    "/analysis",
+    "/analysis/00000000-0000-4000-8000-000000000000/sources",
+  ]) {
     const protectedPage = await fetch(`${baseUrl}${path}`, { redirect: "manual" });
     if (
       protectedPage.status !== 307 ||
@@ -96,6 +101,7 @@ try {
   for (const [path, method] of [
     ["/api/smart-search", "POST"],
     ["/api/analysis/workspaces", "GET"],
+    ["/api/analysis/workspaces/00000000-0000-4000-8000-000000000000/sources?type=lecture", "GET"],
   ]) {
     const protectedApi = await fetch(`${baseUrl}${path}`, {
       body: method === "POST" ? JSON.stringify({ prompt: "synthetic" }) : undefined,

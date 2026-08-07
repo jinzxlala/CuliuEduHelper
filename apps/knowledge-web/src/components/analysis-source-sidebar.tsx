@@ -46,8 +46,16 @@ export function AnalysisSourceSidebar({
           <p className="eyebrow">冻结背景</p>
           <h2>背景资料</h2>
         </div>
-        <span>{activeSources.length}/100</span>
+        <span>{activeSources.length}/500</span>
       </div>
+      {editable ? (
+        <Link
+          className="primary-button button-link full-width source-import-button"
+          href={`/analysis/${workspaceId}/sources`}
+        >
+          引入资料
+        </Link>
+      ) : null}
       {activeSources.length === 0 ? (
         <div className="empty-state compact-empty-state">
           <p>尚未加入资料。</p>

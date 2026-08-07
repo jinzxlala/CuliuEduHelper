@@ -50,6 +50,7 @@ import {
   archiveKnowledgeWorkspace,
   createKnowledgeConversation,
   createKnowledgeWorkspace,
+  listKnowledgeSourceCatalog,
   listKnowledgeWorkspaces,
   readKnowledgeWorkspace,
   revokeKnowledgeWorkspaceMember,
@@ -256,6 +257,14 @@ describe("knowledge analysis database boundaries", () => {
     expect(
       await addKnowledgeWorkspaceSources(database, editorId, created.id, { sources: [reference] }),
     ).toEqual({ created: [], existing: [`lecture:${lectureId}`] });
+    expect(await listKnowledgeSourceCatalog(database, editorId, created.id, "lecture")).toEqual([
+      expect.objectContaining({
+        alreadyAdded: true,
+        sourceId: lectureId,
+        sourceType: "lecture",
+        title: "Synthetic stage 3 lecture",
+      }),
+    ]);
     expect(
       (
         await createKnowledgeConversation(database, editorId, created.id, {

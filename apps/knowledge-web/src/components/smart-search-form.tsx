@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type JSX, type SyntheticEvent } from "react";
 
 import { AddToWorkspaceButton } from "./add-to-workspace-button";
+import { BulkWorkspaceAdd, WorkspaceSelectionCheckbox } from "./bulk-workspace-add";
 
 interface SmartResultReference {
   matchedTerms: string[];
@@ -222,37 +223,47 @@ export function SmartSearchForm({
               <p className="error-text">{run.safeErrorSummary}</p>
             )}
             {run.summary === null ? null : <p className="smart-search-summary">{run.summary}</p>}
-            <div className="smart-result-grid">
-              {run.resultReferences.map((result) => (
-                <article
-                  className="smart-result-card"
-                  key={`${result.sourceType}:${result.sourceId}`}
-                >
-                  <p className="eyebrow">{result.sourceType === "lecture" ? "讲座" : "匿名案例"}</p>
-                  <h3>{result.sourceId}</h3>
-                  <p>{result.rationale}</p>
-                  {result.matchedTerms.length === 0 ? null : (
-                    <p>匹配词：{result.matchedTerms.join("、")}</p>
-                  )}
-                  <div className="smart-result-actions">
-                    <Link
-                      className="secondary-button button-link compact-button"
-                      href={
-                        result.sourceType === "lecture"
-                          ? `/knowledge/lectures/${result.sourceId}`
-                          : `/knowledge/cases/${result.sourceId}`
-                      }
-                    >
-                      查看来源
-                    </Link>
-                    <AddToWorkspaceButton
-                      sourceId={result.sourceId}
-                      sourceType={result.sourceType}
-                    />
-                  </div>
-                </article>
-              ))}
-            </div>
+            <BulkWorkspaceAdd sources={run.resultReferences}>
+              <div className="smart-result-grid">
+                {run.resultReferences.map((result) => (
+                  <article
+                    className="smart-result-card"
+                    key={`${result.sourceType}:${result.sourceId}`}
+                  >
+                    <div className="selectable-result-heading">
+                      <p className="eyebrow">
+                        {result.sourceType === "lecture" ? "讲座" : "匿名案例"}
+                      </p>
+                      <WorkspaceSelectionCheckbox
+                        sourceId={result.sourceId}
+                        sourceType={result.sourceType}
+                      />
+                    </div>
+                    <h3>{result.sourceId}</h3>
+                    <p>{result.rationale}</p>
+                    {result.matchedTerms.length === 0 ? null : (
+                      <p>匹配词：{result.matchedTerms.join("、")}</p>
+                    )}
+                    <div className="smart-result-actions">
+                      <Link
+                        className="secondary-button button-link compact-button"
+                        href={
+                          result.sourceType === "lecture"
+                            ? `/knowledge/lectures/${result.sourceId}`
+                            : `/knowledge/cases/${result.sourceId}`
+                        }
+                      >
+                        查看来源
+                      </Link>
+                      <AddToWorkspaceButton
+                        sourceId={result.sourceId}
+                        sourceType={result.sourceType}
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </BulkWorkspaceAdd>
           </section>
         )}
       </div>

@@ -183,6 +183,13 @@
       "when": 1785945558373,
       "tag": "0025_good_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786066094307,
+      "tag": "0026_expand_workspace_source_capacity",
+      "breakpoints": true
     }
   ]
 }

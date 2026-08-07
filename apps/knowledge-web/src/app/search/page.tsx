@@ -10,6 +10,7 @@ import type { JSX } from "react";
 
 import { HighlightedText } from "../../components/highlighted-text";
 import { AddToWorkspaceButton } from "../../components/add-to-workspace-button";
+import { BulkWorkspaceAdd, WorkspaceSelectionCheckbox } from "../../components/bulk-workspace-add";
 import { SignOutButton } from "../../components/sign-out-button";
 import { requireActiveSessionPrincipal } from "../../lib/auth-session";
 import { getKnowledgeSearchService } from "../../lib/knowledge-search";
@@ -63,9 +64,12 @@ function LectureResult({ hit }: Readonly<{ hit: SearchHit<LectureDocument> }>): 
   const lecture = hit.document;
   return (
     <article className="result-card">
-      <div className="result-meta">
-        <span>{displayDate(lecture.date)}</span>
-        <span>{lecture.organization ?? "机构待确认"}</span>
+      <div className="selectable-result-heading">
+        <div className="result-meta">
+          <span>{displayDate(lecture.date)}</span>
+          <span>{lecture.organization ?? "机构待确认"}</span>
+        </div>
+        <WorkspaceSelectionCheckbox sourceId={lecture.lecture_id} sourceType="lecture" />
       </div>
       <h2>
         <Link href={`/knowledge/lectures/${encodeURIComponent(lecture.lecture_id)}`}>
@@ -94,9 +98,12 @@ function CaseResult({ hit }: Readonly<{ hit: SearchHit<CaseDocument> }>): JSX.El
   const formattedTitle = formattedText(hit, "academic_label", title || item.case_id);
   return (
     <article className="result-card">
-      <div className="result-meta">
-        <span>{item.case_type}</span>
-        <span>可信度：{confidenceLabels[item.confidence]}</span>
+      <div className="selectable-result-heading">
+        <div className="result-meta">
+          <span>{item.case_type}</span>
+          <span>可信度：{confidenceLabels[item.confidence]}</span>
+        </div>
+        <WorkspaceSelectionCheckbox sourceId={item.case_id} sourceType="case" />
       </div>
       <h2>
         <Link href={`/knowledge/cases/${encodeURIComponent(item.case_id)}`}>
@@ -385,6 +392,16 @@ export default async function SearchPage({
     unavailable = true;
   }
   const page = result?.lectures ?? result?.cases ?? result?.transcripts;
+  const workspaceSources = [
+    ...(result?.lectures?.hits.map((hit) => ({
+      sourceId: hit.document.lecture_id,
+      sourceType: "lecture" as const,
+    })) ?? []),
+    ...(result?.cases?.hits.map((hit) => ({
+      sourceId: hit.document.case_id,
+      sourceType: "case" as const,
+    })) ?? []),
+  ];
 
   return (
     <main className="app-shell">
@@ -486,12 +503,16 @@ export default async function SearchPage({
                 <p>可以减少筛选条件，或换一个更具体的关键词。</p>
               </div>
             ) : null}
-            {result?.lectures?.hits.map((hit) => (
-              <LectureResult hit={hit} key={hit.document.lecture_id} />
-            ))}
-            {result?.cases?.hits.map((hit) => (
-              <CaseResult hit={hit} key={hit.document.case_id} />
-            ))}
+            {workspaceSources.length === 0 ? null : (
+              <BulkWorkspaceAdd sources={workspaceSources}>
+                {result?.lectures?.hits.map((hit) => (
+                  <LectureResult hit={hit} key={hit.document.lecture_id} />
+                ))}
+                {result?.cases?.hits.map((hit) => (
+                  <CaseResult hit={hit} key={hit.document.case_id} />
+                ))}
+              </BulkWorkspaceAdd>
+            )}
             {result?.transcripts?.hits.map((hit) => (
               <TranscriptResult hit={hit} key={hit.document.segment_id} />
             ))}

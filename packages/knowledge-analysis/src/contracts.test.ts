@@ -91,6 +91,19 @@ describe("knowledge analysis contracts", () => {
     ).toThrow();
   });
 
+  it("allows a complete bounded source library while keeping a hard capacity", () => {
+    const sources = Array.from({ length: 500 }, (_, index) => ({
+      ...source,
+      sourceId: `lecture:${String(index)}`,
+    }));
+    expect(AddKnowledgeWorkspaceSourcesInputSchema.parse({ sources }).sources).toHaveLength(500);
+    expect(() =>
+      AddKnowledgeWorkspaceSourcesInputSchema.parse({
+        sources: [...sources, { ...source, sourceId: "lecture:overflow" }],
+      }),
+    ).toThrow();
+  });
+
   it("accepts deterministic report content and rejects duplicate block IDs", () => {
     const section = {
       chart: {
