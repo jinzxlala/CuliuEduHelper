@@ -42,7 +42,9 @@ export async function enqueueTask(
 ): Promise<string> {
   const task = TaskEnvelopeSchema.parse(untrustedTask);
   const job = await queue.add(task.taskName, task, {
-    ...(task.taskName === "knowledge.analysis-chat" ? { attempts: 1 } : {}),
+    ...(task.taskName === "knowledge.analysis-chat" || task.taskName === "knowledge.analysis-report"
+      ? { attempts: 1 }
+      : {}),
     jobId: task.idempotencyKey,
   });
   if (job.id === undefined) {

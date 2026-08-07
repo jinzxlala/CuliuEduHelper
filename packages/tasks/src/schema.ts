@@ -223,14 +223,17 @@ export const KnowledgeAnalysisReportTaskSchema = z.object({
   idempotencyKey: TaskIdempotencyKeySchema,
   payload: z
     .object({
-      contextVersion: z.literal("knowledge-analysis-report-context.v1"),
+      contextVersion: z.enum([
+        "knowledge-analysis-report-context.v1",
+        "knowledge-analysis-report-context.v2",
+      ]),
       conversationId: z.uuid(),
       correlationId: z.uuid(),
       gitCommitSha: z.string().regex(/^[0-9a-f]{40}$/u),
       inputSnapshotHash: z.string().regex(/^[0-9a-f]{64}$/u),
       model: z.literal("deepseek-v4-flash"),
       pricingVersion: z.literal("deepseek-v4-flash-cny-2026-08-02"),
-      promptVersion: z.literal("knowledge-analysis-report.v2"),
+      promptVersion: z.enum(["knowledge-analysis-report.v2", "knowledge-analysis-report.v3"]),
       reportId: z.uuid(),
       schemaVersion: z.literal("knowledge-analysis-report-output.v1"),
       templateVersion: z.literal("knowledge-analysis-report-html.v4"),
